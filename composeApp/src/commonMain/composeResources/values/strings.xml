@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">TimeFlow</string>
+    <string name="greeting">Hello, %1$s!</string>
+    <string name="cyclone">Cyclone</string>
+    <string name="open_github">Open github</string>
+    <string name="run">Run</string>
+    <string name="stop">Stop</string>
+    <string name="theme">Theme</string>
+</resources>

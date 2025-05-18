@@ -1,0 +1,46 @@
+syntax = "proto3";
+package xyz.hyli.timeflow.proto;
+
+message Course {
+  string name = 1;
+  string teacher = 2;
+  string classroom = 3;
+  oneof time {
+    TimeRange timeRange = 4;
+    TimeList timeList = 5;
+  }
+  oneof week {
+    WeekRange weekRange = 6;
+    WeekList weekList = 7;
+  }
+}
+
+message TimeRange {
+  repeated Range range = 1;
+}
+
+message TimeList {
+  repeated int32 time = 1;
+}
+
+message WeekRange {
+  repeated Range range = 1;
+}
+
+message WeekList {
+  repeated int32 week = 1;
+}
+
+message Range {
+  int32 start = 1;
+  int32 end = 2;
+}
+
+message DayList {
+  repeated Course courses = 1;
+}
+
+message Schedule {
+  string name = 1;
+  repeated DayList day = 2;
+}
