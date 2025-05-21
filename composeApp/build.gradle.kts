@@ -17,7 +17,11 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.buildConfig)
+    alias(libs.plugins.jgit)
 }
+
+val appMajorVersionCode = libs.versions.version.major.code.get().toInt()
+val appVersionCode = appMajorVersionCode * 10000 + (jgit.repo()?.commitCount("refs/remotes/origin/${jgit.repo()?.raw?.branch ?: "master"}") ?: 0)
 
 kotlin {
     androidTarget {
@@ -44,6 +48,8 @@ kotlin {
         it.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+
+            export(libs.calf.ui)
         }
     }
 
@@ -71,6 +77,9 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kstore)
             implementation(libs.materialKolor)
+            implementation(libs.kmp.settings)
+            implementation(libs.dnd)
+            api(libs.calf.ui)
         }
 
         androidMain.dependencies {
@@ -101,11 +110,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
         targetSdk = 35
 
         applicationId = "xyz.hyli.timeflow"
-        versionCode = 10000
+        versionCode = appVersionCode
         versionName = libs.versions.version.name.get()
     }
     packaging {
@@ -141,7 +150,7 @@ compose.desktop {
             }
             macOS {
                 iconFile.set(project.file("desktopAppIcons/MacosIcon.icns"))
-                bundleID = "xyz.hyli.timeflow.desktopApp"
+                bundleID = "xyz.hyli.timeflow"
             }
         }
     }
@@ -158,6 +167,10 @@ tasks.withType<ComposeHotRun>().configureEach {
 buildConfig {
     // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
+    useKotlinOutput()
+    buildConfigField("APP_VERSION_NAME", libs.versions.version.name)
+    buildConfigField("APP_VERSION_CODE", appVersionCode)
+    buildConfigField("BUILD_TIME", System.currentTimeMillis())
 }
 
 dependencies {
