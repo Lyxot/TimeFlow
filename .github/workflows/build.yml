@@ -1,0 +1,57 @@
+name: Android CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+        required: false
+        default: false
+
+  push:
+
+jobs:
+  build-android:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: 'recursive'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
+          cache-overwrite-existing: true
+          cache-read-only: false
+
+      - name: Setup Debug Session
+        if: inputs.debug == true
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
+
+      - name: Build APK
+        run: |
+            export COMMIT_COUNT=$(git rev-list --count HEAD)
+            ./gradlew assembleRelease
+
+      - name: Upload built apk
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: |
+            composeApp/build/outputs/apk/release/*.apk
+
+    

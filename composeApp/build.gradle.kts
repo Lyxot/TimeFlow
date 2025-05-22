@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
+import java.lang.System.getenv
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -18,10 +19,16 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.jgit)
+    alias(libs.plugins.ktorfit)
 }
 
 val appMajorVersionCode = libs.versions.version.major.code.get().toInt()
-val appVersionCode = appMajorVersionCode * 10000 + (jgit.repo()?.commitCount("refs/remotes/origin/${jgit.repo()?.raw?.branch ?: "master"}") ?: 0)
+val appVersionCode = appMajorVersionCode * 10000 +
+        if (getenv("CI") == "true") {
+            getenv("COMMIT_COUNT").toInt()
+        } else {
+            jgit.repo()?.commitCount("refs/remotes/origin/${jgit.repo()?.raw?.branch ?: "master"}") ?: 0
+        }
 
 kotlin {
     androidTarget {
@@ -60,12 +67,9 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.kotlinLogging)
+            implementation(libs.kermit)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.client.serialization)
-            implementation(libs.ktor.client.logging)
+            implementation(libs.ktorfit.lib)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.navigation.compose)
@@ -73,7 +77,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.kotlinInject)
             implementation(libs.coil)
-            implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kstore)
             implementation(libs.materialKolor)
@@ -86,22 +89,22 @@ kotlin {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.ktor.client.okhttp)
             implementation(libs.kstore.file)
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.ktor.client.okhttp)
             implementation(libs.kstore.file)
         }
 
         iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
             implementation(libs.kstore.file)
         }
 
+        wasmJsMain.dependencies {
+
+        }
     }
 }
 
@@ -153,6 +156,12 @@ compose.desktop {
                 bundleID = "xyz.hyli.timeflow"
             }
         }
+
+        buildTypes.release.proguard {
+            version.set("7.7.0")
+            configurationFiles.from("proguard.pro")
+        }
+
     }
 }
 
@@ -167,6 +176,7 @@ tasks.withType<ComposeHotRun>().configureEach {
 buildConfig {
     // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
+    packageName = "xyz.hyli.timeflow"
     useKotlinOutput()
     buildConfigField("APP_VERSION_NAME", libs.versions.version.name)
     buildConfigField("APP_VERSION_CODE", appVersionCode)
