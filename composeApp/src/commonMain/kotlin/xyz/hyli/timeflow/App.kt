@@ -1,6 +1,5 @@
 package xyz.hyli.timeflow
 
-import TimeFlow.composeApp.BuildConfig
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image

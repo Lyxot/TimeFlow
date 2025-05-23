@@ -1,0 +1,144 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+        required: false
+        default: false
+      debug-runner:
+        type: choice
+        required: true
+        default: "macos-latest"
+        options:
+          - macos-latest
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - windows-latest
+          - windows-11-arm
+
+  push:
+
+jobs:
+  get-count:
+    runs-on: ubuntu-latest
+    outputs:
+      count: ${{ steps.commit-count.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          submodules: 'recursive'
+      - name: Get commit count
+        id: commit-count
+        run: |
+          echo "count=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+
+  debug:
+    runs-on: ${{ inputs.debug-runner }}
+    if: inputs.debug == true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Debug Session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
+
+  build:
+    strategy:
+      matrix:
+        include:
+          - name: android
+            runner: macos-15
+            task: ./gradlew assembleRelease
+            path: composeApp/build/outputs/apk/release/*.apk
+
+          - name: macos-arm64
+            runner: macos-15
+            task: ./gradlew packageReleaseDmg
+            path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
+
+          - name: macos-x86_64
+            runner: macos-13
+            task: ./gradlew packageReleaseDmg
+            path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
+
+          - name: linux-x86_64
+            runner: ubuntu-24.04
+            task: ./gradlew packageReleaseDeb
+            path: composeApp/build/compose/binaries/main-release/deb/*.deb
+
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            task: ./gradlew packageReleaseDeb
+            path: composeApp/build/compose/binaries/main-release/deb/*.deb
+
+          - name: windows-x86_64
+            runner: windows-latest
+            task: ./gradlew.bat packageReleaseMsi
+            path: composeApp/build/compose/binaries/main-release/msi/*.msi
+
+          - name: windows-arm64
+            runner: windows-11-arm
+            task: ./gradlew.bat packageReleaseMsi
+            path: composeApp/build/compose/binaries/main-release/msi/*.msi
+
+    runs-on: ${{ matrix.runner }}
+    name: Build ${{ matrix.name }}
+    needs: get-count
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Signing
+        id: sign
+        if: ${{ matrix.name == 'android' }}
+        run: |
+          base64 --decode <<< "${{ secrets.RELEASE_KEY }}" > composeApp/release-key.jks
+          grep -q '[^[:space:]]' composeApp/release-key.jks && echo release_key_exists=true >> $GITHUB_OUTPUT || echo release_key_exists=false >> $GITHUB_OUTPUT
+
+      - name: Build
+        env:
+          COMMIT_COUNT: ${{ needs.get-count.outputs.count }}
+          RELEASE_KEY_EXISTS: ${{ steps.sign.outputs.release_key_exists }}
+          RELEASE_KEY_STORE_PASSWORD: ${{ secrets.RELEASE_KEY_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ${{ matrix.task }}
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.path }}
+    
