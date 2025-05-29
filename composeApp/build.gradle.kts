@@ -138,17 +138,13 @@ android {
     }
     signingConfigs {
         create("release") {
-            if (getenv("RELEASE_KEY_EXISTS") == "true") {
-                storeFile = file("release-key.jks")
-                storePassword = getenv("RELEASE_KEY_STORE_PASSWORD")
-                keyAlias = "TimeFlow"
-                keyPassword = getenv("RELEASE_KEY_PASSWORD")
-                enableV1Signing = false
-                enableV2Signing = true
-                enableV3Signing = true
-            } else {
-                return@create
-            }
+            storeFile = file("release-key.jks")
+            storePassword = getenv("RELEASE_KEY_STORE_PASSWORD")
+            keyAlias = "TimeFlow"
+            keyPassword = getenv("RELEASE_KEY_PASSWORD")
+            enableV1Signing = false
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
     packaging {
@@ -157,11 +153,13 @@ android {
         }
     }
     buildTypes {
-        getByName("release") {
-            isShrinkResources = true
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+        if (getenv("RELEASE_KEY_EXISTS") == "true") {
+            getByName("release") {
+                isShrinkResources = true
+                isMinifyEnabled = true
+                proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
