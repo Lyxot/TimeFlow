@@ -5,22 +5,20 @@ message Course {
   string name = 1;
   string teacher = 2;
   string classroom = 3;
-  oneof time {
-    TimeRange timeRange = 4;
-    TimeList timeList = 5;
-  }
+  Range time = 4;
   oneof week {
+    WeekDescription weekDescription = 5;
     WeekRange weekRange = 6;
     WeekList weekList = 7;
   }
 }
 
-message TimeRange {
-  repeated Range range = 1;
-}
-
-message TimeList {
-  repeated int32 time = 1;
+message WeekDescription {
+  enum description {
+    ALL = 0;
+    ODD = 1;
+    EVEN = 2;
+  }
 }
 
 message WeekRange {

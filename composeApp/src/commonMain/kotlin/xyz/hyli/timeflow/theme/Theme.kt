@@ -5,15 +5,22 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import xyz.hyli.timeflow.viewmodel.TimeFlowViewModel
 
 internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 
 @Composable
 internal fun AppTheme(
+    viewModel: TimeFlowViewModel,
     content: @Composable () -> Unit
 ) {
     val systemIsDark = isSystemInDarkTheme()
-    val isDarkState = remember(systemIsDark) { mutableStateOf(systemIsDark) }
+    val uiState by viewModel.uiState.collectAsState()
+    val isDarkState = remember(systemIsDark, uiState.theme) {
+        if (uiState.theme != 1 && uiState.theme != 2) // 0: System, 1: Light, 2: Dark
+            mutableStateOf(systemIsDark)
+        else mutableStateOf(uiState.theme == 2)
+    }
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState
     ) {

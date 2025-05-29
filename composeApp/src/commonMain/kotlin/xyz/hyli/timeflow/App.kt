@@ -18,17 +18,20 @@ import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import timeflow.composeapp.generated.resources.*
 import xyz.hyli.timeflow.theme.AppTheme
-import xyz.hyli.timeflow.theme.LocalThemeIsDark
 import kotlinx.coroutines.isActive
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import xyz.hyli.timeflow.viewmodel.TimeFlowViewModel
 
 @Preview
 @Composable
-internal fun App() = AppTheme {
+internal fun App(
+    viewModel: TimeFlowViewModel
+) = AppTheme(viewModel) {
+    val uiState by viewModel.uiState.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -111,19 +114,26 @@ internal fun App() = AppTheme {
         }
 
         item {
-            var isDark by LocalThemeIsDark.current
-            val icon = remember(isDark) {
-                if (isDark) Res.drawable.ic_light_mode
-                else Res.drawable.ic_dark_mode
-            }
-
             ElevatedButton(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).widthIn(min = 200.dp),
-                onClick = { isDark = !isDark },
+                onClick = {
+                    if (uiState.theme == 0) {
+                        viewModel.setTheme(1) // Switch to light theme
+                    } else if (uiState.theme == 1) {
+                        viewModel.setTheme(2) // Switch to dark theme
+                    } else {
+                        viewModel.setTheme(0) // Switch to system theme
+                    }
+                },
                 content = {
-                    Icon(vectorResource(icon), contentDescription = null)
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(Res.string.theme))
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(
+                        if (uiState.theme == 1) "Light"
+                        else if (uiState.theme == 2) "Dark"
+                        else "System"
+                    )
                 }
             )
         }

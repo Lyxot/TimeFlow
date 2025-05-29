@@ -46,10 +46,10 @@ kotlin {
         }
     }
 
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+//    wasmJs {
+//        browser()
+//        binaries.executable()
+//    }
 
     listOf(
         iosX64(),
@@ -82,9 +82,9 @@ kotlin {
             implementation(libs.kotlinInject)
             implementation(libs.coil)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kstore)
             implementation(libs.materialKolor)
-            implementation(libs.kmp.settings)
+            implementation(libs.datastore)
+            implementation(libs.datastore.preferences)
             implementation(libs.dnd)
             api(libs.calf.ui)
         }
@@ -92,23 +92,23 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
+            implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.kstore.file)
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.kstore.file)
+            implementation(libs.appdirs)
         }
 
         iosMain.dependencies {
-            implementation(libs.kstore.file)
-        }
-
-        wasmJsMain.dependencies {
 
         }
+
+//        wasmJsMain.dependencies {
+//
+//        }
     }
 
     sourceSets.all {
@@ -119,6 +119,9 @@ kotlin {
         }
     }
 
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 }
 
 android {
@@ -211,16 +214,18 @@ buildConfig {
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
     packageName = "xyz.hyli.timeflow"
     useKotlinOutput()
+    buildConfigField("APP_NAME", "TimeFlow")
     buildConfigField("APP_VERSION_NAME", libs.versions.version.name)
     buildConfigField("APP_VERSION_CODE", appVersionCode)
     buildConfigField("BUILD_TIME", System.currentTimeMillis())
+    buildConfigField("AUTHOR", "Lyxot")
 }
 
 dependencies {
     with(libs.kotlinInjectKsp) {
         add("kspAndroid", this)
         add("kspJvm", this)
-        add("kspWasmJs", this)
+//        add("kspWasmJs", this)
         add("kspIosX64", this)
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)
