@@ -22,7 +22,11 @@ internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
     )
 
     override suspend fun readFrom(source: BufferedSource) =
-        ProtoBuf.decodeFromByteArray<Settings>(source.readByteArray())
+        try {
+            ProtoBuf.decodeFromByteArray<Settings>(source.readByteArray())
+        } catch (_: Exception) {
+            defaultValue
+        }
 
     override suspend fun writeTo(t: Settings, sink: BufferedSink) {
         sink.use {

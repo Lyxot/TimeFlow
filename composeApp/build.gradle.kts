@@ -176,6 +176,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "TimeFlow"
             packageVersion = libs.versions.version.name.get()
+            modules(
+                "jdk.unsupported",
+                "java.instrument"
+            )
 
             linux {
                 iconFile.set(project.file("desktopAppIcons/LinuxIcon.png"))
