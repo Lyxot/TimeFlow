@@ -1,8 +1,9 @@
-package xyz.hyli.timeflow.theme
+package xyz.hyli.timeflow.ui.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
 import platform.UIKit.UIApplication
@@ -20,7 +21,7 @@ internal actual fun getColorScheme(isDark: Boolean): ColorScheme {
 }
 
 @Composable
-internal actual fun SystemAppearance(isDark: Boolean) {
+internal actual fun SystemAppearance(isDark: Boolean, navigationBarColor: Color) {
     LaunchedEffect(isDark) {
         UIApplication.sharedApplication.setStatusBarStyle(
             if (isDark) UIStatusBarStyleDarkContent else UIStatusBarStyleLightContent

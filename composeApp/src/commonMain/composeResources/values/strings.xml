@@ -6,4 +6,7 @@
     <string name="run">Run</string>
     <string name="stop">Stop</string>
     <string name="theme">Theme</string>
+    <string name="page_events">日程</string>
+    <string name="page_schedule">课程表</string>
+    <string name="page_settings">设置</string>
 </resources>

@@ -1,4 +1,4 @@
-package xyz.hyli.timeflow.viewmodel
+package xyz.hyli.timeflow.ui.viewmodel
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore

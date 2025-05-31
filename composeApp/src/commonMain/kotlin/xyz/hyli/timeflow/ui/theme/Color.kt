@@ -1,4 +1,4 @@
-package xyz.hyli.timeflow.theme
+package xyz.hyli.timeflow.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

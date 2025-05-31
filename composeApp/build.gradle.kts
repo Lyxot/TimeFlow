@@ -87,6 +87,7 @@ kotlin {
             implementation(libs.datastore.preferences)
             implementation(libs.dnd)
             api(libs.calf.ui)
+            implementation(libs.material3.window.size)
         }
 
         androidMain.dependencies {
@@ -193,6 +194,7 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("desktopAppIcons/MacosIcon.icns"))
                 bundleID = "xyz.hyli.timeflow"
+                jvmArgs += listOf("-Dapple.awt.application.name=TimeFlow")
             }
         }
 

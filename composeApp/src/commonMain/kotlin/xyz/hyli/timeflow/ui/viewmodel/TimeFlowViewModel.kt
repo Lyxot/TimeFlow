@@ -1,5 +1,6 @@
-package xyz.hyli.timeflow.viewmodel
+package xyz.hyli.timeflow.ui.viewmodel
 
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,14 +19,21 @@ import xyz.hyli.timeflow.di.DataRepository
 class TimeFlowViewModel(
     private val repository: DataRepository
 ): ViewModel() {
+    val currentPage = mutableIntStateOf(0)
     val uiState: StateFlow<UiState> =
-        repository.theme
-            .map { UiState(it) }
+        repository.settings
+            .map { UiState(
+                theme = it.theme
+            ) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = UiState()
             )
+
+    fun setCurrentPage(page: Int) {
+        currentPage.value = page
+    }
 
     fun setTheme(theme: Int) {
         viewModelScope.launch {
