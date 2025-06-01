@@ -1,0 +1,35 @@
+syntax = "proto2";
+package xyz.hyli.timeflow.proto;
+
+message Course {
+  optional string name = 1;
+  optional string teacher = 2;
+  optional string classroom = 3;
+  optional Range time = 4;
+  oneof week {
+    WeekDescription weekDescription = 5;
+    WeekRange weekRange = 6;
+    WeekList weekList = 7;
+  }
+}
+
+message WeekDescription {
+  enum description {
+    ALL = 0;
+    ODD = 1;
+    EVEN = 2;
+  }
+}
+
+message WeekRange {
+  repeated Range range = 1;
+}
+
+message WeekList {
+  repeated int32 week = 1;
+}
+
+message Range {
+  optional int32 start = 1;
+  optional int32 end = 2;
+}

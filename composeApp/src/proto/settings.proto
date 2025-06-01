@@ -1,0 +1,12 @@
+syntax = "proto2";
+package xyz.hyli.timeflow.proto;
+import "schedule.proto";
+
+message Settings {
+  optional int32 firstLaunch = 1;
+  optional int32 theme = 2;
+  optional bool themeDynamicColor = 3;
+  optional int64 themeColor = 4;
+  map<string, Schedule> schedule = 5;
+  optional string selectedSchedule = 6;
+}

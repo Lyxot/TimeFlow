@@ -17,9 +17,7 @@ import okio.use
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
-    override val defaultValue = Settings(
-        theme = 0
-    )
+    override val defaultValue = Settings()
 
     override suspend fun readFrom(source: BufferedSource) =
         try {
@@ -54,6 +52,11 @@ class SettingsDataStore(
     suspend fun setTheme(theme: Int) {
         db.updateData { currentSettings ->
             currentSettings.copy(theme = theme)
+        }
+    }
+    suspend fun reset() {
+        db.updateData { currentSettings ->
+            Settings()
         }
     }
 }
