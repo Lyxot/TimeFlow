@@ -15,7 +15,7 @@ val Events: ImageVector
             return _Events!!
         }
         _Events = ImageVector.Builder(
-            name = "Event_list",
+            name = "Events",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 960f,
@@ -93,13 +93,13 @@ val EventsFilled: ImageVector
             return _EventsFilled!!
         }
         _EventsFilled = ImageVector.Builder(
-            name = "IconName",
+            name = "Events_filled",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 960f,
             viewportHeight = 960f
         ).apply {
-            path(fill = SolidColor(Color(0xFF000000))) {
+            path(fill = SolidColor(Color.Black)) {
                 moveTo(640f, 840f)
                 quadTo(607f, 840f, 583.5f, 816.5f)
                 quadTo(560f, 793f, 560f, 760f)

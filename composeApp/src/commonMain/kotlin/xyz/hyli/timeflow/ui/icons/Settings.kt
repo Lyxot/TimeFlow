@@ -124,13 +124,13 @@ val SettingsFilled: ImageVector
             return _SettingsFilled!!
         }
         _SettingsFilled = ImageVector.Builder(
-            name = "IconName",
+            name = "Settings_filled",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 960f,
             viewportHeight = 960f
         ).apply {
-            path(fill = SolidColor(Color(0xFF000000))) {
+            path(fill = SolidColor(Color.Black)) {
                 moveTo(370f, 880f)
                 lineTo(354f, 752f)
                 quadTo(341f, 747f, 329.5f, 740f)

@@ -59,10 +59,15 @@ fun CompactNavigation(
                 )
                 NavigationBarItem(
                     icon = { Icon(
-                        if (currentPage == Destination.Settings) SettingsFilled else Settings,
+                        if (currentPage == Destination.Settings ||
+                            currentPage == Destination.SettingsLessonsPerDay)
+                            SettingsFilled
+                        else
+                            Settings,
                         contentDescription = null) },
                     label = { Text(stringResource(Res.string.page_settings))},
-                    selected = currentPage == Destination.Settings,
+                    selected = currentPage == Destination.Settings ||
+                            currentPage == Destination.SettingsLessonsPerDay,
                     onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
                 )
             }
@@ -112,10 +117,15 @@ fun MediumNavigation(
             NavigationRailItem(
                 modifier = Modifier.padding(vertical = 8.dp),
                 icon = { Icon(
-                    if (currentPage == Destination.Settings) SettingsFilled else Settings,
+                    if (currentPage == Destination.Settings ||
+                        currentPage == Destination.SettingsLessonsPerDay)
+                        SettingsFilled
+                    else
+                        Settings,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_settings)) },
-                selected = currentPage == Destination.Settings,
+                selected = currentPage == Destination.Settings ||
+                        currentPage == Destination.SettingsLessonsPerDay,
                 onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
             )
         }
@@ -161,10 +171,15 @@ fun ExpandedNavigation(
             NavigationDrawerItem(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 icon = { Icon(
-                    if (currentPage == Destination.Settings) SettingsFilled else Settings,
+                    if (currentPage == Destination.Settings ||
+                        currentPage == Destination.SettingsLessonsPerDay)
+                        SettingsFilled
+                    else
+                        Settings,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_settings)) },
-                selected = currentPage == Destination.Settings,
+                selected = currentPage == Destination.Settings ||
+                        currentPage == Destination.SettingsLessonsPerDay,
                 onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
             )
         }

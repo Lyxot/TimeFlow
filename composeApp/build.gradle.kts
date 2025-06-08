@@ -76,6 +76,15 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.coil)
+            implementation(libs.composedialogs.core)
+            implementation(libs.composepreferences.core)
+            implementation(libs.composepreferences.screen.bool)
+            implementation(libs.composepreferences.screen.button)
+            implementation(libs.composepreferences.screen.color)
+            implementation(libs.composepreferences.screen.date)
+            implementation(libs.composepreferences.screen.input)
+            implementation(libs.composepreferences.screen.list)
+            implementation(libs.composepreferences.screen.number)
             implementation(libs.datastore)
             implementation(libs.datastore.preferences)
             implementation(libs.dnd)
@@ -166,6 +175,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+    dependencies {
+        coreLibraryDesugaring(libs.desugar.jdk.libs)
     }
 }
 

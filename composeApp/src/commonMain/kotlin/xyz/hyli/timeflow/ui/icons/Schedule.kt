@@ -15,7 +15,7 @@ val Schedule: ImageVector
             return _Schedule!!
         }
         _Schedule = ImageVector.Builder(
-            name = "Event_note",
+            name = "Schedule",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 960f,
@@ -90,14 +90,14 @@ val ScheduleFilled: ImageVector
             return _ScheduleFilled!!
         }
         _ScheduleFilled = ImageVector.Builder(
-            name = "IconName",
+            name = "Schedule_filled",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 960f,
             viewportHeight = 960f,
             autoMirror = true
         ).apply {
-            path(fill = SolidColor(Color(0xFF000000))) {
+            path(fill = SolidColor(Color.Black)) {
                 moveTo(280f, 560f)
                 lineTo(280f, 480f)
                 lineTo(680f, 480f)

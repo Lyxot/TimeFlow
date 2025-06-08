@@ -65,7 +65,7 @@ fun ScheduleScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.settings.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -151,11 +151,11 @@ fun ScheduleScreen(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).widthIn(min = 200.dp),
                 onClick = {
                     if (uiState.theme == 0) {
-                        viewModel.setTheme(1) // Switch to light theme
+                        viewModel.updateTheme(1) // Switch to light theme
                     } else if (uiState.theme == 1) {
-                        viewModel.setTheme(2) // Switch to dark theme
+                        viewModel.updateTheme(2) // Switch to dark theme
                     } else {
-                        viewModel.setTheme(0) // Switch to system theme
+                        viewModel.updateTheme(0) // Switch to system theme
                     }
                 },
                 content = {

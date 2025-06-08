@@ -11,7 +11,10 @@ build-config = "5.6.5"
 calf = "0.8.0"
 coil = "3.2.0"
 compose = "1.8.1"
+composepreferences = "1.1.2"
+composedialogs = "2.1.4"
 datastore = "1.1.7"
+desugar_jdk_libs = "2.1.5"
 dnd = "0.3.0"
 hot-reload = "1.0.0-alpha10"
 jgit = "1.1"
@@ -37,8 +40,28 @@ calf-permissions = { group = "com.mohamedrejeb.calf", name = "calf-permissions",
 calf-ui = { group = "com.mohamedrejeb.calf", name = "calf-ui", version.ref = "calf" }
 calf-webview = { group = "com.mohamedrejeb.calf", name = "calf-webview", version.ref = "calf" }
 coil = { group = "io.coil-kt.coil3", name = "coil-compose-core", version.ref = "coil" }
+composedialogs-core = { module = "io.github.mflisar.composedialogs:core", version.ref = "composedialogs" }
+composedialogs-dialog-color = { module = "io.github.mflisar.composedialogs:dialog-color", version.ref = "composedialogs" }
+composedialogs-dialog-date = { module = "io.github.mflisar.composedialogs:dialog-date", version.ref = "composedialogs" }
+composedialogs-dialog-info = { module = "io.github.mflisar.composedialogs:dialog-info", version.ref = "composedialogs" }
+composedialogs-dialog-input = { module = "io.github.mflisar.composedialogs:dialog-input", version.ref = "composedialogs" }
+composedialogs-dialog-list = { module = "io.github.mflisar.composedialogs:dialog-list", version.ref = "composedialogs" }
+composedialogs-dialog-menu = { module = "io.github.mflisar.composedialogs:dialog-menu", version.ref = "composedialogs" }
+composedialogs-dialog-number = { module = "io.github.mflisar.composedialogs:dialog-number", version.ref = "composedialogs" }
+composedialogs-dialog-progress = { module = "io.github.mflisar.composedialogs:dialog-progress", version.ref = "composedialogs" }
+composedialogs-dialog-time = { module = "io.github.mflisar.composedialogs:dialog-time", version.ref = "composedialogs" }
+composepreferences-core = { module = "io.github.mflisar.composepreferences:core", version.ref = "composepreferences" }
+composepreferences-screen-bool = { module = "io.github.mflisar.composepreferences:screen-bool", version.ref = "composepreferences" }
+composepreferences-screen-button = { module = "io.github.mflisar.composepreferences:screen-button", version.ref = "composepreferences" }
+composepreferences-screen-color = { module = "io.github.mflisar.composepreferences:screen-color", version.ref = "composepreferences" }
+composepreferences-screen-date = { module = "io.github.mflisar.composepreferences:screen-date", version.ref = "composepreferences" }
+composepreferences-screen-input = { module = "io.github.mflisar.composepreferences:screen-input", version.ref = "composepreferences" }
+composepreferences-screen-list = { module = "io.github.mflisar.composepreferences:screen-list", version.ref = "composepreferences" }
+composepreferences-screen-number = { module = "io.github.mflisar.composepreferences:screen-number", version.ref = "composepreferences" }
+composepreferences-screen-time = { module = "io.github.mflisar.composepreferences:screen-time", version.ref = "composepreferences" }
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 dnd = { group = "com.mohamedrejeb.dnd", name = "compose-dnd", version.ref = "dnd" }
 kermit = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }

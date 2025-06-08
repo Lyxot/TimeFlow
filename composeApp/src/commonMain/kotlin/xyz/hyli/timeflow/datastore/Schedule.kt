@@ -1,5 +1,11 @@
 package xyz.hyli.timeflow.datastore
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
@@ -23,6 +29,11 @@ data class Date(
     @ProtoNumber(2) val month: Int,
     @ProtoNumber(3) val day: Int
 ) {
+    companion object {
+        fun fromLocalDate(localDate: LocalDate): Date {
+            return Date(localDate.year, localDate.monthNumber, localDate.dayOfMonth)
+        }
+    }
     override fun toString(): String =
          "$year/${if (month < 10) "0$month" else month}/${if (day < 10) "0$day" else day}"
 
@@ -33,27 +44,10 @@ data class Date(
             "${this.month}/${if (this.day < 10) "0${this.day}" else {this.day}}"
         }
 
-    fun addWeeks(weeks: Int): Date {
-        var newDate = this
-        for (i in 1..weeks * 7) {
-            val daysInMonth = when (newDate.month) {
-                1, 3, 5, 7, 8, 10, 12 -> 31
-                4, 6, 9, 11 -> 30
-                2 -> if ((newDate.year % 4 == 0 && newDate.year % 100 != 0) || (newDate.year % 400 == 0)) 29 else 28
-                else -> throw IllegalArgumentException("Invalid month")
-            }
-            newDate = if (newDate.day < daysInMonth) {
-                Date(newDate.year, newDate.month, newDate.day + 1)
-            } else {
-                if (newDate.month == 12) {
-                    Date(newDate.year + 1, 1, 1)
-                } else {
-                    Date(newDate.year, newDate.month + 1, 1)
-                }
-            }
-        }
-        return newDate
-    }
+    fun toLocalDate(): LocalDate = LocalDate(year, month, day)
+
+    fun addWeeks(weeks: Int): Date =
+        fromLocalDate(this.toLocalDate().plus(weeks, DateTimeUnit.WEEK))
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -190,8 +184,20 @@ data class Schedule(
     @ProtoNumber(1) val name: String = "",
     @ProtoNumber(2) val deleted: Boolean = false,
     @ProtoNumber(3) val schedule: DayList = DayList(),
-    @ProtoNumber(4) val termStartDate: Date,
-    @ProtoNumber(5) val termEndDate: Date,
+    @ProtoNumber(4) val termStartDate: Date = defaultTermStartDate(),
+    @ProtoNumber(5) val termEndDate: Date = defaultTermEndDate(),
     @ProtoNumber(6) val lessonsPerDay: LessonsPerDay = LessonsPerDay.fromPeriodCounts(),
     @ProtoNumber(7) val displayWeekends: Boolean = false,
-)
+) {
+    companion object {
+        fun defaultTermStartDate(): Date {
+            val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val year = currentDate.year
+            val month = if (currentDate.monthNumber in 3..8) 3 else 9
+            val day = 1
+            return Date(year, month, day)
+        }
+
+        fun defaultTermEndDate(): Date = defaultTermStartDate().addWeeks(16)
+    }
+}

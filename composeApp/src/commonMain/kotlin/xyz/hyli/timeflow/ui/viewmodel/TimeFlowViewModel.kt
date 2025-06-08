@@ -12,27 +12,51 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import xyz.hyli.timeflow.datastore.Schedule
+import xyz.hyli.timeflow.datastore.Settings
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.DataRepository
 
 class TimeFlowViewModel(
     private val repository: DataRepository
 ): ViewModel() {
-    val uiState: StateFlow<UiState> =
+    val settings: StateFlow<Settings> =
         repository.settings
-            .map { UiState(
-                theme = it.theme
+            .map { Settings(
+                firstLaunch = it.firstLaunch,
+                theme = it.theme,
+                themeDynamicColor = it.themeDynamicColor,
+                themeColor = it.themeColor,
+                schedule = it.schedule,
+                selectedSchedule = it.selectedSchedule
             ) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = UiState()
+                initialValue = Settings()
             )
 
-
-    fun setTheme(theme: Int) {
+    fun updateTheme(theme: Int) {
         viewModelScope.launch {
-            repository.setTheme(theme)
+            repository.updateTheme(theme)
+        }
+    }
+
+    fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
+        viewModelScope.launch {
+            repository.updateThemeDynamicColor(themeDynamicColor)
+        }
+    }
+
+    fun updateThemeColor(color: Long) {
+        viewModelScope.launch {
+            repository.updateThemeColor(color)
+        }
+    }
+
+    fun updateSchedule(uuid: String, schedule: Schedule) {
+        viewModelScope.launch {
+            repository.updateSchedule(uuid, schedule)
         }
     }
 
@@ -51,9 +75,5 @@ class TimeFlowViewModel(
             }
     }
 }
-
-data class UiState(
-    val theme: Int = 0
-)
 
 private const val TIMEOUT_MILLIS = 5_000L

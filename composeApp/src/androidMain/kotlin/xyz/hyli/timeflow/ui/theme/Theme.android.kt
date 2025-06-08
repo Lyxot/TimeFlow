@@ -15,15 +15,15 @@ import androidx.compose.ui.platform.LocalView
 import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
-internal actual fun getColorScheme(isDark: Boolean): ColorScheme {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+internal actual fun getColorScheme(isDark: Boolean, seedColor: Long, isDynamicColor: Boolean): ColorScheme {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && isDynamicColor) {
         if (isDark) {
             dynamicDarkColorScheme(LocalContext.current)
         } else {
             dynamicLightColorScheme(LocalContext.current)
         }
     } else {
-        rememberDynamicColorScheme(seedColor = SeedColor, isDark = isDark, isAmoled = true)
+        rememberDynamicColorScheme(seedColor = Color(seedColor), isDark = isDark, isAmoled = true)
     }
 }
 

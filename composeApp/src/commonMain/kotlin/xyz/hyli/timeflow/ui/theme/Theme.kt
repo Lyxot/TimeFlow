@@ -4,7 +4,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
@@ -15,20 +21,20 @@ internal fun AppTheme(
     content: @Composable () -> Unit
 ) {
     val systemIsDark = isSystemInDarkTheme()
-    val uiState by viewModel.uiState.collectAsState()
-    val isDarkState = remember(systemIsDark, uiState.theme) {
-        if (uiState.theme != 1 && uiState.theme != 2) // 0: System, 1: Light, 2: Dark
+    val settings by viewModel.settings.collectAsState()
+    val isDarkState = remember(systemIsDark, settings.theme) {
+        if (settings.theme != 1 && settings.theme != 2) // 0: System, 1: Light, 2: Dark
             mutableStateOf(systemIsDark)
-        else mutableStateOf(uiState.theme == 2)
+        else mutableStateOf(settings.theme == 2)
     }
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState
     ) {
         val isDark by isDarkState
-        val colorScheme = getColorScheme(isDark)
+        val colorScheme = getColorScheme(isDark, settings.themeColor, settings.themeDynamicColor)
         SystemAppearance(!isDark)
         MaterialTheme(
-            colorScheme = getColorScheme(isDark),
+            colorScheme = colorScheme,
             content = {
                 Surface {
                     content()
@@ -39,7 +45,7 @@ internal fun AppTheme(
 }
 
 @Composable
-internal expect fun getColorScheme(isDark: Boolean): ColorScheme
+internal expect fun getColorScheme(isDark: Boolean, seedColor: Long, isDynamicColor: Boolean): ColorScheme
 
 @Composable
 internal expect fun SystemAppearance(isDark: Boolean)

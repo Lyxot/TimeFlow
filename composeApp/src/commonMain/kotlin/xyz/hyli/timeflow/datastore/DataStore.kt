@@ -49,9 +49,26 @@ class SettingsDataStore(
         )
     )
     val settings: Flow<Settings> = db.data
-    suspend fun setTheme(theme: Int) {
+    suspend fun updateTheme(theme: Int) {
         db.updateData { currentSettings ->
             currentSettings.copy(theme = theme)
+        }
+    }
+    suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(themeDynamicColor = themeDynamicColor)
+        }
+    }
+    suspend fun updateThemeColor(color: Long) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(themeColor = color)
+        }
+    }
+    suspend fun updateSchedule(uuid: String, schedule: Schedule) {
+        db.updateData { currentSettings ->
+            val updatedSchedule = currentSettings.schedule.toMutableMap()
+            updatedSchedule[uuid] = schedule
+            currentSettings.copy(schedule = updatedSchedule)
         }
     }
     suspend fun reset() {
