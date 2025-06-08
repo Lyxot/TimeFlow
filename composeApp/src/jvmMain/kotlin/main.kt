@@ -19,7 +19,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
     ) {
         val size = calculateWindowSizeClass()
-        window.minimumSize = Dimension(350, 600)
+        window.minimumSize = Dimension(480, 540)
         App(
             viewModel = ViewModelOwner(appContainer).timeFlowViewModel,
             windowSizeClass = size

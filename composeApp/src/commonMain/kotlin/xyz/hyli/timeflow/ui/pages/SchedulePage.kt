@@ -57,8 +57,8 @@ import timeflow.composeapp.generated.resources.run
 import timeflow.composeapp.generated.resources.stop
 import timeflow.composeapp.generated.resources.theme
 import xyz.hyli.timeflow.BuildConfig
-import xyz.hyli.timeflow.getPlatform
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
 
 @Composable
 fun ScheduleScreen(
@@ -91,7 +91,7 @@ fun ScheduleScreen(
             }
 
             AnimatedVisibility(showContent) {
-                val platformName = remember { getPlatform().name }
+                val platformName = remember { currentPlatform().name }
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(painterResource(Res.drawable.compose_multiplatform), null)
                     Text("Compose: " + stringResource(Res.string.greeting, platformName))

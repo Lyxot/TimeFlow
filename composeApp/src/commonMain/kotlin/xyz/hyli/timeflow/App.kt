@@ -9,6 +9,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import xyz.hyli.timeflow.ui.navigation.CompactScreen
 import xyz.hyli.timeflow.ui.navigation.MediumScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isDesktop
 
 @Preview
 @Composable
@@ -17,9 +19,17 @@ internal fun App(
     windowSizeClass: WindowSizeClass
 ) = AppTheme(viewModel) {
     val navController = rememberNavController()
-    when (windowSizeClass.widthSizeClass) {
-        WindowWidthSizeClass.Compact -> CompactScreen(viewModel, navController)
-        WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded -> MediumScreen(viewModel, navController)
-        else -> MediumScreen(viewModel, navController)
+    if (currentPlatform().isDesktop()) {
+        MediumScreen(viewModel, navController)
+    } else {
+        when (windowSizeClass.widthSizeClass) {
+            WindowWidthSizeClass.Compact -> CompactScreen(viewModel, navController)
+            WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded -> MediumScreen(
+                viewModel,
+                navController
+            )
+
+            else -> MediumScreen(viewModel, navController)
+        }
     }
 }
