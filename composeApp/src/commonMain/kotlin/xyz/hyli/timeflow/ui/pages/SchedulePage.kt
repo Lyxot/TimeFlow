@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import kotlinx.coroutines.isActive
 import org.jetbrains.compose.resources.Font
@@ -61,14 +62,14 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 @Composable
 fun ScheduleScreen(
-    viewModel: TimeFlowViewModel
+    viewModel: TimeFlowViewModel,
+    navHostController: NavHostController
 ) {
     val uiState by viewModel.uiState.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(16.dp),
+            .windowInsetsPadding(WindowInsets.safeDrawing),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         listOf(BuildConfig.APP_VERSION_NAME, BuildConfig.APP_VERSION_CODE, BuildConfig.BUILD_TIME).forEach {

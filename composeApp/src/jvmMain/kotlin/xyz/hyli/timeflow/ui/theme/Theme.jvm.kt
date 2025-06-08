@@ -16,5 +16,5 @@ internal actual fun getColorScheme(isDark: Boolean): ColorScheme {
 }
 
 @Composable
-internal actual fun SystemAppearance(isDark: Boolean, navigationBarColor: Color) {
+internal actual fun SystemAppearance(isDark: Boolean) {
 }

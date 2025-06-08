@@ -6,9 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import xyz.hyli.timeflow.ui.CompactScreen
-import xyz.hyli.timeflow.ui.ExpandedScreen
-import xyz.hyli.timeflow.ui.MediumScreen
+import xyz.hyli.timeflow.ui.navigation.CompactScreen
+import xyz.hyli.timeflow.ui.navigation.MediumScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 @Preview
@@ -16,11 +15,11 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 internal fun App(
     viewModel: TimeFlowViewModel,
     windowSizeClass: WindowSizeClass
-) = AppTheme(viewModel) { colorScheme ->
+) = AppTheme(viewModel) {
     val navController = rememberNavController()
     when (windowSizeClass.widthSizeClass) {
-        WindowWidthSizeClass.Compact -> CompactScreen(viewModel, navController, colorScheme)
-        WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded -> MediumScreen(viewModel, navController, colorScheme)
-        else -> MediumScreen(viewModel, navController, colorScheme)
+        WindowWidthSizeClass.Compact -> CompactScreen(viewModel, navController)
+        WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded -> MediumScreen(viewModel, navController)
+        else -> MediumScreen(viewModel, navController)
     }
 }

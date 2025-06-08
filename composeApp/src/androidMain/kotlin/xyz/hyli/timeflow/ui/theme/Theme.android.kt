@@ -10,7 +10,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import com.materialkolor.rememberDynamicColorScheme
@@ -29,15 +28,26 @@ internal actual fun getColorScheme(isDark: Boolean): ColorScheme {
 }
 
 @Composable
-internal actual fun SystemAppearance(isDark: Boolean, navigationBarColor: Color) {
+internal actual fun SystemAppearance(isDark: Boolean) {
     val view = LocalView.current
-    LaunchedEffect(isDark, navigationBarColor) {
-        (view.context as ComponentActivity).enableEdgeToEdge(
-            navigationBarStyle = if (isDark) {
-                SystemBarStyle.dark(navigationBarColor.toArgb())
-            } else {
-                SystemBarStyle.light(navigationBarColor.toArgb(), 0)
-            }
-        )
+    LaunchedEffect(isDark) {
+        val activity = view.context as ComponentActivity
+        if (isDark) {
+            activity.enableEdgeToEdge(
+//                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            )
+        } else {
+            activity.enableEdgeToEdge(
+//                    statusBarStyle = SystemBarStyle.light(
+//                        android.graphics.Color.TRANSPARENT,
+//                        android.graphics.Color.TRANSPARENT,
+//                    ),
+                navigationBarStyle = SystemBarStyle.light(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                )
+            )
+        }
     }
 }

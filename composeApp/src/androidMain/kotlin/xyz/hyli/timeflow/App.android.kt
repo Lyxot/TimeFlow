@@ -2,6 +2,7 @@ package xyz.hyli.timeflow
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -17,7 +18,18 @@ class AppActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            // 透明状态栏
+//            statusBarStyle = SystemBarStyle.auto(
+//                android.graphics.Color.TRANSPARENT,
+//                android.graphics.Color.TRANSPARENT,
+//            ),
+            // 透明导航栏
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
         setContent {
             val app = LocalContext.current.applicationContext as TimeFlow
             val extras = remember(app) {
