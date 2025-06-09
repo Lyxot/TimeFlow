@@ -59,19 +59,22 @@ kotlin {
         it.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-
-            export(libs.calf.ui)
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.calf.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.material3AdaptiveNavigationSuite) {
+                exclude(group = "org.jetbrains.androidx.window")
+            }
             implementation(compose.runtime)
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0-alpha02") {
+                exclude(group = "org.jetbrains.androidx.window")
+            }
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
@@ -96,7 +99,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.ktorfit.lib)
             implementation(libs.material.kolor)
-            implementation(libs.material3.window.size)
         }
 
         androidMain.dependencies {
@@ -110,6 +112,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.androidx.window.core.jvm)
         }
 
         iosMain.dependencies {

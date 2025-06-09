@@ -5,7 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import kotlinx.coroutines.isActive
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
@@ -82,10 +81,7 @@ fun ScheduleScreen(
             var showContent by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
-                    .adaptiveClickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = { showContent = !showContent }
-                    ),
+                    .clickable { showContent = !showContent }
             ) {
                 Text("Click me!")
             }
