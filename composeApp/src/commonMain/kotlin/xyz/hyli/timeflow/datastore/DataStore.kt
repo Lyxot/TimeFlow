@@ -64,6 +64,18 @@ class SettingsDataStore(
             currentSettings.copy(themeColor = color)
         }
     }
+    suspend fun updateSelectedSchedule(uuid: String) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(selectedSchedule = uuid)
+        }
+    }
+    suspend fun createSchedule(uuid: String, schedule: Schedule) {
+        db.updateData { currentSettings ->
+            val updatedSchedule = currentSettings.schedule.toMutableMap()
+            updatedSchedule[uuid] = schedule
+            currentSettings.copy(schedule = updatedSchedule)
+        }
+    }
     suspend fun updateSchedule(uuid: String, schedule: Schedule) {
         db.updateData { currentSettings ->
             val updatedSchedule = currentSettings.schedule.toMutableMap()

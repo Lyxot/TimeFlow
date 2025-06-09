@@ -20,6 +20,12 @@ class DataRepository(
     suspend fun updateThemeColor(color: Long) {
         settingsDataStore.updateThemeColor(color)
     }
+    suspend fun updateSelectedSchedule(uuid: String) {
+        settingsDataStore.updateSelectedSchedule(uuid)
+    }
+    suspend fun createSchedule(uuid: String, schedule: Schedule) {
+        settingsDataStore.createSchedule(uuid, schedule)
+    }
     suspend fun updateSchedule(uuid: String, schedule: Schedule) {
         settingsDataStore.updateSchedule(uuid, schedule)
     }

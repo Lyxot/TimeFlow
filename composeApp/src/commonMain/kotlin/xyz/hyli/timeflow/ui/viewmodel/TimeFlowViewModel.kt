@@ -54,6 +54,18 @@ class TimeFlowViewModel(
         }
     }
 
+    fun updateSelectedSchedule(uuid: String) {
+        viewModelScope.launch {
+            repository.updateSelectedSchedule(uuid)
+        }
+    }
+
+    fun createSchedule(uuid: String, schedule: Schedule) {
+        viewModelScope.launch {
+            repository.createSchedule(uuid, schedule)
+        }
+    }
+
     fun updateSchedule(uuid: String, schedule: Schedule) {
         viewModelScope.launch {
             repository.updateSchedule(uuid, schedule)

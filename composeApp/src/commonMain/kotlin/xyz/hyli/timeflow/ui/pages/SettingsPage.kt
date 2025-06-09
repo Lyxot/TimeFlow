@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.michaelflisar.composedialogs.core.rememberDialogState
+import com.michaelflisar.composedialogs.dialogs.input.DialogInputValidator
+import com.michaelflisar.composedialogs.dialogs.input.rememberDialogInputValidator
 import com.michaelflisar.composepreferences.core.PreferenceDivider
 import com.michaelflisar.composepreferences.core.PreferenceScreen
 import com.michaelflisar.composepreferences.core.PreferenceSection
@@ -82,19 +84,22 @@ import timeflow.composeapp.generated.resources.lesson_8
 import timeflow.composeapp.generated.resources.lesson_9
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.save
-import timeflow.composeapp.generated.resources.settings_schedule_lessons_per_day
-import timeflow.composeapp.generated.resources.settings_schedule_lessons_per_day_afternoon
-import timeflow.composeapp.generated.resources.settings_schedule_lessons_per_day_evening
-import timeflow.composeapp.generated.resources.settings_schedule_lessons_per_day_morning
-import timeflow.composeapp.generated.resources.settings_schedule_lessons_per_day_subtitle
-import timeflow.composeapp.generated.resources.settings_schedule_name
-import timeflow.composeapp.generated.resources.settings_schedule_term_end_date
-import timeflow.composeapp.generated.resources.settings_schedule_term_start_date
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_afternoon
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_evening
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_lessons_per_day
+import timeflow.composeapp.generated.resources.settings_title_schedule_name
+import timeflow.composeapp.generated.resources.settings_title_schedule_term_end_date
+import timeflow.composeapp.generated.resources.settings_title_schedule_term_start_date
+import timeflow.composeapp.generated.resources.settings_subtitle_create_schedule
+import timeflow.composeapp.generated.resources.settings_title_selected_schedule
 import timeflow.composeapp.generated.resources.settings_theme_dark
-import timeflow.composeapp.generated.resources.settings_theme_dynamic_color
-import timeflow.composeapp.generated.resources.settings_theme_dynamic_color_subtitle
+import timeflow.composeapp.generated.resources.settings_title_theme_dynamic_color
+import timeflow.composeapp.generated.resources.settings_subtitle_theme_dynamic_color
 import timeflow.composeapp.generated.resources.settings_theme_light
 import timeflow.composeapp.generated.resources.settings_theme_system
+import timeflow.composeapp.generated.resources.settings_title_create_schedule
 import timeflow.composeapp.generated.resources.settings_title_display_weekends
 import timeflow.composeapp.generated.resources.settings_title_general
 import timeflow.composeapp.generated.resources.settings_title_lessons_per_day
@@ -102,11 +107,13 @@ import timeflow.composeapp.generated.resources.settings_title_lessons_time_after
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_morning
 import timeflow.composeapp.generated.resources.settings_title_schedule
-import timeflow.composeapp.generated.resources.settings_title_schedule_empty
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.settings_title_theme
 import timeflow.composeapp.generated.resources.settings_title_theme_color
 import timeflow.composeapp.generated.resources.settings_warning_lessons_per_day_empty
 import timeflow.composeapp.generated.resources.settings_warning_lessons_time_conflict
+import timeflow.composeapp.generated.resources.settings_warning_schedule_name_empty
 import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.LessonsPerDay
@@ -118,7 +125,10 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 import xyz.hyli.timeflow.utils.supportDynamicColor
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: TimeFlowViewModel,
@@ -174,8 +184,8 @@ fun SettingsScreen(
                 onValueChange = {
                     viewModel.updateThemeDynamicColor(it)
                 },
-                title = stringResource(Res.string.settings_theme_dynamic_color),
-                subtitle = stringResource(Res.string.settings_theme_dynamic_color_subtitle),
+                title = stringResource(Res.string.settings_title_theme_dynamic_color),
+                subtitle = stringResource(Res.string.settings_subtitle_theme_dynamic_color),
                 visible = themeDynamicColorDependency,
             )
             // Theme Color Settings
@@ -191,6 +201,57 @@ fun SettingsScreen(
                 alphaSupported = false,
                 visible = themeColorDependency,
             )
+            // Current selected schedule settings
+            val selectedScheduleDependency = Dependency.State(settingsState) {
+                it.schedule.values.any { !it.deleted }
+            }
+            PreferenceList(
+                value = settings.selectedSchedule,
+                onValueChange = {
+                    viewModel.updateSelectedSchedule(it)
+                },
+                items = settings.schedule.keys.toList(),
+                itemTextProvider = { settings.schedule[it]?.name ?: "" },
+                title = stringResource(Res.string.settings_title_selected_schedule),
+                subtitle =
+                    if (!settings.schedule.values.any { !it.deleted })
+                        stringResource(Res.string.settings_subtitle_schedule_empty)
+                    else
+                        null,
+                enabled = selectedScheduleDependency
+            )
+            // Add New Schedule
+            val stringScheduleNameEmpty = stringResource(Res.string.settings_warning_schedule_name_empty)
+            PreferenceInputText(
+                value = "",
+                onValueChange = { newScheduleName ->
+                    if (newScheduleName.isNotEmpty()) {
+                        val newSchedule = Schedule(
+                            name = newScheduleName
+                        )
+                        var uuid = Uuid.random().toString()
+                        while (settings.schedule.containsKey(uuid)) {
+                            uuid = Uuid.random().toString()
+                        }
+                        viewModel.createSchedule(
+                            uuid,
+                            newSchedule
+                        )
+                        viewModel.updateSelectedSchedule(uuid)
+                    }
+                },
+                title = stringResource(Res.string.settings_title_create_schedule),
+                subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
+                validator = rememberDialogInputValidator(
+                    validate = {
+                        if (it.isNotEmpty())
+                            DialogInputValidator.Result.Valid
+                        else
+                            DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                    },
+                    state = DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                )
+            )
         }
         PreferenceDivider()
         // Schedule Settings
@@ -199,8 +260,13 @@ fun SettingsScreen(
         }
         PreferenceSection(
             title = stringResource(Res.string.settings_title_schedule),
-            subtitle = if (settings.selectedSchedule.isNotEmpty()) null
-            else stringResource(Res.string.settings_title_schedule_empty),
+            subtitle =
+                if (settings.selectedSchedule.isNotEmpty())
+                    null
+                else if (!settings.schedule.values.any { !it.deleted })
+                    stringResource(Res.string.settings_subtitle_schedule_empty)
+                else
+                    stringResource(Res.string.settings_subtitle_schedule_not_selected),
             enabled = scheduleDependency
         ) {
             // Schedule Name
@@ -215,7 +281,7 @@ fun SettingsScreen(
                         )
                     }
                 },
-                title = stringResource(Res.string.settings_schedule_name),
+                title = stringResource(Res.string.settings_title_schedule_name),
                 enabled = scheduleDependency
             )
             // Term Start and End Dates
@@ -231,7 +297,7 @@ fun SettingsScreen(
                         )
                     }
                 },
-                title = stringResource(Res.string.settings_schedule_term_start_date),
+                title = stringResource(Res.string.settings_title_schedule_term_start_date),
                 enabled = scheduleDependency
             )
             PreferenceDate(
@@ -246,13 +312,13 @@ fun SettingsScreen(
                         )
                     }
                 },
-                title = stringResource(Res.string.settings_schedule_term_end_date),
+                title = stringResource(Res.string.settings_title_schedule_term_end_date),
                 enabled = scheduleDependency
             )
             // Lessons Per Day Settings
             BasePreference(
-                title = stringResource(Res.string.settings_schedule_lessons_per_day),
-                subtitle = stringResource(Res.string.settings_schedule_lessons_per_day_subtitle),
+                title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
+                subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
                 onClick = {
                     navHostController.navigate(SettingsDestination.LessonsPerDay.name)
                 },
@@ -349,6 +415,7 @@ fun SettingsLessonsPerDayScreen(
                                 settings.selectedSchedule,
                                 currentSchedule.copy(lessonsPerDay = lessonsPerDay.value)
                             )
+                            navHostController.popBackStack()
                         }
                     },
                     enabled = conflictSet.size == 0 &&
@@ -393,7 +460,7 @@ fun SettingsLessonsPerDayScreen(
                     min = 0,
                     max = 10,
                     stepSize = 1,
-                    title = stringResource(Res.string.settings_schedule_lessons_per_day_morning) + ":\t${morningCount.value}",
+                    title = stringResource(Res.string.settings_title_schedule_lessons_per_day_morning) + ":\t${morningCount.value}",
                 )
                 PreferenceNumber(
                     style = PreferenceNumber.Style.Slider(true),
@@ -417,7 +484,7 @@ fun SettingsLessonsPerDayScreen(
                     min = 0,
                     max = 10,
                     stepSize = 1,
-                    title = stringResource(Res.string.settings_schedule_lessons_per_day_afternoon) + ":\t${afternoonCount.value}",
+                    title = stringResource(Res.string.settings_title_schedule_lessons_per_day_afternoon) + ":\t${afternoonCount.value}",
                 )
                 PreferenceNumber(
                     style = PreferenceNumber.Style.Slider(true),
@@ -441,7 +508,7 @@ fun SettingsLessonsPerDayScreen(
                     min = 0,
                     max = 10,
                     stepSize = 1,
-                    title = stringResource(Res.string.settings_schedule_lessons_per_day_evening) + ":\t${eveningCount.value}",
+                    title = stringResource(Res.string.settings_title_schedule_lessons_per_day_evening) + ":\t${eveningCount.value}",
                 )
             }
             val lessonStringResourceList = listOf(
