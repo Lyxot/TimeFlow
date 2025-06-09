@@ -11,7 +11,7 @@
     <string name="confirm">确定</string>
     <string name="save">保存</string>
 
-    <string name="page_events">日程</string>
+    <string name="page_today">今日</string>
     <string name="page_schedule">课程表</string>
     <string name="page_settings">设置</string>
 

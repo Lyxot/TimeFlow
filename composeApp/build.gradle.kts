@@ -75,6 +75,7 @@ kotlin {
             implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0-alpha02") {
                 exclude(group = "org.jetbrains.androidx.window")
             }
+            implementation(compose.materialIconsExtended)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
