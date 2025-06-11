@@ -2,7 +2,7 @@
 app-version-major = "1"
 app-version-name = "1.0.0"
 agp = "8.10.1"
-adaptive = "1.2.0-alpha02"
+adaptive = "1.1.1"
 androidx-activity-compose = "1.10.1"
 androidx-lifecycle = "2.9.0"
 androidx-navigation = "2.9.0-beta02"
@@ -11,8 +11,7 @@ appdirs = "1.4.0"
 build-config = "5.6.5"
 coil = "3.2.0"
 compose = "1.8.1"
-composepreferences = "1.1.2"
-composedialogs = "2.1.4"
+composables = "1.31.1"
 datastore = "1.1.7"
 desugar_jdk_libs = "2.1.5"
 dnd = "0.3.0"
@@ -27,7 +26,6 @@ kotlinx-serialization = "1.8.1"
 ksp = "2.1.21-2.0.1"
 ktorfit = "2.5.2"
 material-kolor = "2.1.1"
-window-core-jvm = "1.4.0"
 
 [libraries]
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
@@ -36,28 +34,9 @@ androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name 
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup-runtime" }
-androidx-window-core-jvm = { module = "androidx.window:window-core-jvm", version.ref = "window-core-jvm" }
 appdirs = { group = "net.harawata", name = "appdirs", version.ref = "appdirs" }
 coil = { group = "io.coil-kt.coil3", name = "coil-compose-core", version.ref = "coil" }
-composedialogs-core = { module = "io.github.mflisar.composedialogs:core", version.ref = "composedialogs" }
-composedialogs-dialog-color = { module = "io.github.mflisar.composedialogs:dialog-color", version.ref = "composedialogs" }
-composedialogs-dialog-date = { module = "io.github.mflisar.composedialogs:dialog-date", version.ref = "composedialogs" }
-composedialogs-dialog-info = { module = "io.github.mflisar.composedialogs:dialog-info", version.ref = "composedialogs" }
-composedialogs-dialog-input = { module = "io.github.mflisar.composedialogs:dialog-input", version.ref = "composedialogs" }
-composedialogs-dialog-list = { module = "io.github.mflisar.composedialogs:dialog-list", version.ref = "composedialogs" }
-composedialogs-dialog-menu = { module = "io.github.mflisar.composedialogs:dialog-menu", version.ref = "composedialogs" }
-composedialogs-dialog-number = { module = "io.github.mflisar.composedialogs:dialog-number", version.ref = "composedialogs" }
-composedialogs-dialog-progress = { module = "io.github.mflisar.composedialogs:dialog-progress", version.ref = "composedialogs" }
-composedialogs-dialog-time = { module = "io.github.mflisar.composedialogs:dialog-time", version.ref = "composedialogs" }
-composepreferences-core = { module = "io.github.mflisar.composepreferences:core", version.ref = "composepreferences" }
-composepreferences-screen-bool = { module = "io.github.mflisar.composepreferences:screen-bool", version.ref = "composepreferences" }
-composepreferences-screen-button = { module = "io.github.mflisar.composepreferences:screen-button", version.ref = "composepreferences" }
-composepreferences-screen-color = { module = "io.github.mflisar.composepreferences:screen-color", version.ref = "composepreferences" }
-composepreferences-screen-date = { module = "io.github.mflisar.composepreferences:screen-date", version.ref = "composepreferences" }
-composepreferences-screen-input = { module = "io.github.mflisar.composepreferences:screen-input", version.ref = "composepreferences" }
-composepreferences-screen-list = { module = "io.github.mflisar.composepreferences:screen-list", version.ref = "composepreferences" }
-composepreferences-screen-number = { module = "io.github.mflisar.composepreferences:screen-number", version.ref = "composepreferences" }
-composepreferences-screen-time = { module = "io.github.mflisar.composepreferences:screen-time", version.ref = "composepreferences" }
+composables-core = { module = "com.composables:core", version.ref = "composables" }
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }

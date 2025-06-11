@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,22 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.michaelflisar.composedialogs.core.rememberDialogState
-import com.michaelflisar.composedialogs.dialogs.input.DialogInputValidator
-import com.michaelflisar.composedialogs.dialogs.input.rememberDialogInputValidator
-import com.michaelflisar.composepreferences.core.PreferenceDivider
-import com.michaelflisar.composepreferences.core.PreferenceScreen
-import com.michaelflisar.composepreferences.core.PreferenceSection
-import com.michaelflisar.composepreferences.core.classes.Dependency
-import com.michaelflisar.composepreferences.core.classes.PreferenceSettingsDefaults
-import com.michaelflisar.composepreferences.core.composables.BasePreference
-import com.michaelflisar.composepreferences.core.styles.ModernStyle
-import com.michaelflisar.composepreferences.screen.bool.PreferenceBool
-import com.michaelflisar.composepreferences.screen.color.PreferenceColor
-import com.michaelflisar.composepreferences.screen.date.PreferenceDate
-import com.michaelflisar.composepreferences.screen.input.PreferenceInputText
-import com.michaelflisar.composepreferences.screen.list.PreferenceList
-import com.michaelflisar.composepreferences.screen.number.PreferenceNumber
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.back
@@ -84,19 +69,12 @@ import timeflow.composeapp.generated.resources.lesson_8
 import timeflow.composeapp.generated.resources.lesson_9
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.save
-import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
-import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_afternoon
-import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_evening
-import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_lessons_per_day
-import timeflow.composeapp.generated.resources.settings_title_schedule_name
-import timeflow.composeapp.generated.resources.settings_title_schedule_term_end_date
-import timeflow.composeapp.generated.resources.settings_title_schedule_term_start_date
 import timeflow.composeapp.generated.resources.settings_subtitle_create_schedule
-import timeflow.composeapp.generated.resources.settings_title_selected_schedule
-import timeflow.composeapp.generated.resources.settings_theme_dark
-import timeflow.composeapp.generated.resources.settings_title_theme_dynamic_color
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_lessons_per_day
+import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.settings_subtitle_theme_dynamic_color
+import timeflow.composeapp.generated.resources.settings_theme_dark
 import timeflow.composeapp.generated.resources.settings_theme_light
 import timeflow.composeapp.generated.resources.settings_theme_system
 import timeflow.composeapp.generated.resources.settings_title_create_schedule
@@ -107,10 +85,17 @@ import timeflow.composeapp.generated.resources.settings_title_lessons_time_after
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_morning
 import timeflow.composeapp.generated.resources.settings_title_schedule
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_afternoon
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_evening
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
+import timeflow.composeapp.generated.resources.settings_title_schedule_name
+import timeflow.composeapp.generated.resources.settings_title_schedule_term_end_date
+import timeflow.composeapp.generated.resources.settings_title_schedule_term_start_date
+import timeflow.composeapp.generated.resources.settings_title_selected_schedule
 import timeflow.composeapp.generated.resources.settings_title_theme
 import timeflow.composeapp.generated.resources.settings_title_theme_color
+import timeflow.composeapp.generated.resources.settings_title_theme_dynamic_color
 import timeflow.composeapp.generated.resources.settings_warning_lessons_per_day_empty
 import timeflow.composeapp.generated.resources.settings_warning_lessons_time_conflict
 import timeflow.composeapp.generated.resources.settings_warning_schedule_name_empty
@@ -119,7 +104,24 @@ import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.LessonsPerDay
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Time
+import xyz.hyli.timeflow.ui.components.BasePreference
+import xyz.hyli.timeflow.ui.components.Dependency
+import xyz.hyli.timeflow.ui.components.DialogInputValidator
+import xyz.hyli.timeflow.ui.components.PreferenceBool
+import xyz.hyli.timeflow.ui.components.PreferenceBoolStyle
+import xyz.hyli.timeflow.ui.components.PreferenceColor
+import xyz.hyli.timeflow.ui.components.PreferenceDate
+import xyz.hyli.timeflow.ui.components.PreferenceDivider
+import xyz.hyli.timeflow.ui.components.PreferenceInputText
+import xyz.hyli.timeflow.ui.components.PreferenceList
+import xyz.hyli.timeflow.ui.components.PreferenceListStyle
+import xyz.hyli.timeflow.ui.components.PreferenceNumber
+import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
+import xyz.hyli.timeflow.ui.components.PreferenceScreen
+import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
+import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
+import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -137,10 +139,7 @@ fun SettingsScreen(
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
     PreferenceScreen(
-        modifier = Modifier.fillMaxWidth(),
-        settings = PreferenceSettingsDefaults.settings(
-            style = ModernStyle.create()
-        )
+        modifier = Modifier.fillMaxWidth()
     ) {
         if (currentPlatform().isDesktop()) {
             Spacer(
@@ -163,15 +162,14 @@ fun SettingsScreen(
                 stringResource(Res.string.settings_theme_dark)
             )
             PreferenceList(
-                style = PreferenceList.Style.SegmentedButtons,
+                style = PreferenceListStyle.Style.SegmentedButtons,
                 value = settings.theme,
                 onValueChange = {
                     viewModel.updateTheme(it)
                 },
                 items = listOf(0, 1, 2),
                 itemTextProvider = { themeList[it] },
-                title = stringResource(Res.string.settings_title_theme),
-                subtitle = stringResource(Res.string.settings_title_theme)
+                title = stringResource(Res.string.settings_title_theme)
             )
             // Dynamic Color Settings
             val themeDynamicColorDependency =
@@ -179,7 +177,7 @@ fun SettingsScreen(
                     currentPlatform().supportDynamicColor()
                 }
             PreferenceBool(
-                style = PreferenceBool.Style.Switch,
+                style = PreferenceBoolStyle.Style.Switch,
                 value = settings.themeDynamicColor,
                 onValueChange = {
                     viewModel.updateThemeDynamicColor(it)
@@ -189,18 +187,15 @@ fun SettingsScreen(
                 visible = themeDynamicColorDependency,
             )
             // Theme Color Settings
-            val themeColorDependency = Dependency.State(settingsState) {
-                !settings.themeDynamicColor || !currentPlatform().supportDynamicColor()
+            if (!settings.themeDynamicColor || !currentPlatform().supportDynamicColor()) {
+                PreferenceColor(
+                    value = Color(settings.themeColor),
+                    onValueChange = {
+                        viewModel.updateThemeColor(it.toArgb().toLong())
+                    },
+                    title = stringResource(Res.string.settings_title_theme_color)
+                )
             }
-            PreferenceColor(
-                value = Color(settings.themeColor),
-                onValueChange = {
-                    viewModel.updateThemeColor(it.toArgb().toLong())
-                },
-                title = stringResource(Res.string.settings_title_theme_color),
-                alphaSupported = false,
-                visible = themeColorDependency,
-            )
             // Current selected schedule settings
             val selectedScheduleDependency = Dependency.State(settingsState) {
                 it.schedule.values.any { !it.deleted }
@@ -248,8 +243,7 @@ fun SettingsScreen(
                             DialogInputValidator.Result.Valid
                         else
                             DialogInputValidator.Result.Error(stringScheduleNameEmpty)
-                    },
-                    state = DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                    }
                 )
             )
         }
@@ -330,7 +324,7 @@ fun SettingsScreen(
                 )
             }
             PreferenceBool(
-                style = PreferenceBool.Style.Switch,
+                style = PreferenceBoolStyle.Style.Switch,
                 value = settings.schedule[settings.selectedSchedule]?.displayWeekends == true,
                 onValueChange = {
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
@@ -391,17 +385,23 @@ fun SettingsLessonsPerDayScreen(
             if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_per_day_empty),
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier
-                        .background(Color(0xFFFBEBE9), RoundedCornerShape(6.dp))
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 12.dp),
                 )
             } else if (conflictSet.size > 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_time_conflict),
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier
-                        .background(Color(0xFFFBEBE9), RoundedCornerShape(6.dp))
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 12.dp)
                 )
             }
@@ -429,17 +429,14 @@ fun SettingsLessonsPerDayScreen(
             }
         }
         PreferenceScreen(
-            modifier = Modifier.fillMaxWidth(),
-            settings = PreferenceSettingsDefaults.settings(
-                style = ModernStyle.create()
-            )
+            modifier = Modifier.fillMaxWidth()
         ) {
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_lessons_per_day)
             ) {
                 // Morning, Afternoon, and Evening Lesson Counts
                 PreferenceNumber(
-                    style = PreferenceNumber.Style.Slider(true),
+                    style = PreferenceNumberStyle.Slider(true),
                     value = morningCount.value,
                     onValueChange = { newCount ->
                         morningCount.value = newCount.coerceIn(0, 10)
@@ -463,7 +460,7 @@ fun SettingsLessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_schedule_lessons_per_day_morning) + ":\t${morningCount.value}",
                 )
                 PreferenceNumber(
-                    style = PreferenceNumber.Style.Slider(true),
+                    style = PreferenceNumberStyle.Slider(true),
                     value = afternoonCount.value,
                     onValueChange = { newCount ->
                         afternoonCount.value = newCount.coerceIn(0, 10)
@@ -487,7 +484,7 @@ fun SettingsLessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_schedule_lessons_per_day_afternoon) + ":\t${afternoonCount.value}",
                 )
                 PreferenceNumber(
-                    style = PreferenceNumber.Style.Slider(true),
+                    style = PreferenceNumberStyle.Slider(true),
                     value = eveningCount.value,
                     onValueChange = { newCount ->
                         eveningCount.value = newCount.coerceIn(0, 10)
@@ -560,7 +557,7 @@ fun SettingsLessonsPerDayScreen(
                             if (i in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = Color.Red
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             } else {
                                 Text(lesson.start.toString() + " - " + lesson.end.toString())
@@ -617,7 +614,7 @@ fun SettingsLessonsPerDayScreen(
                             if (i + morningCount.value in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = Color.Red
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             } else {
                                 Text(
@@ -676,7 +673,7 @@ fun SettingsLessonsPerDayScreen(
                             if (i + morningCount.value + afternoonCount.value in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = Color.Red
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             } else {
                                 Text(

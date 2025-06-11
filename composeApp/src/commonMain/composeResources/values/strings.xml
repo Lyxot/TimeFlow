@@ -21,8 +21,8 @@
     <string name="settings_theme_system">跟随系统</string>
     <string name="settings_theme_light">浅色</string>
     <string name="settings_theme_dark">深色</string>
-    <string name="settings_title_theme_dynamic_color">动态取色</string>
-    <string name="settings_subtitle_theme_dynamic_color">开启后，应用将根据桌面壁纸自动调整主题颜色</string>
+    <string name="settings_title_theme_dynamic_color">动态色彩</string>
+    <string name="settings_subtitle_theme_dynamic_color">使用系统强调色作为主题颜色</string>
     <string name="settings_title_selected_schedule">当前课程表</string>
     <string name="settings_title_create_schedule">创建课程表</string>
     <string name="settings_subtitle_create_schedule">点击创建新课程表</string>
@@ -78,4 +78,15 @@
     <string name="lesson_28">第二十八节</string>
     <string name="lesson_29">第二十九节</string>
     <string name="lesson_30">第三十节</string>
+
+    <string name="preference_dialog_close">关闭</string>
+    <string name="preference_color_dialog_title">选择颜色</string>
+    <string name="preference_color_tab_presets">预设</string>
+    <string name="preference_color_tab_custom">自定义</string>
+    <string name="preference_date_dialog_title">选择日期</string>
+    <string name="preference_number_validation_invalid">请输入有效数字</string>
+    <string name="preference_number_validation_range">数值必须在 %1$s 到 %2$s 之间</string>
+    <string name="preference_number_validation_step">数值必须是 %1$s 的倍数</string>
+    <string name="preference_number_dialog_label">数值 (%1$s - %2$s)</string>
+    <string name="preference_text_validation_minimum_length">至少输入%1$d个字符</string>
 </resources>

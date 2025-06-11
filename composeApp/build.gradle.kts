@@ -64,31 +64,21 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(compose.animation)
+            implementation(compose.animationGraphics)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.foundation)
             implementation(compose.material3)
-            implementation(compose.material3AdaptiveNavigationSuite) {
-                exclude(group = "org.jetbrains.androidx.window")
-            }
-            implementation(compose.runtime)
-            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0-alpha02") {
-                exclude(group = "org.jetbrains.androidx.window")
-            }
+            implementation(compose.material3AdaptiveNavigationSuite)
             implementation(compose.materialIconsExtended)
+            implementation(compose.runtime)
+            implementation(libs.adaptive)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.coil)
-            implementation(libs.composedialogs.core)
-            implementation(libs.composepreferences.core)
-            implementation(libs.composepreferences.screen.bool)
-            implementation(libs.composepreferences.screen.button)
-            implementation(libs.composepreferences.screen.color)
-            implementation(libs.composepreferences.screen.date)
-            implementation(libs.composepreferences.screen.input)
-            implementation(libs.composepreferences.screen.list)
-            implementation(libs.composepreferences.screen.number)
+            implementation(libs.composables.core)
             implementation(libs.datastore)
             implementation(libs.datastore.preferences)
             implementation(libs.dnd)
@@ -113,7 +103,6 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.androidx.window.core.jvm)
         }
 
         iosMain.dependencies {
