@@ -8,6 +8,8 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import java.lang.System.getenv
+import java.net.HttpURLConnection
+import java.net.URL
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -16,18 +18,24 @@ plugins {
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hot.reload)
-    alias(libs.plugins.jgit)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktorfit)
 }
 
-val appMajorVersionCode = libs.versions.app.version.major.get().toInt()
-val appVersionCode = appMajorVersionCode * 10000 +
-        if (getenv("CI") == "true") {
-            getenv("COMMIT_COUNT").toInt()
-        } else {
-            jgit.repo()?.commitCount("refs/remotes/origin/${jgit.repo()?.raw?.branch ?: "master"}") ?: 0
+val appVersionCode = app.versions.major.get().toInt() * 10000 +
+        try {
+            val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            val linkHeader = connection.getHeaderField("Link") ?: ""
+            val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
+            val match = lastPagePattern.find(linkHeader)
+            match?.groupValues?.get(1)?.toInt() ?: 0
+        } catch (e: Exception) {
+            println("Error getting commit count from GitHub API: ${e.message}")
+            0
         }
 
 kotlin {
@@ -129,15 +137,15 @@ kotlin {
 
 android {
     namespace = "xyz.hyli.timeflow"
-    compileSdk = 35
+    compileSdk = app.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
-        targetSdk = 35
+        minSdk = app.versions.minSdk.get().toInt()
+        targetSdk = app.versions.targetSdk.get().toInt()
 
         applicationId = "xyz.hyli.timeflow"
         versionCode = appVersionCode
-        versionName = libs.versions.app.version.name.get()
+        versionName = app.versions.name.get()
     }
     signingConfigs {
         create("release") {
@@ -182,7 +190,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "TimeFlow"
-            packageVersion = libs.versions.app.version.name.get()
+            packageVersion = app.versions.name.get()
             modules(
                 "jdk.unsupported",
                 "java.instrument"
@@ -225,7 +233,7 @@ buildConfig {
     packageName = "xyz.hyli.timeflow"
     useKotlinOutput()
     buildConfigField("APP_NAME", "TimeFlow")
-    buildConfigField("APP_VERSION_NAME", libs.versions.app.version.name)
+    buildConfigField("APP_VERSION_NAME", app.versions.name.get())
     buildConfigField("APP_VERSION_CODE", appVersionCode)
     buildConfigField("BUILD_TIME", System.currentTimeMillis())
     buildConfigField("AUTHOR", "Lyxot")

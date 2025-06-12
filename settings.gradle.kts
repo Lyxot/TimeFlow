@@ -27,6 +27,11 @@ dependencyResolutionManagement {
         }
         mavenCentral()
     }
+    versionCatalogs {
+        create("app") {
+            from(files("gradle/app.versions.toml"))
+        }
+    }
 }
 plugins {
     //https://github.com/JetBrains/compose-hot-reload?tab=readme-ov-file#set-up-automatic-provisioning-of-the-jetbrains-runtime-jbr-via-gradle

@@ -1,0 +1,6 @@
+[versions]
+major = "1"
+name = "1.0.0"
+compileSdk = "35"
+minSdk = "24"
+targetSdk = "35"

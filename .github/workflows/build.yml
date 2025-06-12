@@ -21,21 +21,6 @@ on:
   push:
 
 jobs:
-  get-count:
-    runs-on: ubuntu-latest
-    outputs:
-      count: ${{ steps.commit-count.outputs.count }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: master
-          fetch-depth: 0
-          submodules: 'recursive'
-      - name: Get commit count
-        id: commit-count
-        run: |
-          echo "count=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
-
   debug:
     runs-on: ${{ inputs.debug-runner }}
     if: inputs.debug == true
@@ -103,7 +88,6 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
-    needs: get-count
     steps:
       - uses: actions/checkout@v4
         with:
@@ -130,7 +114,6 @@ jobs:
 
       - name: Build
         env:
-          COMMIT_COUNT: ${{ needs.get-count.outputs.count }}
           RELEASE_KEY_EXISTS: ${{ steps.sign.outputs.release_key_exists }}
           RELEASE_KEY_STORE_PASSWORD: ${{ secrets.RELEASE_KEY_STORE_PASSWORD }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
