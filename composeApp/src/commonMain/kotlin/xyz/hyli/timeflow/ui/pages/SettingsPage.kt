@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -120,6 +121,7 @@ import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
+import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
@@ -340,8 +342,8 @@ fun SettingsScreen(
             )
         }
         Spacer(modifier = Modifier.height(
-            if (currentPlatform().isDesktop()) 4.dp
-            else 12.dp
+            if (currentPlatform().isDesktop()) 12.dp
+            else 24.dp
         ))
     }
 }
@@ -557,13 +559,24 @@ fun SettingsLessonsPerDayScreen(
                             if (i in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
-                                Text(lesson.start.toString() + " - " + lesson.end.toString())
+                                Text(
+                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                )
                             }
                             if (dialogState.visible) {
                                 TimePeriodPickerDialog(
+                                    style =
+                                        if (currentPlatform().isDesktop())
+                                            TimePeriodPickerStyle.TextField
+                                        else
+                                            TimePeriodPickerStyle.Wheel,
                                     state = dialogState,
                                     initStartTime = lesson.start,
                                     initEndTime = lesson.end,
@@ -614,15 +627,24 @@ fun SettingsLessonsPerDayScreen(
                             if (i + morningCount.value in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
                                 Text(
-                                    lesson.start.toString() + " - " + lesson.end.toString(),
+                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             }
                             if (dialogState.visible) {
                                 TimePeriodPickerDialog(
+                                    style =
+                                        if (currentPlatform().isDesktop())
+                                            TimePeriodPickerStyle.TextField
+                                        else
+                                            TimePeriodPickerStyle.Wheel,
                                     state = dialogState,
                                     initStartTime = lesson.start,
                                     initEndTime = lesson.end,
@@ -673,15 +695,24 @@ fun SettingsLessonsPerDayScreen(
                             if (i + morningCount.value + afternoonCount.value in conflictSet) {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
                                 Text(
-                                    lesson.start.toString() + " - " + lesson.end.toString(),
+                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             }
                             if (dialogState.visible) {
                                 TimePeriodPickerDialog(
+                                    style =
+                                        if (currentPlatform().isDesktop())
+                                            TimePeriodPickerStyle.TextField
+                                        else
+                                            TimePeriodPickerStyle.Wheel,
                                     state = dialogState,
                                     initStartTime = lesson.start,
                                     initEndTime = lesson.end,
@@ -718,8 +749,13 @@ fun SettingsLessonsPerDayScreen(
                 }
             }
             Spacer(
-                modifier = if (currentPlatform().isDesktop()) Modifier.height(4.dp)
-                    else Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
+                    else Modifier.height(
+                        maxOf(
+                            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                            24.dp
+                        )
+                    )
             )
         }
     }

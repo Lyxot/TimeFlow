@@ -57,7 +57,8 @@ data class Time(
     @ProtoNumber(2) val minute: Int
 ) {
     override fun toString(): String {
-        return "${this.hour}:${if (this.minute < 10) "0${this.minute}" else {this.minute}}"
+        return this.hour.toString().padStart(2, '0') +
+                ":" + this.minute.toString().padStart(2, '0')
     }
 
     operator fun compareTo(b: Time): Int {
