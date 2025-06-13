@@ -12,18 +12,6 @@ import kotlinx.serialization.protobuf.ProtoNumber
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-data class DayList(
-    @ProtoNumber(1) val monday: List<Course> = emptyList(),
-    @ProtoNumber(2) val tuesday: List<Course> = emptyList(),
-    @ProtoNumber(3) val wednesday: List<Course> = emptyList(),
-    @ProtoNumber(4) val thursday: List<Course> = emptyList(),
-    @ProtoNumber(5) val friday: List<Course> = emptyList(),
-    @ProtoNumber(6) val saturday: List<Course> = emptyList(),
-    @ProtoNumber(7) val sunday: List<Course> = emptyList()
-)
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
 data class Date(
     @ProtoNumber(1) val year: Int,
     @ProtoNumber(2) val month: Int,
@@ -89,7 +77,7 @@ data class Lesson(
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-data class LessonsPerDay(
+data class LessonTimePeriodInfo(
     @ProtoNumber(1) val morning: List<Lesson>,
     @ProtoNumber(2) val afternoon: List<Lesson>,
     @ProtoNumber(3) val evening: List<Lesson>
@@ -104,7 +92,7 @@ data class LessonsPerDay(
             morningStart: Time = Time(8, 0),
             afternoonStart: Time = Time(13, 0),
             eveningStart: Time = Time(18, 0)
-        ): LessonsPerDay {
+        ): LessonTimePeriodInfo {
             val start = listOf(morningCount, afternoonCount, eveningCount).indexOfFirst{ it > 0 }
             var time = when (start) {
                 0 -> morningStart
@@ -155,7 +143,7 @@ data class LessonsPerDay(
                 )
             }
 
-            return LessonsPerDay(
+            return LessonTimePeriodInfo(
                 morning = morning,
                 afternoon = afternoon,
                 evening = evening
@@ -177,6 +165,10 @@ data class LessonsPerDay(
             }
         }
     }
+
+    fun getTotalLessons(): Int {
+        return morning.size + afternoon.size + evening.size
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -184,10 +176,10 @@ data class LessonsPerDay(
 data class Schedule(
     @ProtoNumber(1) val name: String = "",
     @ProtoNumber(2) val deleted: Boolean = false,
-    @ProtoNumber(3) val schedule: DayList = DayList(),
+    @ProtoNumber(3) val courses: List<Course> = emptyList(),
     @ProtoNumber(4) val termStartDate: Date = defaultTermStartDate(),
     @ProtoNumber(5) val termEndDate: Date = defaultTermEndDate(),
-    @ProtoNumber(6) val lessonsPerDay: LessonsPerDay = LessonsPerDay.fromPeriodCounts(),
+    @ProtoNumber(6) val lessonTimePeriodInfo: LessonTimePeriodInfo = LessonTimePeriodInfo.fromPeriodCounts(),
     @ProtoNumber(7) val displayWeekends: Boolean = false,
 ) {
     companion object {

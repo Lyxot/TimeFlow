@@ -2,16 +2,6 @@ syntax = "proto2";
 package xyz.hyli.timeflow.proto;
 import "course.proto";
 
-message DayList {
-  repeated Course monday = 1;
-  repeated Course tuesday = 2;
-  repeated Course wednesday = 3;
-  repeated Course thursday = 4;
-  repeated Course friday = 5;
-  repeated Course saturday = 6;
-  repeated Course sunday = 7;
-}
-
 message Date {
   optional int32 year = 1;
   optional int32 month = 2;
@@ -28,7 +18,7 @@ message Lesson {
   optional Time end = 2;
 }
 
-message LessonsPerDay {
+message LessonTimePeriodInfo {
   repeated Lesson morning = 1;
   repeated Lesson afternoon = 2;
   repeated Lesson evening = 3;
@@ -37,8 +27,9 @@ message LessonsPerDay {
 message Schedule {
   optional string name = 1;
   optional bool deleted = 2;
-  optional Schedule schedule = 3;
+  repeated Course courses = 3;
   optional Date termStartDate = 4;
   optional Date termEndDate = 5;
-  optional LessonsPerDay lessonsPerDay = 6;
+  optional LessonTimePeriodInfo lessonTimePeriodInfo = 6;
+  optional bool displayWeekends = 7;
 }

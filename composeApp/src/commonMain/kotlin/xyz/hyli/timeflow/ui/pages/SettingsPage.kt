@@ -102,7 +102,7 @@ import timeflow.composeapp.generated.resources.settings_warning_lessons_time_con
 import timeflow.composeapp.generated.resources.settings_warning_schedule_name_empty
 import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Lesson
-import xyz.hyli.timeflow.datastore.LessonsPerDay
+import xyz.hyli.timeflow.datastore.LessonTimePeriodInfo
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Time
 import xyz.hyli.timeflow.ui.components.BasePreference
@@ -354,17 +354,17 @@ fun SettingsLessonsPerDayScreen(
     navHostController: NavHostController
 ) {
     val settings by viewModel.settings.collectAsState()
-    val lessonsPerDay = remember {
+    val lessonTimePeriodInfo = remember {
         mutableStateOf(
-            settings.schedule[settings.selectedSchedule]?.lessonsPerDay
-                ?: LessonsPerDay.fromPeriodCounts()
+            settings.schedule[settings.selectedSchedule]?.lessonTimePeriodInfo
+                ?: LessonTimePeriodInfo.fromPeriodCounts()
         )
     }
-    val morningCount = remember { mutableStateOf(lessonsPerDay.value.morning.size) }
-    val afternoonCount = remember { mutableStateOf(lessonsPerDay.value.afternoon.size) }
-    val eveningCount = remember { mutableStateOf(lessonsPerDay.value.evening.size) }
+    val morningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.morning.size) }
+    val afternoonCount = remember { mutableStateOf(lessonTimePeriodInfo.value.afternoon.size) }
+    val eveningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.evening.size) }
     val isModified = remember { mutableStateOf(false) }
-    val conflictSet = lessonsPerDayValidator(lessonsPerDay.value)
+    val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
 
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -415,7 +415,7 @@ fun SettingsLessonsPerDayScreen(
                         if (currentSchedule != null) {
                             viewModel.updateSchedule(
                                 settings.selectedSchedule,
-                                currentSchedule.copy(lessonsPerDay = lessonsPerDay.value)
+                                currentSchedule.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
                             )
                             navHostController.popBackStack()
                         }
@@ -442,15 +442,18 @@ fun SettingsLessonsPerDayScreen(
                     value = morningCount.value,
                     onValueChange = { newCount ->
                         morningCount.value = newCount.coerceIn(0, 10)
-                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                            morning = LessonsPerDay.generateLessons(
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
+                            morning = LessonTimePeriodInfo.generateLessons(
                                 newCount,
-                                lessonsPerDay.value.morning.getOrNull(0)?.start ?: Time(8, 0),
-                                lessonsPerDay.value.morning.getOrNull(0)?.end?.minutesSince(
-                                    lessonsPerDay.value.morning[0].start
+                                lessonTimePeriodInfo.value.morning.getOrNull(0)?.start ?: Time(
+                                    8,
+                                    0
+                                ),
+                                lessonTimePeriodInfo.value.morning.getOrNull(0)?.end?.minutesSince(
+                                    lessonTimePeriodInfo.value.morning[0].start
                                 ) ?: 40,
-                                lessonsPerDay.value.morning.getOrNull(1)?.start?.minutesSince(
-                                    lessonsPerDay.value.morning[0].end
+                                lessonTimePeriodInfo.value.morning.getOrNull(1)?.start?.minutesSince(
+                                    lessonTimePeriodInfo.value.morning[0].end
                                 ) ?: 10
                             )
                         )
@@ -466,15 +469,18 @@ fun SettingsLessonsPerDayScreen(
                     value = afternoonCount.value,
                     onValueChange = { newCount ->
                         afternoonCount.value = newCount.coerceIn(0, 10)
-                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                            afternoon = LessonsPerDay.generateLessons(
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
+                            afternoon = LessonTimePeriodInfo.generateLessons(
                                 newCount,
-                                lessonsPerDay.value.afternoon.getOrNull(0)?.start ?: Time(13, 0),
-                                lessonsPerDay.value.afternoon.getOrNull(0)?.end?.minutesSince(
-                                    lessonsPerDay.value.afternoon[0].start
+                                lessonTimePeriodInfo.value.afternoon.getOrNull(0)?.start ?: Time(
+                                    13,
+                                    0
+                                ),
+                                lessonTimePeriodInfo.value.afternoon.getOrNull(0)?.end?.minutesSince(
+                                    lessonTimePeriodInfo.value.afternoon[0].start
                                 ) ?: 40,
-                                lessonsPerDay.value.afternoon.getOrNull(1)?.start?.minutesSince(
-                                    lessonsPerDay.value.afternoon[0].end
+                                lessonTimePeriodInfo.value.afternoon.getOrNull(1)?.start?.minutesSince(
+                                    lessonTimePeriodInfo.value.afternoon[0].end
                                 ) ?: 10
                             )
                         )
@@ -490,15 +496,18 @@ fun SettingsLessonsPerDayScreen(
                     value = eveningCount.value,
                     onValueChange = { newCount ->
                         eveningCount.value = newCount.coerceIn(0, 10)
-                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                            evening = LessonsPerDay.generateLessons(
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
+                            evening = LessonTimePeriodInfo.generateLessons(
                                 newCount,
-                                lessonsPerDay.value.evening.getOrNull(0)?.start ?: Time(18, 0),
-                                lessonsPerDay.value.evening.getOrNull(0)?.end?.minutesSince(
-                                    lessonsPerDay.value.evening[0].start
+                                lessonTimePeriodInfo.value.evening.getOrNull(0)?.start ?: Time(
+                                    18,
+                                    0
+                                ),
+                                lessonTimePeriodInfo.value.evening.getOrNull(0)?.end?.minutesSince(
+                                    lessonTimePeriodInfo.value.evening[0].start
                                 ) ?: 40,
-                                lessonsPerDay.value.evening.getOrNull(1)?.start?.minutesSince(
-                                    lessonsPerDay.value.evening[0].end
+                                lessonTimePeriodInfo.value.evening.getOrNull(1)?.start?.minutesSince(
+                                    lessonTimePeriodInfo.value.evening[0].end
                                 ) ?: 10
                             )
                         )
@@ -550,7 +559,7 @@ fun SettingsLessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_lessons_time_morning)
                 ) {
                     for (i in 0 until morningCount.value) {
-                        val lesson = lessonsPerDay.value.morning[i]
+                        val lesson = lessonTimePeriodInfo.value.morning[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
                             title = stringResource(lessonStringResourceList[i]),
@@ -582,9 +591,11 @@ fun SettingsLessonsPerDayScreen(
                                     initEndTime = lesson.end,
                                     onTimePeriodChange = { startTime, endTime ->
                                         if (i > 0) {
-                                            if (startTime < lessonsPerDay.value.morning[i - 1].end) {
-                                                lessonsPerDay.value = lessonsPerDay.value.copy(
-                                                    morning = lessonsPerDay.value.morning.toMutableList().apply {
+                                            if (startTime < lessonTimePeriodInfo.value.morning[i - 1].end) {
+                                                lessonTimePeriodInfo.value =
+                                                    lessonTimePeriodInfo.value.copy(
+                                                        morning = lessonTimePeriodInfo.value.morning.toMutableList()
+                                                            .apply {
                                                         this[i] = Lesson(
                                                             start = startTime,
                                                             end = endTime
@@ -594,14 +605,17 @@ fun SettingsLessonsPerDayScreen(
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonsPerDay.generateLessons(
+                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
                                             morningCount.value - i,
                                             startTime,
                                             endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(lessonsPerDay.value.morning[i - 1].end)
+                                            if (i == 0) 10 else startTime.minutesSince(
+                                                lessonTimePeriodInfo.value.morning[i - 1].end
+                                            )
                                         )
-                                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                                            morning = lessonsPerDay.value.morning.toMutableList()
+                                        lessonTimePeriodInfo.value =
+                                            lessonTimePeriodInfo.value.copy(
+                                                morning = lessonTimePeriodInfo.value.morning.toMutableList()
                                                 .subList(0, i) + updatedLessons
                                         )
                                         isModified.value = true
@@ -618,7 +632,7 @@ fun SettingsLessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_lessons_time_afternoon),
                 ) {
                     for (i in 0 until afternoonCount.value) {
-                        val lesson = lessonsPerDay.value.afternoon[i]
+                        val lesson = lessonTimePeriodInfo.value.afternoon[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
                             title = stringResource(lessonStringResourceList[i + morningCount.value]),
@@ -650,9 +664,11 @@ fun SettingsLessonsPerDayScreen(
                                     initEndTime = lesson.end,
                                     onTimePeriodChange = { startTime, endTime ->
                                         if (i > 0) {
-                                            if (startTime < lessonsPerDay.value.afternoon[i - 1].end) {
-                                                lessonsPerDay.value = lessonsPerDay.value.copy(
-                                                    afternoon = lessonsPerDay.value.afternoon.toMutableList().apply {
+                                            if (startTime < lessonTimePeriodInfo.value.afternoon[i - 1].end) {
+                                                lessonTimePeriodInfo.value =
+                                                    lessonTimePeriodInfo.value.copy(
+                                                        afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
+                                                            .apply {
                                                         this[i] = Lesson(
                                                             start = startTime,
                                                             end = endTime
@@ -662,14 +678,17 @@ fun SettingsLessonsPerDayScreen(
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonsPerDay.generateLessons(
+                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
                                             afternoonCount.value - i,
                                             startTime,
                                             endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(lessonsPerDay.value.afternoon[i - 1].end)
+                                            if (i == 0) 10 else startTime.minutesSince(
+                                                lessonTimePeriodInfo.value.afternoon[i - 1].end
+                                            )
                                         )
-                                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                                            afternoon = lessonsPerDay.value.afternoon.toMutableList()
+                                        lessonTimePeriodInfo.value =
+                                            lessonTimePeriodInfo.value.copy(
+                                                afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
                                                 .subList(0, i) + updatedLessons
                                         )
                                         isModified.value = true
@@ -686,7 +705,7 @@ fun SettingsLessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_lessons_time_evening)
                 ) {
                     for (i in 0 until eveningCount.value) {
-                        val lesson = lessonsPerDay.value.evening[i]
+                        val lesson = lessonTimePeriodInfo.value.evening[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
                             title = stringResource(lessonStringResourceList[i + morningCount.value + afternoonCount.value]),
@@ -718,9 +737,11 @@ fun SettingsLessonsPerDayScreen(
                                     initEndTime = lesson.end,
                                     onTimePeriodChange = { startTime, endTime ->
                                         if (i > 0) {
-                                            if (startTime < lessonsPerDay.value.evening[i - 1].end) {
-                                                lessonsPerDay.value = lessonsPerDay.value.copy(
-                                                    evening = lessonsPerDay.value.evening.toMutableList().apply {
+                                            if (startTime < lessonTimePeriodInfo.value.evening[i - 1].end) {
+                                                lessonTimePeriodInfo.value =
+                                                    lessonTimePeriodInfo.value.copy(
+                                                        evening = lessonTimePeriodInfo.value.evening.toMutableList()
+                                                            .apply {
                                                         this[i] = Lesson(
                                                             start = startTime,
                                                             end = endTime
@@ -730,14 +751,17 @@ fun SettingsLessonsPerDayScreen(
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonsPerDay.generateLessons(
+                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
                                             eveningCount.value - i,
                                             startTime,
                                             endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(lessonsPerDay.value.evening[i - 1].end)
+                                            if (i == 0) 10 else startTime.minutesSince(
+                                                lessonTimePeriodInfo.value.evening[i - 1].end
+                                            )
                                         )
-                                        lessonsPerDay.value = lessonsPerDay.value.copy(
-                                            evening = lessonsPerDay.value.evening.toMutableList()
+                                        lessonTimePeriodInfo.value =
+                                            lessonTimePeriodInfo.value.copy(
+                                                evening = lessonTimePeriodInfo.value.evening.toMutableList()
                                                 .subList(0, i) + updatedLessons
                                         )
                                         isModified.value = true
@@ -762,9 +786,10 @@ fun SettingsLessonsPerDayScreen(
 }
 
 private fun lessonsPerDayValidator(
-    lessonsPerDay: LessonsPerDay
+    lessonTimePeriodInfo: LessonTimePeriodInfo
 ): IntSet {
-    val lessons = lessonsPerDay.morning + lessonsPerDay.afternoon + lessonsPerDay.evening
+    val lessons =
+        lessonTimePeriodInfo.morning + lessonTimePeriodInfo.afternoon + lessonTimePeriodInfo.evening
     val conflictSet = MutableIntSet()
     for (i in 1 until lessons.size) {
         if (lessons[i].start < lessons[i - 1].end) { // Overlapping lessons

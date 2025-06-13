@@ -27,13 +27,30 @@ val course = ProtoBuf.decodeFromHexString<Course>(hexString)
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
+enum class Weekday {
+    @ProtoNumber(1)
+    MONDAY,
+    @ProtoNumber(2)
+    TUESDAY,
+    @ProtoNumber(3)
+    WEDNESDAY,
+    @ProtoNumber(4)
+    THURSDAY,
+    @ProtoNumber(5)
+    FRIDAY,
+    @ProtoNumber(6)
+    SATURDAY,
+    @ProtoNumber(7)
+    SUNDAY,
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
 enum class WeekDescriptionEnum {
     @ProtoNumber(1)
     ALL,
-
     @ProtoNumber(2)
     ODD,
-
     @ProtoNumber(3)
     EVEN
 }
@@ -70,6 +87,7 @@ data class Course(
     @ProtoNumber(2) val teacher: String = "",
     @ProtoNumber(3) val classroom: String = "",
     @ProtoNumber(4) val time: Range,
+    @ProtoNumber(5) val weekday: Weekday,
     @ProtoOneOf val week: IWeekType?
 )
 
@@ -79,17 +97,17 @@ sealed interface IWeekType
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class WeekDescriptionType(
-    @ProtoNumber(5) val weekDescription: WeekDescription
+    @ProtoNumber(6) val weekDescription: WeekDescription
 ) : IWeekType
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class WeekRangeType(
-    @ProtoNumber(6) val weekRange: WeekRange
+    @ProtoNumber(7) val weekRange: WeekRange
 ) : IWeekType
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class WeekListType(
-    @ProtoNumber(7) val weekList: WeekList
+    @ProtoNumber(8) val weekList: WeekList
 ) : IWeekType
