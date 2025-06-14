@@ -1,6 +1,7 @@
 package xyz.hyli.timeflow.ui.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -85,6 +94,18 @@ fun ScheduleScreen(
     }
 }
 
+data class TableState(
+    val state: TableCellState = TableCellState.NORMAL,
+    val row: Int = 0,
+    val column: Int = 0,
+)
+
+enum class TableCellState {
+    NORMAL,
+    IS_CLICKED,
+    IS_MODIFYING
+}
+
 @Composable
 fun ScheduleTable(
     rows: Int,
@@ -97,8 +118,21 @@ fun ScheduleTable(
             schedule.lessonTimePeriodInfo.evening
 
     Box(modifier = modifier.fillMaxWidth()) {
+        val state = remember { mutableStateOf(TableState()) }
+        
+        // 自动重置状态的逻辑
+        LaunchedEffect(state.value) {
+            if (state.value.state == TableCellState.IS_CLICKED) {
+                kotlinx.coroutines.delay(10000) // 10秒
+                if (state.value.state == TableCellState.IS_CLICKED) {
+                    state.value = state.value.copy(state = TableCellState.NORMAL)
+                }
+            }
+        }
+        
         // 底层：表格框架
         TableGrid(
+            state = state,
             rows = rows,
             columns = columns,
             lessonTimePeriodInfo = lessonTimePeriodInfo
@@ -106,6 +140,7 @@ fun ScheduleTable(
 
         // 覆盖层：课程内容
         CourseOverlay(
+            state = state,
             rows = rows,
             columns = columns,
             schedule = schedule,
@@ -116,6 +151,7 @@ fun ScheduleTable(
 
 @Composable
 fun TableGrid(
+    state: MutableState<TableState>,
     rows: Int,
     columns: Int,
     lessonTimePeriodInfo: List<Lesson>
@@ -141,8 +177,10 @@ fun TableGrid(
         // 每一天的空白列（只显示表头和边框）
         for (dayIndex in 0 until rows) {
             EmptyDayColumn(
+                state = state,
                 modifier = Modifier.weight(1f),
                 dayName = weekdays[dayIndex],
+                dayIndex = dayIndex,
                 columns = columns,
                 isLastDay = dayIndex == rows - 1
             )
@@ -205,8 +243,10 @@ fun TimeColumn(
 
 @Composable
 fun EmptyDayColumn(
+    state: MutableState<TableState>,
     modifier: Modifier = Modifier,
     dayName: String,
+    dayIndex: Int,
     columns: Int,
     isLastDay: Boolean
 ) {
@@ -234,6 +274,31 @@ fun EmptyDayColumn(
                 isBottomBorder = lessonIndex < columns - 1
             ) {
                 // 空白单元格，只显示边框
+                if (state.value.row != dayIndex ||
+                    state.value.column != lessonIndex ||
+                    state.value.state != TableCellState.IS_CLICKED) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp),
+                        colors = CardDefaults.cardColors().copy(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            contentColor = MaterialTheme.colorScheme.onBackground
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable {
+                                    state.value = TableState(
+                                        state = TableCellState.IS_CLICKED,
+                                        row = dayIndex,
+                                        column = lessonIndex
+                                    )
+                                }
+                        )
+                    }
+                }
             }
         }
     }
@@ -241,6 +306,7 @@ fun EmptyDayColumn(
 
 @Composable
 fun CourseOverlay(
+    state: MutableState<TableState>,
     rows: Int,
     columns: Int,
     schedule: Schedule,
@@ -253,6 +319,7 @@ fun CourseOverlay(
         // 课程覆盖层
         for (dayIndex in 0 until rows) {
             CourseColumn(
+                state = state,
                 modifier = Modifier.weight(1f),
                 dayIndex = dayIndex,
                 columns = columns,
@@ -264,6 +331,7 @@ fun CourseOverlay(
 
 @Composable
 fun CourseColumn(
+    state: MutableState<TableState>,
     modifier: Modifier = Modifier,
     dayIndex: Int,
     columns: Int,
@@ -303,6 +371,14 @@ fun CourseColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(2.dp)
+                            .clickable {
+                                state.value = TableState(
+                                    state = TableCellState.IS_MODIFYING,
+                                    row = dayIndex,
+                                    column = lessonIndex
+                                )
+                                // TODO: Dialog to show course details, edit and add new course
+                            }
                     ) {
                         Box(
                             modifier = Modifier
@@ -319,6 +395,31 @@ fun CourseColumn(
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
+                        }
+                    }
+                } else if (state.value.row == dayIndex && state.value.column == lessonIndex) {
+                    if (state.value.state != TableCellState.NORMAL) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        // TODO: Add new course logic
+                                        state.value = state.value.copy(
+                                            state = TableCellState.IS_MODIFYING
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null
+                                )
+                            }
                         }
                     }
                 }
@@ -370,8 +471,7 @@ fun TableCell(
                         )
                     }
                 } else Modifier
-            )
-            .padding(4.dp),
+            ),
         contentAlignment = Alignment.Center
     ) {
         content()
