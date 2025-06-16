@@ -1,36 +1,51 @@
 package xyz.hyli.timeflow.ui.pages
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -43,6 +58,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,6 +106,7 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ScheduleScreen(
     viewModel: TimeFlowViewModel,
@@ -98,35 +117,77 @@ fun ScheduleScreen(
     val row = if (schedule?.displayWeekends == true) 7 else 5
     val column = schedule?.lessonTimePeriodInfo?.getTotalLessons()
 
-    if (schedule == null || column == null || column == 0) {
-        // 显示空状态或错误信息
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+    @Composable
+    fun ScheduleScreenContent() {
+        if (schedule == null || column == null || column == 0) {
+            // 显示空状态或错误信息
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_subtitle_schedule_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            return
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .then(
+                    if (currentPlatform().isDesktop())
+                        Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp)
+                    else Modifier
+                )
         ) {
-            Text(
-                text = stringResource(Res.string.settings_subtitle_schedule_empty),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
+            // 课程表表格
+            ScheduleTable(
+                rows = row,
+                columns = column,
+                schedule = schedule,
+                modifier = Modifier.fillMaxWidth(),
+                navHostController = navHostController
+            )
+            Spacer(
+                modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
+                else Modifier.height(
+                    maxOf(
+                        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                        24.dp
+                    )
+                )
             )
         }
-        return
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(4.dp)
-            .verticalScroll(rememberScrollState())
+    AnimatedContent(
+        settings.initialized,
+        transitionSpec = {
+            fadeIn(
+                animationSpec = tween(300)
+            ) togetherWith fadeOut(animationSpec = tween(300))
+        }
     ) {
-        // 课程表表格
-        ScheduleTable(
-            rows = row,
-            columns = column,
-            schedule = schedule,
-            modifier = Modifier.fillMaxWidth(),
-            navHostController = navHostController
-        )
+        when (it) {
+            false -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator(
+                        modifier = Modifier.size(96.dp)
+                    )
+                }
+            }
+
+            true -> {
+                ScheduleScreenContent()
+            }
+        }
     }
 }
 
@@ -531,6 +592,7 @@ fun TableCell(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditCourseScreen(
     viewModel: TimeFlowViewModel,
@@ -550,6 +612,7 @@ fun EditCourseScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.statusBars)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -613,7 +676,8 @@ fun EditCourseScreen(
                     Text(
                         text = "*" + stringResource(Res.string.required)
                     )
-                }
+                },
+                shape = CardDefaults.shape
             )
             OutlinedTextField(
                 value = course.classroom,
@@ -624,7 +688,8 @@ fun EditCourseScreen(
                     Text(
                         text = stringResource(Res.string.schedule_title_course_classroom)
                     )
-                }
+                },
+                shape = CardDefaults.shape
             )
             OutlinedTextField(
                 value = course.teacher,
@@ -635,37 +700,37 @@ fun EditCourseScreen(
                     Text(
                         text = stringResource(Res.string.schedule_title_course_teacher)
                     )
-                }
+                },
+                shape = CardDefaults.shape
             )
             val showCourseTimePickerDialog = rememberDialogState()
-            OutlinedTextField(
-                value = stringResource(
-                    Res.string.schedule_value_course_time,
-                    course.time.start, course.time.end
+            val containerColor = OutlinedTextFieldDefaults.colors().unfocusedContainerColor
+            val borderColor = OutlinedTextFieldDefaults.colors().unfocusedIndicatorColor
+            Card(
+                modifier = Modifier.padding(top = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = containerColor,
                 ),
-                onValueChange = { },
-                enabled = false,
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        showCourseTimePickerDialog.show()
-                    },
-                singleLine = true,
-                label = {
+                border = BorderStroke(1.dp, borderColor),
+                onClick = { showCourseTimePickerDialog.show() }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                     Text(
                         text = stringResource(Res.string.schedule_title_course_time)
                     )
-                },
-                colors = OutlinedTextFieldDefaults.colors().let {
-                    it.copy(
-                        disabledTextColor = it.unfocusedTextColor,
-                        disabledLabelColor = it.unfocusedLabelColor,
-                        disabledContainerColor = it.unfocusedContainerColor,
-                        disabledIndicatorColor = it.unfocusedIndicatorColor
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        stringResource(
+                            Res.string.schedule_value_course_time,
+                            course.time.start, course.time.end
+                        )
                     )
                 }
-            )
+            }
             if (showCourseTimePickerDialog.visible) {
                 CourseTimePickerDialog(
                     style =
@@ -683,33 +748,28 @@ fun EditCourseScreen(
                     }
                 )
             }
-
-            OutlinedTextField(
-                value = " ",
-                onValueChange = { },
-                enabled = false,
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = {
-                    Text(
-                        text = stringResource(Res.string.schedule_title_course_week)
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors().let {
-                    it.copy(
-                        disabledTextColor = it.unfocusedTextColor,
-                        disabledLabelColor = it.unfocusedLabelColor,
-                        disabledContainerColor = it.unfocusedContainerColor,
-                        disabledIndicatorColor = it.unfocusedIndicatorColor
-                    )
-                },
-                leadingIcon = {
-                    Column {
-                        SingleChoiceSegmentedButtonRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+            Card(
+                modifier = Modifier.padding(top = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = containerColor,
+                ),
+                border = BorderStroke(1.dp, borderColor)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.schedule_title_course_week)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             val items = listOf(
                                 WeekDescriptionEnum.ODD to stringResource(Res.string.odd_week),
@@ -721,61 +781,91 @@ fun EditCourseScreen(
                                     weekDescription = item.first,
                                     totalWeeks = schedule.totalWeeks()
                                 )
-                                SegmentedButton(
-                                    selected = course.week.week.toSet() == weekList.week.toSet(),
-                                    onClick = { course = course.copy(week = weekList) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = items.size
-                                    )
+                                ToggleButton(
+                                    modifier = Modifier
+                                        .padding(horizontal = 1.dp)
+                                        .semantics { role = Role.RadioButton },
+                                    checked = course.week.week.toSet() == weekList.week.toSet(),
+                                    onCheckedChange = { course = course.copy(week = weekList) },
+                                    shapes =
+                                        when (index) {
+                                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                            items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                                        },
                                 ) {
                                     Text(item.second)
                                 }
                             }
                         }
-                        FlowRow(
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            for (i in 1..schedule.totalWeeks()) {
-                                val isSelected = course.week.week.contains(i)
-                                Card(
+                    }
+                    FlowRow {
+                        for (i in 1..schedule.totalWeeks()) {
+                            var isSelected by remember {
+                                mutableStateOf(
+                                    course.week.week.contains(
+                                        i
+                                    )
+                                )
+                            }
+                            LaunchedEffect(course.week) {
+                                isSelected = course.week.week.contains(i)
+                            }
+                            val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
+                                animateColorAsState(
+                                    if (isSelected) it.checkedContainerColor
+                                    else it.containerColor,
+                                )
+                            }
+                            val contentColor by ToggleButtonDefaults.toggleButtonColors().let {
+                                animateColorAsState(
+                                    if (isSelected) it.checkedContentColor
+                                    else it.contentColor,
+                                )
+                            }
+                            val colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = containerColor,
+                                contentColor = contentColor,
+                                disabledContainerColor = containerColor,
+                                disabledContentColor = contentColor
+                            )
+                            ToggleButton(
+                                modifier = Modifier
+                                    .padding(horizontal = 4.dp)
+                                    .semantics { role = Role.RadioButton },
+                                checked = isSelected,
+                                onCheckedChange = {
+                                    course = if (isSelected) {
+                                        course.copy(week = course.week.copy(week = course.week.week - i))
+                                    } else {
+                                        course.copy(week = course.week.copy(week = course.week.week + i))
+                                    }
+                                },
+                                shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
+                                colors = colors,
+                            ) {
+                                Box(
                                     modifier = Modifier
-                                        .padding(4.dp),
-                                    colors = CardDefaults.cardColors().let {
-                                        if (isSelected) {
-                                            it.copy(
-                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        } else {
-                                            it.copy(
-                                                containerColor = it.disabledContainerColor,
-                                                contentColor = it.disabledContentColor
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        course = if (isSelected) {
-                                            course.copy(week = course.week.copy(week = course.week.week - i))
-                                        } else {
-                                            course.copy(week = course.week.copy(week = course.week.week + i))
-                                        }
-                                    }
+                                        .width(20.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp, 32.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = i.toString(),
-                                        )
-                                    }
+                                    Text(
+                                        text = i.toString()
+                                    )
                                 }
                             }
                         }
                     }
                 }
+            }
+            Spacer(
+                modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
+                else Modifier.height(
+                    maxOf(
+                        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                        24.dp
+                    )
+                )
             )
         }
     }

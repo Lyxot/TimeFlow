@@ -17,11 +17,14 @@ import androidx.compose.material.icons.filled.CalendarViewDay
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.CalendarViewDay
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
@@ -70,6 +73,7 @@ data class EditCourseDestination(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AdaptiveNavigation(
     navHostController: NavHostController,
@@ -78,13 +82,18 @@ fun AdaptiveNavigation(
 ) {
     val currentBackStackEntry = navHostController.currentBackStackEntryFlow.collectAsState(initial = null)
     val currentPage = currentBackStackEntry.value?.destination?.route
-    NavigationSuiteScaffold(
-        layoutType =
-            if (currentPage !in Destination.entries.map { it.name } &&
-                navSuiteType == NavigationSuiteType.NavigationBar)
-                NavigationSuiteType.None
+    val state = rememberNavigationSuiteScaffoldState()
+    LaunchedEffect(currentPage) {
+        if (navSuiteType == NavigationSuiteType.NavigationBar) {
+            if (currentPage in Destination.entries.map { it.name })
+                state.show()
             else
-                navSuiteType,
+                state.toggle()
+        }
+    }
+    NavigationSuiteScaffold(
+        state = state,
+        layoutType = navSuiteType,
         modifier = Modifier.fillMaxSize(),
         navigationSuiteItems = {
             item(

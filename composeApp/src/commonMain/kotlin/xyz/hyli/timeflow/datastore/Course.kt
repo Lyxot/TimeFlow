@@ -63,12 +63,6 @@ data class Range(
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-data class WeekDescription(
-    @ProtoNumber(1) val description: WeekDescriptionEnum = WeekDescriptionEnum.ALL
-)
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
 data class WeekRange(
     @ProtoNumber(1) val range: List<Range>
 )

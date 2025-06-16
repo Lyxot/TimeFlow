@@ -78,10 +78,14 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(compose.foundation)
             implementation(compose.material3)
-            implementation(compose.material3AdaptiveNavigationSuite)
+            implementation(compose.material3AdaptiveNavigationSuite) {
+                exclude(group = "org.jetbrains.androidx.window")
+            }
             implementation(compose.materialIconsExtended)
             implementation(compose.runtime)
-            implementation(libs.adaptive)
+            implementation(libs.adaptive.get().toString()) {
+                exclude(group = "org.jetbrains.androidx.window")
+            }
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
@@ -111,6 +115,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.androidx.window.core.jvm)
         }
 
         iosMain.dependencies {

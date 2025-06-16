@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.datastore.Schedule
@@ -22,18 +21,10 @@ class TimeFlowViewModel(
 ): ViewModel() {
     val settings: StateFlow<Settings> =
         repository.settings
-            .map { Settings(
-                firstLaunch = it.firstLaunch,
-                theme = it.theme,
-                themeDynamicColor = it.themeDynamicColor,
-                themeColor = it.themeColor,
-                schedule = it.schedule,
-                selectedSchedule = it.selectedSchedule
-            ) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = Settings()
+                initialValue = Settings(initialized = false)
             )
 
     fun updateTheme(theme: Int) {

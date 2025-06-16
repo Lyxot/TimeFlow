@@ -10,7 +10,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,19 +20,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -42,6 +47,7 @@ object PreferenceListStyle {
     enum class Style { Dialog, SegmentedButtons }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> PreferenceList(
     value: T,
@@ -99,46 +105,51 @@ fun <T> PreferenceList(
                         label = "list_alpha_animation"
                     )
 
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .alpha(listAlphaValue)
+                            .alpha(listAlphaValue),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        subtitle?.let {
+                        Column {
                             Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(top = 4.dp)
+                                text = title,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+
+                            subtitle?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.weight(1f))
 
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        items.forEachIndexed { index, item ->
-                            SegmentedButton(
-                                selected = value == item,
-                                onClick = { if (isEnabled) onValueChange(item) },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = items.size
-                                ),
-                                enabled = isEnabled
-                            ) {
-                                Text(itemTextProvider(item))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            items.forEachIndexed { index, item ->
+                                ToggleButton(
+                                    modifier = Modifier
+                                        .padding(1.dp)
+                                        .semantics { role = Role.RadioButton },
+                                    checked = value == item,
+                                    onCheckedChange = { if (isEnabled) onValueChange(item) },
+                                    shapes =
+                                        when (index) {
+                                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                            items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                                        },
+                                    enabled = isEnabled
+                                ) {
+                                    Text(itemTextProvider(item))
+                                }
                             }
                         }
                     }

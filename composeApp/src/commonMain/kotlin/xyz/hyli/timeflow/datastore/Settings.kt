@@ -9,6 +9,7 @@ import xyz.hyli.timeflow.utils.supportDynamicColor
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Settings(
+    val initialized: Boolean = true, // Whether the settings have been initialized, always true
     @ProtoNumber(1) val firstLaunch: Int = 0, // 0: Not launched, Version Code: Last launched version code
     @ProtoNumber(2) val theme: Int = 0, // 0: System, 1: Light, 2: Dark
     @ProtoNumber(3) val themeDynamicColor: Boolean = currentPlatform().supportDynamicColor(), // Whether dynamic color is enabled, only applicable for Android 12 and above
