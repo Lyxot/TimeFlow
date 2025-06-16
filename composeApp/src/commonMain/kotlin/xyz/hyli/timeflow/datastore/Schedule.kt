@@ -4,8 +4,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
@@ -184,7 +185,7 @@ data class Schedule(
 ) {
     companion object {
         fun defaultTermStartDate(): Date {
-            val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
             val year = currentDate.year
             val month = if (currentDate.monthNumber in 3..8) 3 else 9
             val day = 1
@@ -192,5 +193,25 @@ data class Schedule(
         }
 
         fun defaultTermEndDate(): Date = defaultTermStartDate().addWeeks(16)
+    }
+
+    fun totalWeeks(): Int {
+        return weeksTill(this.termEndDate.toLocalDate())
+    }
+
+    fun weeksTill(endDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {
+        val startDate = this.termStartDate.toLocalDate()
+        if (endDate < startDate) return 0
+
+        // 计算每个日期在周中的位置偏移（周一=0，周日=6）
+        val startOffset = startDate.dayOfWeek.ordinal - 1
+        val endOffset = endDate.dayOfWeek.ordinal - 1
+
+        // 计算调整后的天数差
+        val daysBetween = startDate.daysUntil(endDate)
+        val adjustedDays = daysBetween + startOffset - endOffset
+
+        // 计算周数
+        return (adjustedDays / 7) + 1
     }
 }

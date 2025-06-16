@@ -3,7 +3,6 @@ package xyz.hyli.timeflow.datastore
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import kotlinx.serialization.protobuf.ProtoOneOf
 
 // Docs: https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/formats.md
 /* Example usage
@@ -78,7 +77,19 @@ data class WeekRange(
 @Serializable
 data class WeekList(
     @ProtoNumber(1) val week: List<Int>
-)
+) {
+    constructor(weekDescription: WeekDescriptionEnum, totalWeeks: Int) : this(
+        week = when (weekDescription) {
+            WeekDescriptionEnum.ALL -> (1..totalWeeks).toList()
+            WeekDescriptionEnum.ODD -> (1..totalWeeks step 2).toList()
+            WeekDescriptionEnum.EVEN -> (2..totalWeeks step 2).toList()
+        }
+    )
+
+    constructor(weekRange: WeekRange) : this(
+        week = weekRange.range.flatMap { it.start..it.end }.distinct()
+    )
+}
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -88,26 +99,5 @@ data class Course(
     @ProtoNumber(3) val classroom: String = "",
     @ProtoNumber(4) val time: Range,
     @ProtoNumber(5) val weekday: Weekday,
-    @ProtoOneOf val week: IWeekType?
+    @ProtoNumber(6) val week: WeekList
 )
-
-@Serializable
-sealed interface IWeekType
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class WeekDescriptionType(
-    @ProtoNumber(6) val weekDescription: WeekDescription
-) : IWeekType
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class WeekRangeType(
-    @ProtoNumber(7) val weekRange: WeekRange
-) : IWeekType
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class WeekListType(
-    @ProtoNumber(8) val weekList: WeekList
-) : IWeekType

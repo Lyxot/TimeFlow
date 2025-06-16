@@ -10,11 +10,26 @@
     <string name="cancel">取消</string>
     <string name="confirm">确定</string>
     <string name="save">保存</string>
+    <string name="required">必填</string>
+    <string name="not_required">非必填</string>
+    <string name="odd_week">单周</string>
+    <string name="even_week">双周</string>
+    <string name="all_week">全选</string>
 
     <string name="page_today">今日</string>
     <string name="page_schedule">课程表</string>
     <string name="page_settings">设置</string>
 
+    <!--    schedule page-->
+    <string name="schedule_title_edit_course">编辑课程</string>
+    <string name="schedule_title_course_name">课程名称</string>
+    <string name="schedule_title_course_classroom">教室</string>
+    <string name="schedule_title_course_teacher">老师</string>
+    <string name="schedule_title_course_time">上课时间</string>
+    <string name="schedule_value_course_time">第 %1$s - %2$s 节</string>
+    <string name="schedule_title_course_week">上课周次</string>
+
+    <!--    settings page-->
     <string name="settings_title_general">通用设置</string>
     <string name="settings_title_theme">外观设置</string>
     <string name="settings_title_theme_color">主题颜色</string>
@@ -47,6 +62,8 @@
     <string name="settings_title_display_weekends">显示周末</string>
 
     <string name="dialog_title_time_period_picker">选择时间段</string>
+    <string name="dialog_title_course_time_picker">选择节数</string>
+    <string name="dialog_course_time_picker_section">节</string>
 
     <string name="lesson_1">第一节</string>
     <string name="lesson_2">第二节</string>

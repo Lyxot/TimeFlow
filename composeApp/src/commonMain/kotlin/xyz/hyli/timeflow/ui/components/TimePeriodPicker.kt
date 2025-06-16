@@ -3,12 +3,6 @@ package xyz.hyli.timeflow.ui.components
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,9 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -184,53 +175,6 @@ private fun TimePeriodPickerTextField(
     onStartTimeChange: (startTime: Time) -> Unit,
     onEndTimeChange: (endTime: Time) -> Unit
 ) {
-    @Composable
-    fun IntTextField(
-        value: Int,
-        range: IntRange,
-        onValueChange: (Int) -> Unit,
-    ) {
-        var textValue by remember { mutableStateOf(value.toString()) }
-        var isValid by remember { mutableStateOf(true) }
-        LaunchedEffect(textValue) {
-            try {
-                val numValue = textValue.toIntOrNull()
-                isValid = numValue in range
-            } catch (_: Exception) {
-                isValid = false
-            }
-        }
-        OutlinedTextField(
-            value = textValue,
-            onValueChange = {
-                textValue = it
-                if (isValid) {
-                    it.toIntOrNull()?.let { onValueChange(it) }
-                }
-            },
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .width(80.dp),
-            textStyle = LocalTextStyle.current.copy(
-                fontFamily = FontFamily.Monospace,
-                textAlign = TextAlign.Center
-            ),
-            singleLine = true,
-            isError = !isValid,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    if (isValid) {
-                        textValue.toIntOrNull()?.let { onValueChange(it) }
-                    }
-                }
-            )
-        )
-    }
-
     var startTime by remember { mutableStateOf(initStartTime) }
     var endTime by remember { mutableStateOf(initEndTime) }
 

@@ -4,21 +4,32 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -40,18 +52,41 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
+import timeflow.composeapp.generated.resources.all_week
+import timeflow.composeapp.generated.resources.back
+import timeflow.composeapp.generated.resources.even_week
 import timeflow.composeapp.generated.resources.friday
 import timeflow.composeapp.generated.resources.monday
+import timeflow.composeapp.generated.resources.odd_week
+import timeflow.composeapp.generated.resources.required
 import timeflow.composeapp.generated.resources.saturday
+import timeflow.composeapp.generated.resources.save
+import timeflow.composeapp.generated.resources.schedule_title_course_classroom
+import timeflow.composeapp.generated.resources.schedule_title_course_name
+import timeflow.composeapp.generated.resources.schedule_title_course_teacher
+import timeflow.composeapp.generated.resources.schedule_title_course_time
+import timeflow.composeapp.generated.resources.schedule_title_course_week
+import timeflow.composeapp.generated.resources.schedule_title_edit_course
+import timeflow.composeapp.generated.resources.schedule_value_course_time
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.sunday
 import timeflow.composeapp.generated.resources.thursday
 import timeflow.composeapp.generated.resources.tuesday
 import timeflow.composeapp.generated.resources.wednesday
+import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Lesson
+import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.Schedule
+import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
+import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.datastore.Weekday
+import xyz.hyli.timeflow.ui.components.CourseTimePickerDialog
+import xyz.hyli.timeflow.ui.components.CourseTimePickerStyle
+import xyz.hyli.timeflow.ui.components.rememberDialogState
+import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isDesktop
 
 @Composable
 fun ScheduleScreen(
@@ -89,7 +124,8 @@ fun ScheduleScreen(
             rows = row,
             columns = column,
             schedule = schedule,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            navHostController = navHostController
         )
     }
 }
@@ -111,7 +147,8 @@ fun ScheduleTable(
     rows: Int,
     columns: Int,
     schedule: Schedule,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navHostController: NavHostController
 ) {
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo.morning +
             schedule.lessonTimePeriodInfo.afternoon +
@@ -144,7 +181,8 @@ fun ScheduleTable(
             rows = rows,
             columns = columns,
             schedule = schedule,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            navHostController = navHostController
         )
     }
 }
@@ -310,7 +348,8 @@ fun CourseOverlay(
     rows: Int,
     columns: Int,
     schedule: Schedule,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navHostController: NavHostController
 ) {
     Row(modifier = modifier) {
         // 时间列占位（与底层对齐）
@@ -323,7 +362,8 @@ fun CourseOverlay(
                 modifier = Modifier.weight(1f),
                 dayIndex = dayIndex,
                 columns = columns,
-                schedule = schedule
+                schedule = schedule,
+                navHostController = navHostController
             )
         }
     }
@@ -335,7 +375,8 @@ fun CourseColumn(
     modifier: Modifier = Modifier,
     dayIndex: Int,
     columns: Int,
-    schedule: Schedule
+    schedule: Schedule,
+    navHostController: NavHostController
 ) {
     val weekdays = listOf(
         Weekday.MONDAY,
@@ -408,9 +449,21 @@ fun CourseColumn(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clickable {
-                                        // TODO: Add new course logic
                                         state.value = state.value.copy(
                                             state = TableCellState.IS_MODIFYING
+                                        )
+                                        navHostController.navigate(
+                                            EditCourseDestination(
+                                                Course(
+                                                    name = "",
+                                                    time = Range(lessonIndex + 1, lessonIndex + 1),
+                                                    weekday = weekdays[dayIndex],
+                                                    week = WeekList(
+                                                        weekDescription = WeekDescriptionEnum.ALL,
+                                                        totalWeeks = schedule.totalWeeks()
+                                                    )
+                                                )
+                                            )
                                         )
                                     },
                                 contentAlignment = Alignment.Center
@@ -475,5 +528,255 @@ fun TableCell(
         contentAlignment = Alignment.Center
     ) {
         content()
+    }
+}
+
+@Composable
+fun EditCourseScreen(
+    viewModel: TimeFlowViewModel,
+    navHostController: NavHostController,
+    initValue: Course
+) {
+    val settings by viewModel.settings.collectAsState()
+    val schedule = settings.schedule[settings.selectedSchedule]!!
+    var course by remember { mutableStateOf(initValue) }
+    var isNameValid by remember { mutableStateOf(initValue.name.isNotBlank()) }
+
+    LaunchedEffect(course) {
+        isNameValid = course.name.isNotBlank()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = {
+                    navHostController.popBackStack()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = stringResource(Res.string.back)
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(Res.string.schedule_title_edit_course)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(
+                onClick = {
+                    // TODO: Check Course validity
+                    viewModel.updateSchedule(
+                        uuid = settings.selectedSchedule,
+                        schedule = schedule.copy(
+                            courses = if (initValue in schedule.courses) {
+                                schedule.courses.map { if (it == initValue) course else it }
+                            } else {
+                                schedule.courses + course
+                            }
+                        )
+                    )
+                    navHostController.popBackStack()
+                },
+                enabled = true,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Done,
+                    contentDescription = stringResource(Res.string.save)
+                )
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            OutlinedTextField(
+                value = course.name,
+                onValueChange = { course = course.copy(name = it) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = !isNameValid,
+                label = {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_course_name) + "*"
+                    )
+                },
+                supportingText = {
+                    Text(
+                        text = "*" + stringResource(Res.string.required)
+                    )
+                }
+            )
+            OutlinedTextField(
+                value = course.classroom,
+                onValueChange = { course = course.copy(classroom = it) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_course_classroom)
+                    )
+                }
+            )
+            OutlinedTextField(
+                value = course.teacher,
+                onValueChange = { course = course.copy(teacher = it) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_course_teacher)
+                    )
+                }
+            )
+            val showCourseTimePickerDialog = rememberDialogState()
+            OutlinedTextField(
+                value = stringResource(
+                    Res.string.schedule_value_course_time,
+                    course.time.start, course.time.end
+                ),
+                onValueChange = { },
+                enabled = false,
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showCourseTimePickerDialog.show()
+                    },
+                singleLine = true,
+                label = {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_course_time)
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors().let {
+                    it.copy(
+                        disabledTextColor = it.unfocusedTextColor,
+                        disabledLabelColor = it.unfocusedLabelColor,
+                        disabledContainerColor = it.unfocusedContainerColor,
+                        disabledIndicatorColor = it.unfocusedIndicatorColor
+                    )
+                }
+            )
+            if (showCourseTimePickerDialog.visible) {
+                CourseTimePickerDialog(
+                    style =
+                        if (currentPlatform().isDesktop())
+                            CourseTimePickerStyle.TextField
+                        else
+                            CourseTimePickerStyle.Wheel,
+                    state = showCourseTimePickerDialog,
+                    initStartTime = course.time.start,
+                    initEndTime = course.time.end,
+                    totalLessonsCount = settings.schedule[settings.selectedSchedule]?.lessonTimePeriodInfo?.getTotalLessons()
+                        ?: 0,
+                    onCourseTimeChange = { start, end ->
+                        course = course.copy(time = Range(start, end))
+                    }
+                )
+            }
+
+            OutlinedTextField(
+                value = " ",
+                onValueChange = { },
+                enabled = false,
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_course_week)
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors().let {
+                    it.copy(
+                        disabledTextColor = it.unfocusedTextColor,
+                        disabledLabelColor = it.unfocusedLabelColor,
+                        disabledContainerColor = it.unfocusedContainerColor,
+                        disabledIndicatorColor = it.unfocusedIndicatorColor
+                    )
+                },
+                leadingIcon = {
+                    Column {
+                        SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            val items = listOf(
+                                WeekDescriptionEnum.ODD to stringResource(Res.string.odd_week),
+                                WeekDescriptionEnum.EVEN to stringResource(Res.string.even_week),
+                                WeekDescriptionEnum.ALL to stringResource(Res.string.all_week)
+                            )
+                            items.forEachIndexed { index, item ->
+                                val weekList = WeekList(
+                                    weekDescription = item.first,
+                                    totalWeeks = schedule.totalWeeks()
+                                )
+                                SegmentedButton(
+                                    selected = course.week.week.toSet() == weekList.week.toSet(),
+                                    onClick = { course = course.copy(week = weekList) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = items.size
+                                    )
+                                ) {
+                                    Text(item.second)
+                                }
+                            }
+                        }
+                        FlowRow(
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        ) {
+                            for (i in 1..schedule.totalWeeks()) {
+                                val isSelected = course.week.week.contains(i)
+                                Card(
+                                    modifier = Modifier
+                                        .padding(4.dp),
+                                    colors = CardDefaults.cardColors().let {
+                                        if (isSelected) {
+                                            it.copy(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        } else {
+                                            it.copy(
+                                                containerColor = it.disabledContainerColor,
+                                                contentColor = it.disabledContentColor
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        course = if (isSelected) {
+                                            course.copy(week = course.week.copy(week = course.week.week - i))
+                                        } else {
+                                            course.copy(week = course.week.copy(week = course.week.week + i))
+                                        }
+                                    }
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp, 32.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = i.toString(),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
 }

@@ -31,11 +31,19 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromHexString
+import kotlinx.serialization.encodeToHexString
+import kotlinx.serialization.protobuf.ProtoBuf
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.page_schedule
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.page_today
+import xyz.hyli.timeflow.datastore.Course
+import xyz.hyli.timeflow.ui.pages.EditCourseScreen
 import xyz.hyli.timeflow.ui.pages.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.SettingsLessonsPerDayScreen
 import xyz.hyli.timeflow.ui.pages.SettingsScreen
@@ -50,6 +58,16 @@ enum class Destination {
 
 enum class SettingsDestination {
     LessonsPerDay
+}
+
+@Serializable
+data class EditCourseDestination(
+    val courseProtoBufHexString: String
+) {
+    @OptIn(ExperimentalSerializationApi::class)
+    constructor(course: Course) : this(
+        courseProtoBufHexString = ProtoBuf.encodeToHexString(course)
+    )
 }
 
 @Composable
@@ -71,13 +89,16 @@ fun AdaptiveNavigation(
         navigationSuiteItems = {
             item(
                 icon = { Icon(
-                    if (currentPage == Destination.Schedule.name)
+                    if (currentPage == Destination.Schedule.name ||
+                        currentPage?.contains("EditCourseDestination") == true
+                    )
                         Icons.AutoMirrored.Filled.EventNote
                     else
                         Icons.AutoMirrored.Outlined.EventNote,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_schedule)) },
-                selected = currentPage == Destination.Schedule.name,
+                selected = currentPage == Destination.Schedule.name ||
+                        currentPage?.contains("EditCourseDestination") == true,
                 onClick = { switchPageSingleTop(navHostController, Destination.Schedule) }
             )
             item(
@@ -94,22 +115,25 @@ fun AdaptiveNavigation(
             item(
                 icon = { Icon(
                     if (currentPage == Destination.Settings.name ||
-                        currentPage == SettingsDestination.LessonsPerDay.name)
+                        currentPage in SettingsDestination.entries.map { it.name }
+                    )
                         Icons.Filled.Settings
                     else
                         Icons.Outlined.Settings,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_settings)) },
                 selected = currentPage == Destination.Settings.name ||
-                        currentPage == SettingsDestination.LessonsPerDay.name,
+                        currentPage in SettingsDestination.entries.map { it.name },
                 onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
             )
         }
     ) {
+//        Text(currentPage ?: "Unknown Page")
         content()
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Composable
 fun navHost(
     viewModel: TimeFlowViewModel,
@@ -129,6 +153,17 @@ fun navHost(
         composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
         subScreenComposable(SettingsDestination.LessonsPerDay.name) {
             SettingsLessonsPerDayScreen(viewModel, navHostController)
+        }
+        composable<EditCourseDestination>(
+            enterTransition = NavigationAnimation.enterSlideIn,
+            exitTransition = NavigationAnimation.exitSlideOut,
+            popEnterTransition = NavigationAnimation.enterSlideIn,
+            popExitTransition = NavigationAnimation.exitSlideOut
+        ) { backStackEntry ->
+            val courseProtoBufHexString: String =
+                backStackEntry.toRoute<EditCourseDestination>().courseProtoBufHexString
+            val course = ProtoBuf.decodeFromHexString<Course>(courseProtoBufHexString)
+            EditCourseScreen(viewModel, navHostController, course)
         }
     }
 }
