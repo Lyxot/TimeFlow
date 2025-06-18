@@ -558,7 +558,6 @@ fun CourseColumn(
                                 onEvent = { event ->
                                     if (event.isPositiveButton) {
                                         viewModel.updateSchedule(
-                                            uuid = viewModel.settings.value.selectedSchedule,
                                             schedule = schedule.copy(
                                                 courses = schedule.courses + newCourse.value
                                             )

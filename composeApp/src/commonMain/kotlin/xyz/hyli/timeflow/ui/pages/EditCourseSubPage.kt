@@ -134,7 +134,6 @@ fun EditCourseScreen(
                 onClick = {
                     // TODO: Check Course validity
                     viewModel.updateSchedule(
-                        uuid = settings.selectedSchedule,
                         schedule = schedule.copy(
                             courses = if (initValue in schedule.courses) {
                                 schedule.courses.map { if (it == initValue) course.value else it }

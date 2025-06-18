@@ -131,10 +131,7 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 import xyz.hyli.timeflow.utils.supportDynamicColor
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: TimeFlowViewModel,
@@ -228,15 +225,9 @@ fun SettingsScreen(
                         val newSchedule = Schedule(
                             name = newScheduleName
                         )
-                        var uuid = Uuid.random().toString()
-                        while (settings.schedule.containsKey(uuid)) {
-                            uuid = Uuid.random().toString()
-                        }
                         viewModel.createSchedule(
-                            uuid,
                             newSchedule
                         )
-                        viewModel.updateSelectedSchedule(uuid)
                     }
                 },
                 title = stringResource(Res.string.settings_title_create_schedule),
@@ -274,8 +265,7 @@ fun SettingsScreen(
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
                     if (currentSchedule != null) {
                         viewModel.updateSchedule(
-                            settings.selectedSchedule,
-                            currentSchedule.copy(name = newName)
+                            schedule = currentSchedule.copy(name = newName)
                         )
                     }
                 },
@@ -290,8 +280,7 @@ fun SettingsScreen(
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
                     if (currentSchedule != null) {
                         viewModel.updateSchedule(
-                            settings.selectedSchedule,
-                            currentSchedule.copy(termStartDate = Date.fromLocalDate(newDate))
+                            schedule = currentSchedule.copy(termStartDate = Date.fromLocalDate(newDate))
                         )
                     }
                 },
@@ -305,8 +294,7 @@ fun SettingsScreen(
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
                     if (currentSchedule != null) {
                         viewModel.updateSchedule(
-                            settings.selectedSchedule,
-                            currentSchedule.copy(termEndDate = Date.fromLocalDate(newDate))
+                            schedule = currentSchedule.copy(termEndDate = Date.fromLocalDate(newDate))
                         )
                     }
                 },
@@ -334,8 +322,7 @@ fun SettingsScreen(
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
                     if (currentSchedule != null) {
                         viewModel.updateSchedule(
-                            settings.selectedSchedule,
-                            currentSchedule.copy(displayWeekends = it)
+                            schedule = currentSchedule.copy(displayWeekends = it)
                         )
                     }
                 },
@@ -418,8 +405,7 @@ fun SettingsLessonsPerDayScreen(
                         val currentSchedule = settings.schedule[settings.selectedSchedule]
                         if (currentSchedule != null) {
                             viewModel.updateSchedule(
-                                settings.selectedSchedule,
-                                currentSchedule.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
+                                schedule = currentSchedule.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
                             )
                             navHostController.popBackStack()
                         }

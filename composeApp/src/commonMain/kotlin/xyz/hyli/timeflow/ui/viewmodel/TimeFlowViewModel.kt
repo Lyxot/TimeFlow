@@ -15,6 +15,8 @@ import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Settings
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.DataRepository
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class TimeFlowViewModel(
     private val repository: DataRepository
@@ -51,13 +53,19 @@ class TimeFlowViewModel(
         }
     }
 
-    fun createSchedule(uuid: String, schedule: Schedule) {
+    @OptIn(ExperimentalUuidApi::class)
+    fun createSchedule(schedule: Schedule) {
+        var uuid = Uuid.random().toString()
+        while (settings.value.schedule.containsKey(uuid)) {
+            uuid = Uuid.random().toString()
+        }
         viewModelScope.launch {
             repository.createSchedule(uuid, schedule)
+            repository.updateSelectedSchedule(uuid)
         }
     }
 
-    fun updateSchedule(uuid: String, schedule: Schedule) {
+    fun updateSchedule(uuid: String = settings.value.selectedSchedule, schedule: Schedule) {
         viewModelScope.launch {
             repository.updateSchedule(uuid, schedule)
         }
