@@ -3,6 +3,8 @@ package xyz.hyli.timeflow.ui.components
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -183,6 +185,9 @@ private fun TimePeriodPickerTextField(
     ) {
         Spacer(modifier = Modifier.weight(1f))
         IntTextField(
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .width(80.dp),
             value = startTime.hour,
             range = 0..23,
             onValueChange = { hour ->
@@ -195,6 +200,9 @@ private fun TimePeriodPickerTextField(
             fontFamily = FontFamily.Monospace
         )
         IntTextField(
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .width(80.dp),
             value = startTime.minute,
             range = 0..59,
             onValueChange = { minute ->
@@ -212,6 +220,9 @@ private fun TimePeriodPickerTextField(
         Spacer(modifier = Modifier.weight(1f))
 
         IntTextField(
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .width(80.dp),
             value = endTime.hour,
             range = 0..23,
             onValueChange = { hour ->
@@ -224,6 +235,9 @@ private fun TimePeriodPickerTextField(
             fontFamily = FontFamily.Monospace
         )
         IntTextField(
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .width(80.dp),
             value = endTime.minute,
             range = 0..59,
             onValueChange = { minute ->

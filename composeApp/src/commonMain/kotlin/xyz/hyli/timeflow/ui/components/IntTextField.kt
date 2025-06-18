@@ -1,11 +1,10 @@
 package xyz.hyli.timeflow.ui.components
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -13,17 +12,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun IntTextField(
+    modifier: Modifier = Modifier,
     value: Int,
     range: IntRange,
+    label: @Composable (() -> Unit)? = null,
+    textAlign: TextAlign = TextAlign.Center,
     onValueChange: (Int) -> Unit,
+    shape: Shape = OutlinedTextFieldDefaults.shape,
 ) {
     var textValue by remember { mutableStateOf(value.toString()) }
     var isValid by remember { mutableStateOf(true) }
@@ -31,33 +34,22 @@ fun IntTextField(
         try {
             val numValue = textValue.toIntOrNull()
             isValid = numValue in range
+            if (isValid) {
+                onValueChange(numValue!!)
+            }
         } catch (_: Exception) {
             isValid = false
         }
     }
     OutlinedTextField(
         value = textValue,
-        onValueChange = {
-            textValue = it
-            try {
-                val numValue = it.toIntOrNull()
-                if (numValue in range) {
-                    isValid = true
-                    onValueChange(numValue!!)
-                } else {
-                    isValid = false
-                }
-            } catch (_: Exception) {
-                isValid = false
-            }
-        },
-        modifier = Modifier
-            .padding(horizontal = 8.dp)
-            .width(80.dp),
+        onValueChange = { textValue = it },
+        modifier = modifier,
         textStyle = LocalTextStyle.current.copy(
             fontFamily = FontFamily.Monospace,
-            textAlign = TextAlign.Center
+            textAlign = textAlign
         ),
+        label = label,
         singleLine = true,
         isError = !isValid,
         keyboardOptions = KeyboardOptions(
@@ -70,6 +62,7 @@ fun IntTextField(
                     textValue.toIntOrNull()?.let { onValueChange(it) }
                 }
             }
-        )
+        ),
+        shape = shape,
     )
 }

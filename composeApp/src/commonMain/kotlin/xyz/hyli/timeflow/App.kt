@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
+import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.navHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -28,10 +29,12 @@ internal fun App(
     val navController = rememberNavController()
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val customNavSuiteType = with(adaptiveInfo) {
-        if (currentPlatform().isDesktop()) {
-            NavigationSuiteType.NavigationRail
-        } else {
-            NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo)
+        NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo).let {
+            if (currentPlatform().isDesktop() && it in NavigationBarType) {
+                NavigationSuiteType.NavigationRail
+            } else {
+                it
+            }
         }
     }
     AdaptiveNavigation(
@@ -46,7 +49,8 @@ internal fun App(
         ) {
             navHost(
                 viewModel = viewModel,
-                navHostController = navController
+                navHostController = navController,
+                navSuiteType = customNavSuiteType,
             )
         }
     }

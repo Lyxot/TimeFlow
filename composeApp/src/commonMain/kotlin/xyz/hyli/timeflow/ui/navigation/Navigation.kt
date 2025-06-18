@@ -63,6 +63,12 @@ enum class SettingsDestination {
     LessonsPerDay
 }
 
+val NavigationBarType = listOf(
+    NavigationSuiteType.NavigationBar,
+    NavigationSuiteType.ShortNavigationBarCompact,
+    NavigationSuiteType.ShortNavigationBarMedium
+)
+
 @Serializable
 data class EditCourseDestination(
     val courseProtoBufHexString: String
@@ -84,7 +90,7 @@ fun AdaptiveNavigation(
     val currentPage = currentBackStackEntry.value?.destination?.route
     val state = rememberNavigationSuiteScaffoldState()
     LaunchedEffect(currentPage) {
-        if (navSuiteType == NavigationSuiteType.NavigationBar) {
+        if (navSuiteType in NavigationBarType) {
             if (currentPage in Destination.entries.map { it.name })
                 state.show()
             else
@@ -146,7 +152,8 @@ fun AdaptiveNavigation(
 @Composable
 fun navHost(
     viewModel: TimeFlowViewModel,
-    navHostController: NavHostController
+    navHostController: NavHostController,
+    navSuiteType: NavigationSuiteType
 ) {
     NavHost(
         modifier = Modifier.fillMaxSize(),
@@ -158,7 +165,13 @@ fun navHost(
         popExitTransition = NavigationAnimation.exitFadeOut
     ) {
         composable(Destination.Today.name) { TodayScreen(viewModel, navHostController) }
-        composable(Destination.Schedule.name) { ScheduleScreen(viewModel, navHostController) }
+        composable(Destination.Schedule.name) {
+            ScheduleScreen(
+                viewModel,
+                navHostController,
+                navSuiteType
+            )
+        }
         composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
         subScreenComposable(SettingsDestination.LessonsPerDay.name) {
             SettingsLessonsPerDayScreen(viewModel, navHostController)

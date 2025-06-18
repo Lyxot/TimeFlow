@@ -25,7 +25,8 @@
     <string name="schedule_title_course_name">课程名称</string>
     <string name="schedule_title_course_classroom">教室</string>
     <string name="schedule_title_course_teacher">老师</string>
-    <string name="schedule_title_course_time">上课时间</string>
+    <string name="schedule_title_course_time_start">上课时间</string>
+    <string name="schedule_title_course_time_end">下课时间</string>
     <string name="schedule_value_course_time">第 %1$s - %2$s 节</string>
     <string name="schedule_title_course_week">上课周次</string>
 
