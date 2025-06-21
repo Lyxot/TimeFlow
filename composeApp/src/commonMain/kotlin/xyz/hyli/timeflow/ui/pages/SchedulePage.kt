@@ -73,6 +73,7 @@ import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.datastore.Weekday
 import xyz.hyli.timeflow.ui.components.DialogButton
+import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
 import xyz.hyli.timeflow.ui.components.MyDialog
 import xyz.hyli.timeflow.ui.components.rememberDialogState
@@ -495,22 +496,18 @@ fun CourseColumn(
                 } else if (state.value.row == dayIndex && state.value.column == lessonIndex) {
                     if (state.value.state != TableCellState.NORMAL) {
                         val showEditCourseDialog = rememberDialogState()
-                        val newCourse = remember {
-                            mutableStateOf(
-                                Course(
-                                    name = "",
-                                    time = Range(
-                                        lessonIndex + 1,
-                                        lessonIndex + 1
-                                    ),
-                                    weekday = weekdays[dayIndex],
-                                    week = WeekList(
-                                        weekDescription = WeekDescriptionEnum.ALL,
-                                        totalWeeks = schedule.totalWeeks()
-                                    )
-                                )
+                        val initValue = Course(
+                            name = "",
+                            time = Range(
+                                lessonIndex + 1,
+                                lessonIndex + 1
+                            ),
+                            weekday = weekdays[dayIndex],
+                            week = WeekList(
+                                weekDescription = WeekDescriptionEnum.ALL,
+                                totalWeeks = schedule.totalWeeks()
                             )
-                        }
+                        )
                         Card(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -528,7 +525,7 @@ fun CourseColumn(
                                         } else {
                                             navHostController.navigate(
                                                 EditCourseDestination(
-                                                    newCourse.value
+                                                    initValue
                                                 )
                                             )
                                         }
@@ -542,8 +539,31 @@ fun CourseColumn(
                             }
                         }
                         if (showEditCourseDialog.visible) {
+                            val newCourse = remember { mutableStateOf(initValue) }
                             var isNameValid =
                                 remember { mutableStateOf(newCourse.value.name.isNotBlank()) }
+                            val isTimeValid = remember {
+                                mutableStateOf(
+                                    if (newCourse.value.time.start > newCourse.value.time.end) {
+                                        false
+                                    } else {
+                                        schedule.courses.none {
+                                            it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday && it.week.week.any { it in newCourse.value.week.week }
+                                        }
+                                    }
+                                )
+                            }
+                            val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
+                                it - schedule.courses.filter {
+                                    it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday
+                                }.flatMap { it.week.week }
+                            }
+                            val isWeekValid =
+                                remember { mutableStateOf(newCourse.value.week.week.isNotEmpty() && newCourse.value.week.week.all { it in validWeeks }) }
+                            showEditCourseDialog.enableButton(
+                                button = DialogButtonType.Positive,
+                                enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
+                            )
                             MyDialog(
                                 state = showEditCourseDialog,
                                 title = {
@@ -572,8 +592,12 @@ fun CourseColumn(
                                 EditCourseContent(
                                     style = EditCourseStyle.Dialog,
                                     viewModel = viewModel,
+                                    initValue = initValue,
                                     courseValue = newCourse,
                                     isNameValid = isNameValid,
+                                    isTimeValid = isTimeValid,
+                                    isWeekValid = isWeekValid,
+                                    validWeeks = validWeeks
                                 )
                             }
                         }

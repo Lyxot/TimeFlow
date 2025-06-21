@@ -72,11 +72,15 @@ data class WeekRange(
 data class WeekList(
     @ProtoNumber(1) val week: List<Int>
 ) {
-    constructor(weekDescription: WeekDescriptionEnum, totalWeeks: Int) : this(
+    constructor(
+        weekDescription: WeekDescriptionEnum,
+        totalWeeks: Int,
+        validWeeks: List<Int> = (1..totalWeeks).toList()
+    ) : this(
         week = when (weekDescription) {
-            WeekDescriptionEnum.ALL -> (1..totalWeeks).toList()
-            WeekDescriptionEnum.ODD -> (1..totalWeeks step 2).toList()
-            WeekDescriptionEnum.EVEN -> (2..totalWeeks step 2).toList()
+            WeekDescriptionEnum.ALL -> (1..totalWeeks).toList().filter { it in validWeeks }
+            WeekDescriptionEnum.ODD -> (1..totalWeeks step 2).toList().filter { it in validWeeks }
+            WeekDescriptionEnum.EVEN -> (2..totalWeeks step 2).toList().filter { it in validWeeks }
         }
     )
 

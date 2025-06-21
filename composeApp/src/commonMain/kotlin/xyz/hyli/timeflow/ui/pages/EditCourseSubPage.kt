@@ -102,8 +102,26 @@ fun EditCourseScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]!!
-    var course = remember { mutableStateOf(initValue) }
-    var isNameValid = remember { mutableStateOf(initValue.name.isNotBlank()) }
+    val course = remember { mutableStateOf(initValue) }
+    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
+        it - schedule.courses.filter {
+            it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
+        }.flatMap { it.week.week }
+    }
+    val isNameValid = remember { mutableStateOf(initValue.name.isNotBlank()) }
+    val isTimeValid = remember {
+        mutableStateOf(
+            if (course.value.time.start > course.value.time.end) {
+                false
+            } else {
+                schedule.courses.none {
+                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.week.any { it in course.value.week.week }
+                }
+            }
+        )
+    }
+    val isWeekValid =
+        remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
 
     Column(
         modifier = Modifier
@@ -132,19 +150,20 @@ fun EditCourseScreen(
             Spacer(modifier = Modifier.weight(1f))
             IconButton(
                 onClick = {
-                    // TODO: Check Course validity
-                    viewModel.updateSchedule(
-                        schedule = schedule.copy(
-                            courses = if (initValue in schedule.courses) {
-                                schedule.courses.map { if (it == initValue) course.value else it }
-                            } else {
-                                schedule.courses + course.value
-                            }
+                    if (isNameValid.value && isTimeValid.value && isWeekValid.value) {
+                        viewModel.updateSchedule(
+                            schedule = schedule.copy(
+                                courses = if (initValue in schedule.courses) {
+                                    schedule.courses.map { if (it == initValue) course.value else it }
+                                } else {
+                                    schedule.courses + course.value
+                                }
+                            )
                         )
-                    )
-                    navHostController.popBackStack()
+                        navHostController.popBackStack()
+                    }
                 },
-                enabled = true,
+                enabled = isNameValid.value && isTimeValid.value && isWeekValid.value,
             ) {
                 Icon(
                     imageVector = Icons.Default.Done,
@@ -155,8 +174,12 @@ fun EditCourseScreen(
         EditCourseContent(
             style = EditCourseStyle.Screen,
             viewModel = viewModel,
+            initValue = initValue,
             courseValue = course,
-            isNameValid = isNameValid
+            isNameValid = isNameValid,
+            isTimeValid = isTimeValid,
+            isWeekValid = isWeekValid,
+            validWeeks = validWeeks
         )
         Spacer(
             modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
@@ -175,8 +198,12 @@ fun EditCourseScreen(
 fun EditCourseContent(
     style: EditCourseStyle,
     viewModel: TimeFlowViewModel,
+    initValue: Course,
     courseValue: MutableState<Course>,
-    isNameValid: MutableState<Boolean>
+    isNameValid: MutableState<Boolean>,
+    isTimeValid: MutableState<Boolean>,
+    isWeekValid: MutableState<Boolean>,
+    validWeeks: List<Int>
 ) {
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]!!
@@ -184,6 +211,15 @@ fun EditCourseContent(
 
     LaunchedEffect(course) {
         isNameValid.value = course.name.isNotBlank()
+        isTimeValid.value = if (course.time.start > course.time.end) {
+            false
+        } else {
+            schedule.courses.none {
+                it != initValue && it.time.start <= course.time.end && it.time.end >= course.time.start && it.weekday == course.weekday && it.week.week.any { it in course.week.week }
+            }
+        }
+        isWeekValid.value =
+            course.week.week.isNotEmpty() && course.week.week.all { it in validWeeks }
     }
 
     Column(
@@ -239,6 +275,19 @@ fun EditCourseContent(
         // Course Time
         val containerColor = OutlinedTextFieldDefaults.colors().unfocusedContainerColor
         val borderColor = OutlinedTextFieldDefaults.colors().unfocusedIndicatorColor
+        fun onCourseTimeChange(range: Range) {
+            course = course.copy(
+                time = range, week = WeekList(
+                    week = course.week.week.filter {
+                        it in (1..schedule.totalWeeks()).toMutableList().let {
+                            it - schedule.courses.filter {
+                                it != initValue && it.time.start <= range.end && it.time.end >= range.start && it.weekday == course.weekday
+                            }.flatMap { it.week.week }
+                        }
+                    }
+                )
+            )
+        }
         when (style) {
             EditCourseStyle.Screen -> {
                 CourseTimeDialog(
@@ -247,9 +296,7 @@ fun EditCourseContent(
                     totalLessonsCount = schedule.lessonTimePeriodInfo.getTotalLessons(),
                     containerColor = containerColor,
                     borderColor = borderColor,
-                    onCourseTimeChange = { range ->
-                        course = course.copy(time = range)
-                    }
+                    onCourseTimeChange = { onCourseTimeChange(it) }
                 )
             }
 
@@ -258,9 +305,7 @@ fun EditCourseContent(
                     initStartTime = course.time.start,
                     initEndTime = course.time.end,
                     totalLessonsCount = schedule.lessonTimePeriodInfo.getTotalLessons(),
-                    onCourseTimeChange = { range ->
-                        course = course.copy(time = range)
-                    }
+                    onCourseTimeChange = { onCourseTimeChange(it) }
                 )
             }
         }
@@ -297,13 +342,20 @@ fun EditCourseContent(
                         items.forEachIndexed { index, item ->
                             val weekList = WeekList(
                                 weekDescription = item.first,
-                                totalWeeks = schedule.totalWeeks()
+                                totalWeeks = schedule.totalWeeks(),
+                                validWeeks = validWeeks
                             )
                             ToggleButton(
                                 modifier = Modifier
                                     .padding(horizontal = 1.dp)
                                     .semantics { role = Role.RadioButton },
-                                checked = course.week.week.toSet() == weekList.week.toSet(),
+                                checked = course.week.week.toSet() == weekList.week.toSet() && !(
+                                        item.first != WeekDescriptionEnum.ALL && course.week.week.toSet() == WeekList(
+                                            weekDescription = WeekDescriptionEnum.ALL,
+                                            totalWeeks = schedule.totalWeeks(),
+                                            validWeeks = validWeeks
+                                        ).week.toSet()
+                                        ),
                                 onCheckedChange = { course = course.copy(week = weekList) },
                                 shapes =
                                     when (index) {
@@ -323,11 +375,11 @@ fun EditCourseContent(
                             mutableStateOf(
                                 course.week.week.contains(
                                     i
-                                )
+                                ) && i in validWeeks
                             )
                         }
                         LaunchedEffect(course.week) {
-                            isSelected = course.week.week.contains(i)
+                            isSelected = course.week.week.contains(i) && i in validWeeks
                         }
                         val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
                             animateColorAsState(
@@ -343,15 +395,23 @@ fun EditCourseContent(
                         }
                         val colors = ToggleButtonDefaults.toggleButtonColors(
                             containerColor = containerColor,
-                            contentColor = contentColor,
-                            disabledContainerColor = containerColor,
-                            disabledContentColor = contentColor
-                        )
+                            contentColor = contentColor
+                        ).let {
+                            if (i in validWeeks) {
+                                it
+                            } else {
+                                it.copy(
+                                    checkedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                    checkedContentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
                         ToggleButton(
                             modifier = Modifier
                                 .padding(horizontal = 2.dp)
                                 .semantics { role = Role.RadioButton },
                             checked = isSelected,
+                            enabled = i in validWeeks || isSelected,
                             onCheckedChange = {
                                 course = if (isSelected) {
                                     course.copy(week = course.week.copy(week = course.week.week - i))
