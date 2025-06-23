@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,16 +41,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -76,6 +80,7 @@ import xyz.hyli.timeflow.datastore.Weekday
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
+import xyz.hyli.timeflow.ui.components.DialogState
 import xyz.hyli.timeflow.ui.components.MyDialog
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
@@ -83,6 +88,16 @@ import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
+
+val weekdays = listOf(
+    Weekday.MONDAY,
+    Weekday.TUESDAY,
+    Weekday.WEDNESDAY,
+    Weekday.THURSDAY,
+    Weekday.FRIDAY,
+    Weekday.SATURDAY,
+    Weekday.SUNDAY
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -179,7 +194,7 @@ fun ScheduleScreen(
 data class TableState(
     val row: Int = 0,
     val column: Int = 0,
-    val isClicked: Boolean = false
+    val isClicked: Int = 0 // 0: 未点击, 1: 点击中, 2: 点击后等待重置
 )
 
 @Composable
@@ -195,17 +210,18 @@ fun ScheduleTable(
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo.morning +
             schedule.lessonTimePeriodInfo.afternoon +
             schedule.lessonTimePeriodInfo.evening
+    var currentWeek by remember { mutableStateOf(schedule.weeksTill()) }
 
     Box(modifier = modifier.fillMaxWidth()) {
         val state = remember { mutableStateOf(TableState()) }
         
         // 自动重置状态的逻辑
         LaunchedEffect(state.value) {
-            if (state.value.isClicked) {
+            if (state.value.isClicked == 1) {
                 val current = state.value
                 delay(10000) // 10秒
                 if (state.value == current) {
-                    state.value = current.copy(isClicked = false)
+                    state.value = TableState()
                 }
             }
         }
@@ -213,6 +229,7 @@ fun ScheduleTable(
         // 底层：表格框架
         TableGrid(
             state = state,
+            modifier = Modifier.zIndex(1f),
             rows = rows,
             columns = columns,
             lessonTimePeriodInfo = lessonTimePeriodInfo
@@ -225,7 +242,10 @@ fun ScheduleTable(
             rows = rows,
             columns = columns,
             schedule = schedule,
-            modifier = Modifier.fillMaxSize(),
+            currentWeek = currentWeek,
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(2f),
             navHostController = navHostController,
             navSuiteType = navSuiteType
         )
@@ -235,6 +255,7 @@ fun ScheduleTable(
 @Composable
 fun TableGrid(
     state: MutableState<TableState>,
+    modifier: Modifier = Modifier,
     rows: Int,
     columns: Int,
     lessonTimePeriodInfo: List<Lesson>
@@ -249,7 +270,7 @@ fun TableGrid(
         Res.string.sunday
     ).map { stringResource(it) }
 
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(modifier = modifier.fillMaxWidth()) {
         // 时间列
         TimeColumn(
             modifier = Modifier.width(48.dp),
@@ -368,19 +389,7 @@ fun EmptyDayColumn(
                             containerColor = MaterialTheme.colorScheme.background,
                             contentColor = MaterialTheme.colorScheme.onBackground
                         )
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable {
-                                    state.value = TableState(
-                                        row = lessonIndex,
-                                        column = dayIndex + 1,
-                                        isClicked = true
-                                    )
-                                }
-                        )
-                    }
+                    ) { }
                 }
             }
         }
@@ -394,6 +403,7 @@ fun CourseOverlay(
     rows: Int,
     columns: Int,
     schedule: Schedule,
+    currentWeek: Int,
     modifier: Modifier = Modifier,
     navHostController: NavHostController,
     navSuiteType: NavigationSuiteType
@@ -411,6 +421,7 @@ fun CourseOverlay(
                 dayIndex = dayIndex,
                 rows = rows,
                 schedule = schedule,
+                currentWeek = currentWeek,
                 navHostController = navHostController,
                 navSuiteType = navSuiteType
             )
@@ -478,120 +489,148 @@ fun TableCell(
 }
 
 @Composable
-fun EmptyClickedTableCell(
+fun EmptyTableCell(
+    state: MutableState<TableState>,
+    index: Int,
+    dayIndex: Int,
+    totalWeeks: Int,
+    onClick: (Course) -> Unit
+) {
+    AnimatedContent(
+        state.value,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = {
+            fadeIn(
+                animationSpec = tween(300)
+            ) togetherWith fadeOut(animationSpec = tween(300))
+        }
+    ) {
+        if (it.row == index && it.column == dayIndex + 1 && it.isClicked != 0) {
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            onClick(
+                                Course(
+                                    name = "",
+                                    time = Range(
+                                        index,
+                                        index
+                                    ),
+                                    weekday = weekdays[dayIndex],
+                                    week = WeekList(
+                                        weekDescription = WeekDescriptionEnum.ALL,
+                                        totalWeeks = totalWeeks
+                                    )
+                                )
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            state.value = TableState(
+                                row = index,
+                                column = dayIndex + 1,
+                                isClicked = 1 // 点击中
+                            )
+                        }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EditCourseDialog(
     state: MutableState<TableState>,
     viewModel: TimeFlowViewModel,
-    row: Int,
-    weekday: Weekday,
-    navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType,
+    initValue: Course,
+    showEditCourseDialog: DialogState
 ) {
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]!!
-    val showEditCourseDialog = rememberDialogState()
-    val initValue = Course(
-        name = "",
-        time = Range(
-            row,
-            row
-        ),
-        weekday = weekday,
-        week = WeekList(
-            weekDescription = WeekDescriptionEnum.ALL,
-            totalWeeks = schedule.totalWeeks()
+    val newCourse = remember { mutableStateOf(initValue) }
+    var isNameValid =
+        remember { mutableStateOf(newCourse.value.name.isNotBlank()) }
+    val isTimeValid = remember {
+        mutableStateOf(
+            if (newCourse.value.time.start > newCourse.value.time.end) {
+                false
+            } else {
+                schedule.courses.none {
+                    it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday && it.week.week.any { it in newCourse.value.week.week }
+                }
+            }
         )
-    )
-    Card(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(2.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable {
-                    if (navSuiteType !in NavigationBarType) {
-                        showEditCourseDialog.show()
-                    } else {
-                        navHostController.navigate(
-                            EditCourseDestination(
-                                initValue
-                            )
-                        )
-                        state.value = state.value.copy(
-                            isClicked = false
-                        )
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = null
-            )
-        }
     }
-    if (showEditCourseDialog.visible) {
-        val newCourse = remember { mutableStateOf(initValue) }
-        var isNameValid =
-            remember { mutableStateOf(newCourse.value.name.isNotBlank()) }
-        val isTimeValid = remember {
-            mutableStateOf(
-                if (newCourse.value.time.start > newCourse.value.time.end) {
-                    false
-                } else {
-                    schedule.courses.none {
-                        it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday && it.week.week.any { it in newCourse.value.week.week }
-                    }
-                }
+    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
+        it - schedule.courses.filter {
+            it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday
+        }.flatMap { it.week.week }
+    }
+    val isWeekValid =
+        remember { mutableStateOf(newCourse.value.week.week.isNotEmpty() && newCourse.value.week.week.all { it in validWeeks }) }
+    showEditCourseDialog.enableButton(
+        button = DialogButtonType.Positive,
+        enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
+    )
+    MyDialog(
+        state = showEditCourseDialog,
+        title = {
+            Text(
+                text = stringResource(Res.string.schedule_title_edit_course)
             )
-        }
-        val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
-            it - schedule.courses.filter {
-                it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday
-            }.flatMap { it.week.week }
-        }
-        val isWeekValid =
-            remember { mutableStateOf(newCourse.value.week.week.isNotEmpty() && newCourse.value.week.week.all { it in validWeeks }) }
-        showEditCourseDialog.enableButton(
-            button = DialogButtonType.Positive,
-            enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
-        )
-        MyDialog(
-            state = showEditCourseDialog,
-            title = {
-                Text(
-                    text = stringResource(Res.string.schedule_title_edit_course)
-                )
-            },
-            buttons = DialogDefaults.buttons(
-                positive = DialogButton(stringResource(Res.string.save)),
-                negative = DialogButton(stringResource(Res.string.cancel)),
-            ),
-            onEvent = { event ->
-                if (event.isPositiveButton) {
-                    viewModel.updateSchedule(
-                        schedule = schedule.copy(
-                            courses = schedule.courses + newCourse.value
-                        )
+        },
+        buttons = DialogDefaults.buttons(
+            positive = DialogButton(stringResource(Res.string.save)),
+            negative = DialogButton(stringResource(Res.string.cancel)),
+        ),
+        onEvent = { event ->
+            if (event.isPositiveButton) {
+                viewModel.updateSchedule(
+                    schedule = schedule.copy(
+                        courses = if (initValue in schedule.courses) {
+                            schedule.courses.map { if (it == initValue) newCourse.value else it }
+                        } else {
+                            schedule.courses + newCourse.value
+                        }
                     )
-                }
-                state.value = state.value.copy(
-                    isClicked = false
                 )
             }
-        ) {
-            EditCourseContent(
-                style = EditCourseStyle.Dialog,
-                viewModel = viewModel,
-                initValue = initValue,
-                courseValue = newCourse,
-                isNameValid = isNameValid,
-                isTimeValid = isTimeValid,
-                isWeekValid = isWeekValid,
-                validWeeks = validWeeks
-            )
+            state.value = TableState() // 重置状态
         }
+    ) {
+        EditCourseContent(
+            style = EditCourseStyle.Dialog,
+            viewModel = viewModel,
+            initValue = initValue,
+            courseValue = newCourse,
+            isNameValid = isNameValid,
+            isTimeValid = isTimeValid,
+            isWeekValid = isWeekValid,
+            validWeeks = validWeeks
+        )
     }
 }
 
@@ -599,78 +638,162 @@ fun EmptyClickedTableCell(
 fun CourseColumn(
     viewModel: TimeFlowViewModel,
     state: MutableState<TableState>,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     dayIndex: Int,
     rows: Int,
     schedule: Schedule,
+    currentWeek: Int,
     navHostController: NavHostController,
     navSuiteType: NavigationSuiteType
 ) {
-    val weekdays = listOf(
-        Weekday.MONDAY,
-        Weekday.TUESDAY,
-        Weekday.WEDNESDAY,
-        Weekday.THURSDAY,
-        Weekday.FRIDAY,
-        Weekday.SATURDAY,
-        Weekday.SUNDAY
-    )
+    val showEditCourseDialog = rememberDialogState()
+    val renderedTimeSlots = mutableSetOf<Int>()
+    val daySchedule = schedule.courses.filter {
+        it.weekday == weekdays[dayIndex]
+    }
+    val dayScheduleTimeForCurrentWeek = mutableSetOf<Range>()
+    val dayScheduleTimeForOtherWeek = mutableSetOf<Range>()
+    daySchedule.forEach {
+        if (it.week.week.contains(currentWeek)) {
+            dayScheduleTimeForCurrentWeek.add(it.time)
+        } else {
+            dayScheduleTimeForOtherWeek.add(it.time)
+        }
+    }
+    var selectedCourse by remember {
+        mutableStateOf(
+            Course(
+                name = "",
+                time = Range(
+                    1,
+                    1
+                ),
+                weekday = weekdays[dayIndex],
+                week = WeekList(
+                    weekDescription = WeekDescriptionEnum.ALL,
+                    totalWeeks = schedule.totalWeeks()
+                )
+            )
+        )
+    }
 
-    Column(modifier = modifier) {
-        // 表头占位（与底层对齐）
-        Box(modifier = Modifier.height(40.dp))
-
-        // 课程单元格
-        for (lessonIndex in 1..rows) {
-            // 查找该时间段的课程
-            val coursesForThisTime = schedule.courses.filter { course ->
-                course.time.start <= lessonIndex && course.time.end >= lessonIndex && course.weekday == weekdays[dayIndex]
+    Box(modifier = modifier) {
+        // 当前周的课程
+        dayScheduleTimeForCurrentWeek.forEach { time ->
+            val courseForThisTime = daySchedule.filter { course ->
+                course.time == time && course.week.week.contains(currentWeek)
             }
-
+            renderedTimeSlots.addAll(time.start..time.end)
+            Box(
+                modifier = Modifier
+                    .height(64.dp * (time.end - time.start + 1))
+                    .padding(end = 1.dp, bottom = 1.dp)
+                    .offset(
+                        y = 40.dp + ((time.start - 1) * 64).dp
+                    )
+                    .zIndex(100f),
+                contentAlignment = Alignment.Center
+            ) {
+                CourseCell(courseForThisTime)
+            }
+        }
+        // 非当前周的课程
+        dayScheduleTimeForOtherWeek.sortedBy { it.end - it.start }.forEachIndexed { _, time ->
+            if ((time.start..time.end).all { it in renderedTimeSlots }) {
+                return@forEachIndexed // 已经渲染过的时间段跳过
+            }
+            val courseForThisTime = daySchedule.filter { course ->
+                course.time == time && !course.week.week.contains(currentWeek)
+            }
+            // 找出第一个未渲染的时间段
+            val firstSpaceToDisplay = (time.start..time.end).first { it !in renderedTimeSlots }
+            var lastSpaceToDisplay = firstSpaceToDisplay
+            (firstSpaceToDisplay..time.end).forEach {
+                if (it !in renderedTimeSlots) {
+                    lastSpaceToDisplay = it
+                } else {
+                    return@forEach // 找到第一个空位后停止
+                }
+            }
+            renderedTimeSlots.addAll(time.start..time.end)
+            Box(
+                modifier = Modifier
+                    .height(64.dp * (time.end - time.start + 1))
+                    .padding(end = 1.dp, bottom = 1.dp)
+                    .offset(
+                        y = 40.dp + ((time.start - 1) * 64).dp
+                    )
+                    .zIndex((99 - (time.end - time.start + 1)).toFloat()) // 渲染顺序
+                ,
+                contentAlignment = Alignment.Center
+            ) {
+                CourseCell(
+                    courseForThisTime,
+                    displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
+                    displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp
+                )
+            }
+        }
+        // 渲染空白单元格
+        (1..rows).filter { it !in renderedTimeSlots }.forEach { index ->
             Box(
                 modifier = Modifier
                     .height(64.dp)
-                    .padding(end = 1.dp, bottom = 1.dp),
+                    .padding(end = 1.dp, bottom = 1.dp)
+                    .offset(
+                        y = 40.dp + ((index - 1) * 64).dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                if (coursesForThisTime.isNotEmpty()) {
-                    CourseCell(coursesForThisTime)
-                } else {
-                    AnimatedContent(
-                        state.value,
-                        modifier = Modifier.fillMaxSize(),
-                        transitionSpec = {
-                            fadeIn(
-                                animationSpec = tween(300)
-                            ) togetherWith fadeOut(animationSpec = tween(300))
-                        }
-                    ) {
-                        when (it.row == lessonIndex && it.column == dayIndex + 1 && it.isClicked) {
-                            false -> {
-                                Box(modifier = Modifier.fillMaxSize())
-                            }
-
-                            true -> {
-                                EmptyClickedTableCell(
-                                    state = state,
-                                    viewModel = viewModel,
-                                    row = lessonIndex,
-                                    weekday = weekdays[dayIndex],
-                                    navHostController = navHostController,
-                                    navSuiteType = navSuiteType
+                EmptyTableCell(
+                    state = state,
+                    index = index,
+                    dayIndex = dayIndex,
+                    totalWeeks = schedule.totalWeeks(),
+                    onClick = { course ->
+                        state.value = state.value.copy(
+                            isClicked = 2, // 点击后等待重置
+                        )
+                        selectedCourse = course
+                        if (navSuiteType !in NavigationBarType) {
+                            showEditCourseDialog.show()
+                        } else {
+                            navHostController.navigate(
+                                EditCourseDestination(
+                                    selectedCourse
                                 )
-                            }
+                            )
                         }
                     }
-                }
+                )
             }
         }
+    }
+    if (showEditCourseDialog.visible) {
+        EditCourseDialog(
+            state = state,
+            viewModel = viewModel,
+            initValue = schedule.courses.firstOrNull {
+                it.weekday == weekdays[dayIndex] && it.time.start == state.value.row
+            } ?: Course(
+                name = "",
+                time = Range(state.value.row, state.value.row),
+                weekday = weekdays[dayIndex],
+                week = WeekList(
+                    weekDescription = WeekDescriptionEnum.ALL,
+                    totalWeeks = schedule.totalWeeks()
+                )
+            ),
+            showEditCourseDialog = showEditCourseDialog
+        )
     }
 }
 
 @Composable
 fun CourseCell(
     coursesForThisTime: List<Course>,
+    displayOffSet: Dp = 0.dp,
+    displayHeight: Dp = coursesForThisTime.first().time.let { (it.end - it.start + 1) * 64 }.dp
 ) {
     val course = coursesForThisTime.first()
     Card(
@@ -686,10 +809,14 @@ fun CourseCell(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .padding(4.dp),
-            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(displayHeight)
+                    .offset(
+                        y = displayOffSet
+                    )
             ) {
                 Text(
                     text = course.name,
