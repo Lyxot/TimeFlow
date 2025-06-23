@@ -1,29 +1,28 @@
 [versions]
-agp = "8.10.1"
-adaptive = "1.1.1"
+agp = "8.11.0"
+adaptive = "1.2.0+dev2603"
 androidx-activity-compose = "1.10.1"
-androidx-lifecycle = "2.9.0"
-androidx-navigation = "2.9.0-beta02"
+androidx-lifecycle = "2.9.1"
+androidx-navigation = "2.9.0-beta03"
 androidx-startup-runtime = "1.2.0"
 appdirs = "1.4.0"
-build-config = "5.6.6"
+build-config = "5.6.7"
 coil = "3.2.0"
-compose = "1.9.0-alpha02"
-composables = "1.33.0"
+compose = "1.9.0+dev2603"
+composables = "1.36.1"
 datastore = "1.1.7"
 desugar_jdk_libs = "2.1.5"
 dnd = "0.3.0"
-hot-reload = "1.0.0-alpha11"
+hot-reload = "1.0.0-beta01"
 kermit = "2.0.6"
 kotlin = "2.1.21"
 kotlin-inject = "0.8.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.6.2"
-kotlinx-serialization = "1.8.1"
+kotlinx-serialization = "1.9.0"
 ksp = "2.1.21-2.0.2"
 ktorfit = "2.5.2"
 material-kolor = "2.1.1"
-window-core-jvm = "1.4.0"
 
 [libraries]
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
@@ -32,7 +31,6 @@ androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name 
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup-runtime" }
-androidx-window-core-jvm = { module = "androidx.window:window-core-jvm", version.ref = "window-core-jvm" }
 appdirs = { group = "net.harawata", name = "appdirs", version.ref = "appdirs" }
 coil = { group = "io.coil-kt.coil3", name = "coil-compose-core", version.ref = "coil" }
 composables-core = { module = "com.composables:core", version.ref = "composables" }
