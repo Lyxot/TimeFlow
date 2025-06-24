@@ -22,14 +22,20 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +63,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.cancel
@@ -64,6 +76,9 @@ import timeflow.composeapp.generated.resources.monday
 import timeflow.composeapp.generated.resources.saturday
 import timeflow.composeapp.generated.resources.save
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
+import timeflow.composeapp.generated.resources.schedule_title_week_vacation
+import timeflow.composeapp.generated.resources.schedule_title_week_x_part_1
+import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.sunday
@@ -132,6 +147,15 @@ fun ScheduleScreen(
             return
         }
 
+        val pagerState = schedule.totalWeeks().let {
+            rememberPagerState(
+                initialPage = (schedule.weeksTill() - 1).coerceIn(0, it), // page 0 for week 1
+                pageCount = {
+                    it + 1 // +1 for vacation
+                }
+            )
+        }
+        val coroutineScope = rememberCoroutineScope()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -142,25 +166,124 @@ fun ScheduleScreen(
                     else Modifier
                 )
         ) {
-            // 课程表表格
-            ScheduleTable(
-                viewModel = viewModel,
-                rows = rows,
-                columns = columns,
-                schedule = schedule,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                navHostController = navHostController,
-                navSuiteType = navSuiteType
-            )
-            Spacer(
-                modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
-                else Modifier.height(
-                    maxOf(
-                        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-                        24.dp
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // placeholder
+                IconButton(
+                    onClick = { },
+                    enabled = false
+                ) { }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    },
+                    enabled = pagerState.currentPage > 0
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                        contentDescription = null
+                    )
+                }
+                Box(
+                    modifier = Modifier.clickable {
+                        // TODO: Select week dialog (bottom sheet)
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row {
+                        val color = if (pagerState.currentPage < pagerState.pageCount - 1)
+                            MaterialTheme.colorScheme.onBackground
+                        else
+                            Color.Transparent
+                        Text(
+                            text = stringResource(Res.string.schedule_title_week_x_part_1),
+                            color = color,
+                        )
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${pagerState.currentPage + 1}",
+                                fontFamily = FontFamily.Monospace,
+                                color = color,
+                            )
+                            Text(
+                                text = "${pagerState.pageCount}",
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.Transparent
+                            )
+                        }
+                        Text(
+                            text = stringResource(Res.string.schedule_title_week_x_part_2),
+                            color = color,
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(Res.string.schedule_title_week_vacation),
+                        color =
+                            if (pagerState.currentPage < pagerState.pageCount - 1)
+                                Color.Transparent
+                            else
+                                MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
+                    },
+                    enabled = pagerState.currentPage < pagerState.pageCount - 1
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = null
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        // TODO: Select a schedule
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SyncAlt,
+                        contentDescription = stringResource(Res.string.save)
+                    )
+                }
+            }
+            HorizontalPager(
+                state = pagerState,
+                pageSpacing = 12.dp,
+                beyondViewportPageCount = 2, // 预加载前后各一页
+            ) { page ->
+                // 课程表表格
+                ScheduleTable(
+                    viewModel = viewModel,
+                    rows = rows,
+                    columns = columns,
+                    schedule = schedule,
+                    currentWeek = page + 1,
+                    modifier = Modifier.fillMaxWidth(),
+                    navHostController = navHostController,
+                    navSuiteType = navSuiteType
+                )
+                Spacer(
+                    modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
+                    else Modifier.height(
+                        maxOf(
+                            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                            24.dp
+                        )
                     )
                 )
-            )
+            }
         }
     }
 
@@ -203,6 +326,7 @@ fun ScheduleTable(
     rows: Int,
     columns: Int,
     schedule: Schedule,
+    currentWeek: Int,
     modifier: Modifier = Modifier,
     navHostController: NavHostController,
     navSuiteType: NavigationSuiteType
@@ -210,7 +334,6 @@ fun ScheduleTable(
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo.morning +
             schedule.lessonTimePeriodInfo.afternoon +
             schedule.lessonTimePeriodInfo.evening
-    var currentWeek by remember { mutableStateOf(schedule.weeksTill()) }
 
     Box(modifier = modifier.fillMaxWidth()) {
         val state = remember { mutableStateOf(TableState()) }
@@ -225,13 +348,13 @@ fun ScheduleTable(
                 }
             }
         }
-        
         // 底层：表格框架
         TableGrid(
             state = state,
             modifier = Modifier.zIndex(1f),
             rows = rows,
             columns = columns,
+            dateList = schedule.dateList(currentWeek),
             lessonTimePeriodInfo = lessonTimePeriodInfo
         )
 
@@ -258,6 +381,7 @@ fun TableGrid(
     modifier: Modifier = Modifier,
     rows: Int,
     columns: Int,
+    dateList: List<LocalDate>,
     lessonTimePeriodInfo: List<Lesson>
 ) {
     val weekdays = listOf(
@@ -284,6 +408,7 @@ fun TableGrid(
                 state = state,
                 modifier = Modifier.weight(1f),
                 dayName = weekdays[dayIndex],
+                date = dateList[dayIndex],
                 dayIndex = dayIndex,
                 rows = rows,
                 isLastDay = dayIndex == columns - 1
@@ -350,6 +475,7 @@ fun EmptyDayColumn(
     state: MutableState<TableState>,
     modifier: Modifier = Modifier,
     dayName: String,
+    date: LocalDate,
     dayIndex: Int,
     rows: Int,
     isLastDay: Boolean
@@ -363,12 +489,28 @@ fun EmptyDayColumn(
             isRightBorder = !isLastDay,
             isBottomBorder = true
         ) {
-            Text(
-                text = dayName,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val color = if (date == Clock.System.todayIn(TimeZone.currentSystemDefault())) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                }
+                Text(
+                    text = dayName,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = color
+                )
+                Text(
+                    text = "${date.monthNumber}/${date.dayOfMonth.toString().padStart(2, '0')}",
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    color = color.copy(alpha = 0.6f)
+                )
+            }
         }
 
         // 空白课程单元格

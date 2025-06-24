@@ -5,6 +5,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -196,22 +197,36 @@ data class Schedule(
     }
 
     fun totalWeeks(): Int {
-        return weeksTill(this.termEndDate.toLocalDate())
+        return weeksTill(this.termEndDate)
     }
 
-    fun weeksTill(endDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {
+    fun weeksTill(date: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {
         val startDate = this.termStartDate.toLocalDate()
-        if (endDate < startDate) return 0
+        if (date < startDate) return 0
 
         // 计算每个日期在周中的位置偏移（周一=0，周日=6）
         val startOffset = startDate.dayOfWeek.ordinal - 1
-        val endOffset = endDate.dayOfWeek.ordinal - 1
+        val endOffset = date.dayOfWeek.ordinal - 1
 
         // 计算调整后的天数差
-        val daysBetween = startDate.daysUntil(endDate)
+        val daysBetween = startDate.daysUntil(date)
         val adjustedDays = daysBetween + startOffset - endOffset
 
         // 计算周数
         return (adjustedDays / 7) + 1
+    }
+
+    fun weeksTill(date: Date): Int {
+        return weeksTill(date.toLocalDate())
+    }
+
+    fun dateList(week: Int): List<LocalDate> {
+        var startDate = this.termStartDate.toLocalDate()
+        while (startDate.dayOfWeek != kotlinx.datetime.DayOfWeek.MONDAY) {
+            startDate = startDate.minus(1, DateTimeUnit.DAY)
+        }
+        return List(7) { i ->
+            startDate.plus((week - 1) * 7 + i, DateTimeUnit.DAY)
+        }
     }
 }
