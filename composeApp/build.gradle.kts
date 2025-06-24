@@ -1,7 +1,7 @@
 @file:OptIn(ExperimentalWasmDsl::class, ExperimentalKotlinGradlePluginApi::class)
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.compose.reload.ComposeHotRun
+import org.jetbrains.compose.reload.gradle.ComposeHotRun
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -20,7 +20,6 @@ plugins {
     alias(libs.plugins.hot.reload)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.ktorfit)
 }
 
 val appVersionCode = app.versions.major.get().toInt() * 10000 +
@@ -96,7 +95,6 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.serialization.protobuf)
-            implementation(libs.ktorfit.lib)
             implementation(libs.material.kolor)
         }
 
@@ -124,8 +122,8 @@ kotlin {
 
     sourceSets.all {
         languageSettings.apply {
-            languageVersion = "2.1"
-            apiVersion = "2.1"
+            languageVersion = "2.2"
+            apiVersion = "2.2"
             progressiveMode = true
         }
     }
