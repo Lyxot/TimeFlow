@@ -13,10 +13,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import xyz.hyli.timeflow.ui.theme.NotoSans
 
 @Composable
 fun IntTextField(
@@ -46,7 +46,7 @@ fun IntTextField(
         onValueChange = { textValue = it },
         modifier = modifier,
         textStyle = LocalTextStyle.current.copy(
-            fontFamily = FontFamily.Monospace,
+            fontFamily = NotoSans,
             textAlign = textAlign
         ),
         label = label,

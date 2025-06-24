@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -127,6 +126,7 @@ import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
+import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -559,13 +559,13 @@ fun SettingsLessonsPerDayScreen(
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
                                     color = MaterialTheme.colorScheme.error,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             }
@@ -632,13 +632,13 @@ fun SettingsLessonsPerDayScreen(
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
                                     color = MaterialTheme.colorScheme.error,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             }
@@ -705,13 +705,13 @@ fun SettingsLessonsPerDayScreen(
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
                                     color = MaterialTheme.colorScheme.error,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             } else {
                                 Text(
                                     text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = NotoSans,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             }

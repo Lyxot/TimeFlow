@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
@@ -23,6 +22,7 @@ import timeflow.composeapp.generated.resources.cancel
 import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.dialog_title_time_period_picker
 import xyz.hyli.timeflow.datastore.Time
+import xyz.hyli.timeflow.ui.theme.NotoSans
 
 enum class TimePeriodPickerStyle {
     Wheel,
@@ -102,13 +102,13 @@ private fun TimePeriodPickerWheel(
         ) { hour ->
             Text(
                 text = hour,
-                fontFamily = FontFamily.Monospace
+                fontFamily = NotoSans
             )
         }
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = ":",
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         Spacer(modifier = Modifier.weight(1f))
         WheelPicker(
@@ -122,14 +122,14 @@ private fun TimePeriodPickerWheel(
         ) { minute ->
             Text(
                 text = minute,
-                fontFamily = FontFamily.Monospace
+                fontFamily = NotoSans
             )
         }
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "—",
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         Spacer(modifier = Modifier.weight(1f))
         WheelPicker(
@@ -143,13 +143,13 @@ private fun TimePeriodPickerWheel(
         ) { hour ->
             Text(
                 text = hour,
-                fontFamily = FontFamily.Monospace
+                fontFamily = NotoSans
             )
         }
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = ":",
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         Spacer(modifier = Modifier.weight(1f))
         WheelPicker(
@@ -163,7 +163,7 @@ private fun TimePeriodPickerWheel(
         ) { minute ->
             Text(
                 text = minute,
-                fontFamily = FontFamily.Monospace
+                fontFamily = NotoSans
             )
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -197,7 +197,7 @@ private fun TimePeriodPickerTextField(
         )
         Text(
             text = ":",
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         IntTextField(
             modifier = Modifier
@@ -215,7 +215,7 @@ private fun TimePeriodPickerTextField(
         Text(
             text = "—",
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         Spacer(modifier = Modifier.weight(1f))
 
@@ -232,7 +232,7 @@ private fun TimePeriodPickerTextField(
         )
         Text(
             text = ":",
-            fontFamily = FontFamily.Monospace
+            fontFamily = NotoSans
         )
         IntTextField(
             modifier = Modifier

@@ -49,7 +49,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,6 +84,7 @@ import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.components.MyDialog
 import xyz.hyli.timeflow.ui.components.WheelPicker
 import xyz.hyli.timeflow.ui.components.rememberDialogState
+import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -514,7 +514,7 @@ fun CourseTimeDialog(
                     Text(
                         modifier = Modifier.width(32.dp),
                         text = it.toString(),
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = NotoSans,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -526,7 +526,7 @@ fun CourseTimeDialog(
                 Text(
                     text = "—",
                     fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = NotoSans
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 WheelPicker(
@@ -541,7 +541,7 @@ fun CourseTimeDialog(
                     Text(
                         modifier = Modifier.width(32.dp),
                         text = it.toString(),
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = NotoSans,
                         textAlign = TextAlign.Center
                     )
                 }

@@ -54,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,6 +99,7 @@ import xyz.hyli.timeflow.ui.components.MyDialog
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
+import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -195,7 +195,9 @@ fun ScheduleScreen(
                     },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         val color = if (pagerState.currentPage < pagerState.pageCount - 1)
                             MaterialTheme.colorScheme.onBackground
                         else
@@ -209,12 +211,12 @@ fun ScheduleScreen(
                         ) {
                             Text(
                                 text = "${pagerState.currentPage + 1}",
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = NotoSans,
                                 color = color,
                             )
                             Text(
                                 text = "${pagerState.pageCount}",
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = NotoSans,
                                 color = Color.Transparent
                             )
                         }
@@ -452,14 +454,14 @@ fun TimeColumn(
                         Text(
                             text = "${allLessons[lessonIndex].start}",
                             style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = NotoSans,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
                         )
                         Text(
                             text = "${allLessons[lessonIndex].end}",
                             style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = NotoSans,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
                         )
