@@ -375,11 +375,11 @@ fun EditCourseContent(
                             mutableStateOf(
                                 course.week.week.contains(
                                     i
-                                ) && i in validWeeks
+                                )
                             )
                         }
                         LaunchedEffect(course.week) {
-                            isSelected = course.week.week.contains(i) && i in validWeeks
+                            isSelected = course.week.week.contains(i)
                         }
                         val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
                             animateColorAsState(
