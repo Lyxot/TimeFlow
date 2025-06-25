@@ -41,7 +41,7 @@ class TimeFlowViewModel(
         }
     }
 
-    fun updateThemeColor(color: Long) {
+    fun updateThemeColor(color: Int) {
         viewModelScope.launch {
             repository.updateThemeColor(color)
         }

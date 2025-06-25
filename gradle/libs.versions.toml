@@ -22,7 +22,7 @@ kotlinx-datetime = "0.6.2"
 kotlinx-serialization = "1.8.1"
 ksp = "2.1.21-2.0.2"
 ktorfit = "2.5.2"
-material-kolor = "2.1.1"
+material-kolor = "3.0.0-beta07"
 window-core-jvm = "1.4.0"
 
 [libraries]

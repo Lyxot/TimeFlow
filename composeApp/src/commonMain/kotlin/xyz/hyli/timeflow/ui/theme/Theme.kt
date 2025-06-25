@@ -12,6 +12,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.materialkolor.ktx.animateColorScheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
@@ -36,7 +37,9 @@ internal fun AppTheme(
         val colorScheme = getColorScheme(isDark, settings.themeColor, settings.themeDynamicColor)
         SystemAppearance(!isDark)
         MaterialExpressiveTheme(
-            colorScheme = colorScheme,
+            colorScheme = animateColorScheme(
+                colorScheme
+            ),
             content = {
                 Surface {
                     content()
@@ -47,7 +50,11 @@ internal fun AppTheme(
 }
 
 @Composable
-internal expect fun getColorScheme(isDark: Boolean, seedColor: Long, isDynamicColor: Boolean): ColorScheme
+internal expect fun getColorScheme(
+    isDark: Boolean,
+    seedColor: Int,
+    isDynamicColor: Boolean
+): ColorScheme
 
 @Composable
 internal expect fun SystemAppearance(isDark: Boolean)

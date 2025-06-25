@@ -59,7 +59,7 @@ class SettingsDataStore(
             currentSettings.copy(themeDynamicColor = themeDynamicColor)
         }
     }
-    suspend fun updateThemeColor(color: Long) {
+    suspend fun updateThemeColor(color: Int) {
         db.updateData { currentSettings ->
             currentSettings.copy(themeColor = color)
         }

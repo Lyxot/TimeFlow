@@ -192,7 +192,7 @@ fun SettingsScreen(
                 PreferenceColor(
                     value = Color(settings.themeColor),
                     onValueChange = {
-                        viewModel.updateThemeColor(it.toArgb().toLong())
+                        viewModel.updateThemeColor(it.toArgb())
                     },
                     title = stringResource(Res.string.settings_title_theme_color)
                 )

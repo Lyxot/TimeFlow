@@ -12,10 +12,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
-internal actual fun getColorScheme(isDark: Boolean, seedColor: Long, isDynamicColor: Boolean): ColorScheme {
+internal actual fun getColorScheme(
+    isDark: Boolean,
+    seedColor: Int,
+    isDynamicColor: Boolean
+): ColorScheme {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && isDynamicColor) {
         if (isDark) {
             dynamicDarkColorScheme(LocalContext.current)
@@ -23,7 +28,10 @@ internal actual fun getColorScheme(isDark: Boolean, seedColor: Long, isDynamicCo
             dynamicLightColorScheme(LocalContext.current)
         }
     } else {
-        rememberDynamicColorScheme(seedColor = Color(seedColor), isDark = isDark, isAmoled = true)
+        rememberDynamicColorScheme(
+            seedColor = Color(seedColor), isDark = isDark, isAmoled = true,
+            specVersion = ColorSpec.SpecVersion.SPEC_2025
+        )
     }
 }
 

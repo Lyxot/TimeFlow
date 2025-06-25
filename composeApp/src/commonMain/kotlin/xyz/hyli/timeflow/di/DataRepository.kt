@@ -17,7 +17,7 @@ class DataRepository(
     suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
         settingsDataStore.updateThemeDynamicColor(themeDynamicColor)
     }
-    suspend fun updateThemeColor(color: Long) {
+    suspend fun updateThemeColor(color: Int) {
         settingsDataStore.updateThemeColor(color)
     }
     suspend fun updateSelectedSchedule(uuid: String) {

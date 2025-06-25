@@ -3,14 +3,12 @@ package xyz.hyli.timeflow.ui.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -19,17 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,22 +37,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.materialkolor.PaletteStyle
-import com.materialkolor.dynamicColorScheme
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.ktx.darken
+import com.materialkolor.ktx.lighten
+import com.materialkolor.rememberDynamicColorScheme
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.cancel
@@ -65,6 +55,9 @@ import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.preference_color_dialog_title
 import timeflow.composeapp.generated.resources.preference_color_tab_custom
 import timeflow.composeapp.generated.resources.preference_color_tab_presets
+import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isDesktop
 
 // ==================== Preference Color ====================
 
@@ -72,6 +65,7 @@ import timeflow.composeapp.generated.resources.preference_color_tab_presets
 fun PreferenceColor(
     value: Color,
     onValueChange: (Color) -> Unit,
+    alphaSupported: Boolean = false,
     title: String,
     subtitle: String? = null,
     enabled: Dependency = Dependency.Enabled,
@@ -91,12 +85,15 @@ fun PreferenceColor(
         } else null,
         leadingContent = null,
         trailingContent = {
-            ColorButton(
+            ThemeColorButton(
                 baseColor = value,
                 selected = false,
                 size = 32.dp,
-                enabled = false,
-                cardColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                enabled = isEnabled,
+                cardColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                onClick = {
+                    showDialog = true
+                }
             )
         }
     )
@@ -104,6 +101,7 @@ fun PreferenceColor(
     if (showDialog) {
         ColorPickerDialog(
             initialColor = value,
+            alphaSupported = alphaSupported,
             onColorSelected = { selectedColor ->
                 onValueChange(selectedColor)
                 showDialog = false
@@ -116,6 +114,7 @@ fun PreferenceColor(
 @Composable
 fun ColorPickerDialog(
     initialColor: Color,
+    alphaSupported: Boolean = false,
     onColorSelected: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -188,6 +187,7 @@ fun ColorPickerDialog(
                 ColorContent(
                     color = remember { mutableStateOf(selectedColor) },
                     colorState = colorState,
+                    alphaSupported = alphaSupported,
                     onColorChange = { selectedColor = it }
                 )
             }
@@ -205,92 +205,33 @@ private enum class ColorPage {
 private fun ColorContent(
     color: MutableState<Color>,
     colorState: MutableState<ColorPage>,
+    alphaSupported: Boolean = false,
     onColorChange: (Color) -> Unit
 ) {
-    val density = LocalDensity.current
-
-    Column(modifier = Modifier.animateContentSize()) {
+    Column(
+        modifier = Modifier
+            .animateContentSize()
+            .fillMaxWidth()
+    ) {
         Crossfade(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
             targetState = colorState.value,
             label = "color"
         ) { page ->
             when (page) {
                 ColorPage.Custom -> {
-                    Column {
-                        // 颜色预览
-                        Row(
-                            modifier = Modifier.height(IntrinsicSize.Min),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box {
-                                Canvas(
-                                    modifier = Modifier
-                                        .height(64.dp)
-                                        .aspectRatio(1f)
-                                        .clip(MaterialTheme.shapes.small)
-                                ) {
-                                    ColorUtil.drawCheckerboard(this, density)
-                                }
-                                Spacer(
-                                    modifier = Modifier
-                                        .height(64.dp)
-                                        .aspectRatio(1f)
-                                        .background(color.value, MaterialTheme.shapes.small)
-                                )
-                            }
-
-                            ColorButton(
-                                baseColor = color.value,
-                                selected = false,
-                                cardColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                enabled = false
-                            )
-
-                            Card {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(all = 8.dp)
-                                        .weight(1f)
-                                ) {
-                                    Text(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        text = "RGB",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        text = "#" + color.value.toArgb().toHexString()
-                                            .substring(2),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        ColorSlider("R", color.value.red) {
-                            color.value = color.value.copy(red = it)
-                            onColorChange(color.value)
-                        }
-                        ColorSlider("G", color.value.green) {
-                            color.value = color.value.copy(green = it)
-                            onColorChange(color.value)
-                        }
-                        ColorSlider("B", color.value.blue) {
-                            color.value = color.value.copy(blue = it)
-                            onColorChange(color.value)
-                        }
-                    }
+                    ColorPicker(
+                        color = color,
+                        alphaSupported = alphaSupported,
+                        style = ColorPickerStyle.THEME,
+                        onColorChange = onColorChange
+                    )
                 }
 
                 ColorPage.Presets -> {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.Center
-                    ) {
+                    FlowRow {
                         ColorDefinitions.COLORS.forEach { it ->
-                            ColorButton(
+                            ThemeColorButton(
                                 onClick = {
                                     color.value = it
                                     onColorChange(it)
@@ -308,37 +249,10 @@ private fun ColorContent(
     }
 }
 
-@Composable
-private fun ColorSlider(
-    label: String,
-    value: Float,
-    onValueChange: (value: Float) -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.width(16.dp),
-            textAlign = TextAlign.Center
-        )
-        Slider(
-            modifier = Modifier.weight(1f),
-            value = value,
-            onValueChange = onValueChange
-        )
-        Text(
-            text = (255f * value).toInt().toString(),
-            modifier = Modifier.width(32.dp),
-            textAlign = TextAlign.End
-        )
-    }
-}
 
 // ==================== 颜色定义和工具类 ====================
 
-private object ColorDefinitions {
+object ColorDefinitions {
     val COLORS_RED = Color(0xFFF44336)
     val COLORS_PINK = Color(0xFFE91E63)
     val COLORS_PURPLE = Color(0xFF9C27B0)
@@ -368,24 +282,8 @@ private object ColorDefinitions {
     )
 }
 
-private object ColorUtil {
-    fun drawCheckerboard(drawScope: DrawScope, density: Density) {
-        val pixelSize = with(density) { 4.dp.toPx().toInt() }
-        val color1 = Color(0xFFC2C2C2)
-        val color2 = Color(0xFFF3F3F3)
-        val sizePixel = Size(pixelSize.toFloat(), pixelSize.toFloat())
-        for (c in 0 until drawScope.size.width.toInt() step pixelSize) {
-            for (r in 0 until drawScope.size.height.toInt() step pixelSize) {
-                val color = if ((c / pixelSize + r / pixelSize) % 2 == 0) color1 else color2
-                drawScope.drawRect(color, topLeft = Offset(c.toFloat(), r.toFloat()), sizePixel)
-            }
-        }
-    }
-
-}
-
 @Composable
-fun ColorButton(
+fun ThemeColorButton(
     onClick: () -> Unit = { },
     baseColor: Color,
     selected: Boolean,
@@ -395,6 +293,60 @@ fun ColorButton(
     cardColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
 ) {
+    val isDark by LocalThemeIsDark.current
+    val colorScheme = rememberDynamicColorScheme(
+        seedColor = baseColor,
+        isDark = isDark,
+        isAmoled = !currentPlatform().isDesktop(),
+        specVersion = ColorSpec.SpecVersion.SPEC_2025
+    )
+    val color1 = colorScheme.primaryContainer
+    val color2 = colorScheme.primaryContainer.let {
+        if (isDark) it.lighten(1.3f)
+        else it.darken(1.3f)
+    }
+    val color3 = colorScheme.primaryContainer.let {
+        if (isDark) it.lighten(1.75f)
+        else it.darken(1.75f)
+    }
+
+    ColorButton(
+        onClick = onClick,
+        color = color1,
+        selected = selected,
+        modifier = modifier,
+        size = size,
+        enabled = enabled,
+        cardColor = cardColor,
+        containerColor = containerColor
+    ) {
+        Surface(
+            color = color2,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .size(maxWidth / 2),
+        ) { }
+        Surface(
+            color = color3,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(maxWidth / 2),
+        ) { }
+    }
+}
+
+@Composable
+fun ColorButton(
+    onClick: () -> Unit = { },
+    color: Color,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    size: Dp = 64.dp,
+    enabled: Boolean = true,
+    cardColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    content: @Composable @UiComposable (BoxWithConstraintsScope.() -> Unit) = { } // Placeholder for custom content
+) {
     val containerSize by animateDpAsState(targetValue = if (selected) size / 80 * 28 else 0.dp)
     val iconSize by animateDpAsState(targetValue = if (selected) size / 80 * 16 else 0.dp)
 
@@ -402,41 +354,20 @@ fun ColorButton(
         modifier = modifier
             .size(size)
             .aspectRatio(1f),
-        shape = RoundedCornerShape(16.dp),
+        shape = CardDefaults.shape,
         color = cardColor,
         onClick = onClick,
         enabled = enabled,
     ) {
         Box(Modifier.fillMaxSize()) {
-            val colorScheme = dynamicColorScheme(
-                seedColor = baseColor,
-                isDark = false,
-                isAmoled = true,
-                style = PaletteStyle.Vibrant
-            )
-            val color1 = colorScheme.inversePrimary
-            val color2 = colorScheme.primaryContainer
-            val color3 = colorScheme.primary
-
             BoxWithConstraints(
                 modifier = modifier
                     .size(size)
                     .clip(CircleShape)
-                    .drawBehind { drawCircle(color1) }
+                    .drawBehind { drawCircle(color) }
                     .align(Alignment.Center),
             ) {
-                Surface(
-                    color = color2,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .size(maxWidth / 2),
-                ) {}
-                Surface(
-                    color = color3,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(maxWidth / 2),
-                ) {}
+                content()
                 Box(
                     modifier = Modifier
                         .align(Alignment.Center)
