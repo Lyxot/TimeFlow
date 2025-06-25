@@ -78,6 +78,7 @@ import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_week_vacation
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_1
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
+import timeflow.composeapp.generated.resources.schedule_warning_multiple_courses
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.sunday
@@ -172,9 +173,15 @@ fun ScheduleScreen(
             ) {
                 // placeholder
                 IconButton(
-                    onClick = { },
-                    enabled = false
-                ) { }
+                    onClick = {
+                        // TODO: Add new schedule dialog
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(Res.string.save)
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
@@ -265,26 +272,29 @@ fun ScheduleScreen(
                 pageSpacing = 12.dp,
                 beyondViewportPageCount = 2, // 预加载前后各一页
             ) { page ->
-                // 课程表表格
-                ScheduleTable(
-                    viewModel = viewModel,
-                    rows = rows,
-                    columns = columns,
-                    schedule = schedule,
-                    currentWeek = page + 1,
-                    modifier = Modifier.fillMaxWidth(),
-                    navHostController = navHostController,
-                    navSuiteType = navSuiteType
-                )
-                Spacer(
-                    modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
-                    else Modifier.height(
-                        maxOf(
-                            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-                            24.dp
+                Column {
+                    // 课程表表格
+                    ScheduleTable(
+                        viewModel = viewModel,
+                        rows = rows,
+                        columns = columns,
+                        schedule = schedule,
+                        currentWeek = page + 1,
+                        modifier = Modifier.fillMaxWidth(),
+                        navHostController = navHostController,
+                        navSuiteType = navSuiteType
+                    )
+                    Spacer(
+                        modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
+                        else Modifier.height(
+                            maxOf(
+                                WindowInsets.navigationBars.asPaddingValues()
+                                    .calculateBottomPadding(),
+                                24.dp
+                            )
                         )
                     )
-                )
+                }
             }
         }
     }
@@ -825,9 +835,10 @@ fun CourseColumn(
         // 当前周的课程
         dayScheduleTimeForCurrentWeek.forEach { time ->
             val courseForThisTime = daySchedule.filter { course ->
-                course.time == time && course.week.week.contains(currentWeek)
+                course.time == time
             }
             renderedTimeSlots.addAll(time.start..time.end)
+            dayScheduleTimeForOtherWeek - time
             Box(
                 modifier = Modifier
                     .height(64.dp * (time.end - time.start + 1))
@@ -838,7 +849,11 @@ fun CourseColumn(
                     .zIndex(100f),
                 contentAlignment = Alignment.Center
             ) {
-                CourseCell(courseForThisTime)
+                CourseCell(
+                    courseForThisTime,
+                    currentWeek = currentWeek,
+                    totalWeeks = schedule.totalWeeks(),
+                )
             }
         }
         // 非当前周的课程
@@ -847,7 +862,7 @@ fun CourseColumn(
                 return@forEachIndexed // 已经渲染过的时间段跳过
             }
             val courseForThisTime = daySchedule.filter { course ->
-                course.time == time && !course.week.week.contains(currentWeek)
+                course.time == time
             }
             // 找出第一个未渲染的时间段
             val firstSpaceToDisplay = (time.start..time.end).first { it !in renderedTimeSlots }
@@ -873,6 +888,8 @@ fun CourseColumn(
             ) {
                 CourseCell(
                     courseForThisTime,
+                    currentWeek = currentWeek,
+                    totalWeeks = schedule.totalWeeks(),
                     displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
                     displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp
                 )
@@ -936,10 +953,40 @@ fun CourseColumn(
 @Composable
 fun CourseCell(
     coursesForThisTime: List<Course>,
+    currentWeek: Int,
+    totalWeeks: Int,
     displayOffSet: Dp = 0.dp,
     displayHeight: Dp = coursesForThisTime.first().time.let { (it.end - it.start + 1) * 64 }.dp
 ) {
-    val course = coursesForThisTime.first()
+    val coursesForThisWeek = if (currentWeek in 1..totalWeeks) {
+        coursesForThisTime.filter { it.week.week.contains(currentWeek) }
+    } else {
+        emptyList()
+    }
+    val coursesForOtherWeek = coursesForThisTime
+        .filterNot { it in coursesForThisWeek }
+        .sortedBy {
+            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
+            it.week.week.minOfOrNull { week ->
+                (week - currentWeek).let {
+                    if (it < 0) it + totalWeeks else it
+                }
+            } ?: Int.MAX_VALUE
+        }
+    val course = if (coursesForThisWeek.isNotEmpty()) {
+        coursesForThisWeek.first()
+    } else if (coursesForOtherWeek.isNotEmpty()) {
+        coursesForOtherWeek.first()
+    } else {
+        return // 没有课程时不渲染
+    }
+    val containerColor =
+        if (coursesForThisWeek.size > 1) MaterialTheme.colorScheme.error
+        else if (coursesForThisWeek.isNotEmpty()) MaterialTheme.colorScheme.secondaryContainer
+        else MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
+    val contentColor =
+        if (coursesForThisWeek.isNotEmpty()) MaterialTheme.colorScheme.onSecondaryContainer
+        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -951,8 +998,8 @@ fun CourseCell(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .padding(4.dp),
+                .background(containerColor)
+                .padding(4.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -962,30 +1009,41 @@ fun CourseCell(
                         y = displayOffSet
                     )
             ) {
-                Text(
-                    text = course.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                if (course.classroom.isNotBlank()) {
+                if (coursesForThisWeek.size > 1) {
                     Text(
-                        text = "@${course.classroom}",
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        text = stringResource(
+                            Res.string.schedule_warning_multiple_courses,
+                            coursesForThisWeek.size
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onError
                     )
-                }
-                if (course.teacher.isNotBlank()) {
+                } else {
                     Text(
-                        text = course.teacher,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
+                        text = course.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        color = contentColor
                     )
+                    if (course.classroom.isNotBlank()) {
+                        Text(
+                            text = "@${course.classroom}",
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = contentColor
+                        )
+                    }
+                    if (course.teacher.isNotBlank()) {
+                        Text(
+                            text = course.teacher,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = contentColor
+                        )
+                    }
                 }
             }
         }
