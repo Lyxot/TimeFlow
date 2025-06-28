@@ -639,7 +639,7 @@ fun CourseTimeDialog(
                 Spacer(modifier = Modifier.weight(1f))
                 WheelPicker(
                     data = (1..totalLessonsCount).toList(),
-                    selectIndex = initStartTime,
+                    selectIndex = initStartTime - 1,
                     visibleCount = 3,
                     onSelect = { _, time ->
                         startTime = time
@@ -666,7 +666,7 @@ fun CourseTimeDialog(
                 Spacer(modifier = Modifier.weight(1f))
                 WheelPicker(
                     data = (1..totalLessonsCount).toList(),
-                    selectIndex = initEndTime,
+                    selectIndex = initEndTime - 1,
                     visibleCount = 3,
                     onSelect = { _, time ->
                         endTime = time
