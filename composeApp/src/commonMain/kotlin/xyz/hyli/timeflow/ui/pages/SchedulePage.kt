@@ -51,11 +51,9 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -287,8 +285,7 @@ fun ScheduleScreen(
             }
             HorizontalPager(
                 state = pagerState,
-                pageSpacing = 12.dp,
-                beyondViewportPageCount = 2, // 预加载前后各一页
+                pageSpacing = 12.dp
             ) { page ->
                 // 课程表表格
                 ScheduleTable(
@@ -429,6 +426,7 @@ fun TableGrid(
         Res.string.saturday,
         Res.string.sunday
     ).map { stringResource(it) }
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
 
     for (dayIndex in 0 until columns) {
         VerticalDivider(
@@ -462,7 +460,7 @@ fun TableGrid(
                         verticalArrangement = Arrangement.Center
                     ) {
                         val color =
-                            if (dateList[dayIndex] == Clock.System.todayIn(TimeZone.currentSystemDefault())) {
+                            if (dateList[dayIndex] == today) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.onBackground
@@ -485,7 +483,10 @@ fun TableGrid(
                         )
                     }
                 }[0].measure(constraints)
-                headerHeight.value = column.height.toDp()
+                val newHeight = column.height.toDp()
+                if (headerHeight.value != newHeight) {
+                    headerHeight.value = newHeight
+                }
                 layout(cellWidth.roundToPx(), column.height) {
                     column.placeRelative(
                         x = 0,
@@ -546,7 +547,10 @@ fun TableGrid(
                         }
                     }
                 }[0].measure(constraints)
-                headerWidth.value = column.width.toDp()
+                val newWidth = column.width.toDp()
+                if (headerWidth.value != newWidth) {
+                    headerWidth.value = newWidth
+                }
                 layout(column.width, 63.dp.roundToPx()) {
                     column.placeRelative(
                         x = 0,
@@ -629,16 +633,19 @@ fun EmptyTableCell(
     totalWeeks: Int,
     onClick: (Course) -> Unit
 ) {
+    val isActive =
+        state.value.row == index && state.value.column == dayIndex + 1 && state.value.isClicked != 0
+
     AnimatedContent(
-        state.value,
+        targetState = isActive,
         modifier = Modifier.fillMaxSize(),
         transitionSpec = {
             fadeIn(
                 animationSpec = tween(300)
             ) togetherWith fadeOut(animationSpec = tween(300))
         }
-    ) {
-        if (it.row == index && it.column == dayIndex + 1 && it.isClicked != 0) {
+    ) { active ->
+        if (active) {
             Card(
                 modifier = Modifier
                     .fillMaxSize()
@@ -782,22 +789,31 @@ fun CourseColumn(
     noGridCells: MutableState<Set<Pair<Int, Int>>>
 ) {
     val showEditCourseDialog = rememberDialogState()
-    val renderedTimeSlots = mutableStateSetOf<Int>()
+    val renderedTimeSlots = mutableSetOf<Int>()
     var noGridCells by noGridCells
-    val daySchedule = remember {
-        schedule.courses.filter {
-            it.weekday == weekdays[dayIndex]
-        }.toMutableStateList()
-    }
-    val dayScheduleTimeForCurrentWeek = remember { mutableStateSetOf<Range>() }
-    val dayScheduleTimeForOtherWeek = remember { mutableStateSetOf<Range>() }
-    daySchedule.forEach {
-        if (it.week.week.contains(currentWeek) && currentWeek in 1..schedule.totalWeeks()) {
-            dayScheduleTimeForCurrentWeek.add(it.time)
-        } else {
-            dayScheduleTimeForOtherWeek.add(it.time)
+
+    val (daySchedule, dayScheduleTimeForCurrentWeek, dayScheduleTimeForOtherWeek) = remember(
+        schedule.courses,
+        dayIndex,
+        currentWeek
+    ) {
+        val filteredSchedule = schedule.courses.filter { it.weekday == weekdays[dayIndex] }
+        val currentWeekTimes = mutableSetOf<Range>()
+        val otherWeekTimes = mutableListOf<Range>()
+
+        filteredSchedule.forEach { course ->
+            if (course.week.week.contains(currentWeek) && currentWeek in 1..schedule.totalWeeks()) {
+                currentWeekTimes.add(course.time)
+            } else {
+                otherWeekTimes.add(course.time)
+            }
         }
+        Triple(filteredSchedule, currentWeekTimes, otherWeekTimes.sortedBy { it.end - it.start })
     }
+    val emptySlots = remember(rows, renderedTimeSlots) {
+        (1..rows).filterNot { it in renderedTimeSlots }
+    }
+
     var selectedCourse by remember {
         mutableStateOf(
             Course(
@@ -837,12 +853,12 @@ fun CourseColumn(
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = remember {
+                    courses = remember(daySchedule, time, currentWeek) {
                         daySchedule.filter { course ->
                             course.time == time && course.week.week.contains(currentWeek)
                         }
                     },
-                    coursesForThisTime = remember {
+                    coursesForThisTime = remember(daySchedule, time) {
                         daySchedule.filter { course ->
                             course.time.end >= time.start && course.time.start <= time.end
                         }
@@ -852,20 +868,22 @@ fun CourseColumn(
             }
         }
         // 非当前周的课程
-        dayScheduleTimeForOtherWeek.sortedBy { it.end - it.start }.forEachIndexed { _, time ->
+        dayScheduleTimeForOtherWeek.forEachIndexed { _, time ->
             if ((time.start..time.end).all { it in renderedTimeSlots }) {
                 return@forEachIndexed // 已经渲染过的时间段跳过
             }
             // 找出第一个未渲染的时间段
-            val firstSpaceToDisplay =
-                remember { (time.start..time.end).first { it !in renderedTimeSlots } }
-            var lastSpaceToDisplay by remember { mutableStateOf(firstSpaceToDisplay) }
-            (firstSpaceToDisplay..time.end).forEach {
-                if (it !in renderedTimeSlots) {
-                    lastSpaceToDisplay = it
-                } else {
-                    return@forEach // 找到第一个空位后停止
+            val (firstSpaceToDisplay, lastSpaceToDisplay) = remember(time, renderedTimeSlots) {
+                val first = (time.start..time.end).first { it !in renderedTimeSlots }
+                var last = first
+                (first..time.end).forEach { slot ->
+                    if (slot !in renderedTimeSlots) {
+                        last = slot
+                    } else {
+                        return@remember Pair(first, last)
+                    }
                 }
+                Pair(first, last)
             }
             renderedTimeSlots.addAll(time.start..time.end)
             if (time.end - time.start > 0) {
@@ -880,12 +898,12 @@ fun CourseColumn(
                     .offset(
                         y = (time.start - 1) * 64.dp - 1.dp
                     )
-                    .zIndex(99f) // 渲染顺序
+                    .zIndex((99 - (time.end - time.start + 1)).toFloat()) // 渲染顺序
                 ,
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = remember {
+                    courses = remember(daySchedule, time, currentWeek) {
                         daySchedule
                             .filter { course ->
                                 course.time == time &&
@@ -900,7 +918,7 @@ fun CourseColumn(
                                 } ?: Int.MAX_VALUE
                             }
                     },
-                    coursesForThisTime = remember {
+                    coursesForThisTime = remember(daySchedule, time) {
                         daySchedule.filter { course ->
                             course.time.end >= time.start && course.time.start <= time.end
                         }
@@ -912,7 +930,7 @@ fun CourseColumn(
             }
         }
         // 渲染空白单元格
-        (1..rows).filter { it !in renderedTimeSlots }.forEach { index ->
+        emptySlots.forEach { index ->
             Box(
                 modifier = Modifier
                     .height(64.dp)

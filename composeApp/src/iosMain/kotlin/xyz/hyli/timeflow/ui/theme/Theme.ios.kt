@@ -4,7 +4,6 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
-import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import platform.UIKit.UIApplication
 import platform.UIKit.UIStatusBarStyleDarkContent
@@ -18,8 +17,7 @@ internal actual fun getColorScheme(
     isDynamicColor: Boolean
 ): ColorScheme {
     return rememberDynamicColorScheme(
-        seedColor = Color(seedColor), isDark = isDark, isAmoled = true,
-        specVersion = ColorSpec.SpecVersion.SPEC_2025
+        seedColor = Color(seedColor), isDark = isDark, isAmoled = true
     )
 }
 

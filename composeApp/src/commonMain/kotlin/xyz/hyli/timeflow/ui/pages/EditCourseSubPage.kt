@@ -393,16 +393,7 @@ fun EditCourseContent(
                 }
                 FlowRow {
                     for (i in 1..schedule.totalWeeks()) {
-                        var isSelected by remember {
-                            mutableStateOf(
-                                course.week.week.contains(
-                                    i
-                                )
-                            )
-                        }
-                        LaunchedEffect(course.week) {
-                            isSelected = course.week.week.contains(i)
-                        }
+                        val isSelected = course.week.week.contains(i)
                         val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
                             animateColorAsState(
                                 if (isSelected) it.checkedContainerColor
