@@ -97,5 +97,6 @@ data class Course(
     @ProtoNumber(3) val classroom: String = "",
     @ProtoNumber(4) val time: Range,
     @ProtoNumber(5) val weekday: Weekday,
-    @ProtoNumber(6) val week: WeekList
+    @ProtoNumber(6) val week: WeekList,
+    @ProtoNumber(7) val color: Int
 )

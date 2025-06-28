@@ -84,7 +84,7 @@ fun ColorPicker(
                     ThemeColorButton(
                         baseColor = color.value,
                         selected = false,
-                        cardColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        cardColor = Color.Transparent,
                         enabled = false
                     )
                 }
@@ -93,7 +93,7 @@ fun ColorPicker(
                     ColorButton(
                         color = showColor,
                         selected = false,
-                        cardColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        cardColor = Color.Transparent,
                         enabled = false
                     )
                 }

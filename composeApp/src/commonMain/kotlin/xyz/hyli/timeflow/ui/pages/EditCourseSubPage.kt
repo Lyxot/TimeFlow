@@ -1,7 +1,14 @@
 package xyz.hyli.timeflow.ui.pages
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,19 +17,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -45,7 +57,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -53,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.materialkolor.ktx.harmonize
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.all_week
@@ -66,6 +83,7 @@ import timeflow.composeapp.generated.resources.odd_week
 import timeflow.composeapp.generated.resources.required
 import timeflow.composeapp.generated.resources.save
 import timeflow.composeapp.generated.resources.schedule_title_course_classroom
+import timeflow.composeapp.generated.resources.schedule_title_course_color
 import timeflow.composeapp.generated.resources.schedule_title_course_name
 import timeflow.composeapp.generated.resources.schedule_title_course_teacher
 import timeflow.composeapp.generated.resources.schedule_title_course_time_end
@@ -77,6 +95,10 @@ import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
+import xyz.hyli.timeflow.ui.components.ColorButton
+import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
+import xyz.hyli.timeflow.ui.components.ColorPicker
+import xyz.hyli.timeflow.ui.components.ColorPickerStyle
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
@@ -432,6 +454,119 @@ fun EditCourseContent(
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+        // Card color
+        Card(
+            modifier = Modifier.padding(top = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = containerColor,
+            ),
+            border = BorderStroke(1.dp, borderColor)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                var isColorCustom by remember { mutableStateOf(Color(course.color) !in COLORS) }
+                Text(
+                    text = stringResource(Res.string.schedule_title_course_color),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                )
+                FlowRow {
+                    COLORS.forEach {
+                        ColorButton(
+                            color = it.harmonize(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                true
+                            ),
+                            containerColor = it.harmonize(
+                                MaterialTheme.colorScheme.primaryContainer,
+                                true
+                            ),
+                            onClick = {
+                                course = course.copy(color = it.toArgb())
+                                isColorCustom = false
+                            },
+                            selected = it.toArgb() == course.color && !isColorCustom,
+                            size = 48.dp,
+                            modifier = Modifier.padding(horizontal = 2.dp),
+                            cardColor = Color.Transparent
+                        )
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .aspectRatio(1f)
+                            .padding(horizontal = 2.dp),
+                        shape = CardDefaults.shape,
+                        color = Color.Transparent,
+                        onClick = {
+                            isColorCustom = true
+                        },
+                        enabled = true,
+                    ) {
+                        val containerSize by animateDpAsState(targetValue = if (isColorCustom) 48.dp / 80 * 28 else 0.dp)
+                        val iconSize by animateDpAsState(targetValue = if (isColorCustom) 48.dp / 80 * 16 else 0.dp)
+                        val paletteColors = listOf(
+                            Color.Red,
+                            Color.Magenta,
+                            Color.Blue,
+                            Color.Cyan,
+                            Color.Green,
+                            Color.Yellow,
+                            Color.Red // 再次添加红色以形成无缝循环
+                        ).map { it.harmonize(MaterialTheme.colorScheme.secondaryContainer, true) }
+                        val sweepGradientBrush = Brush.sweepGradient(colors = paletteColors)
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .size(containerSize)
+                                .drawBehind {
+                                    drawCircle(brush = sweepGradientBrush)
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .clip(CircleShape)
+                                    .size(containerSize)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                            )
+                            Icon(
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize).align(Alignment.Center),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+                AnimatedContent(
+                    modifier = Modifier.padding(top = 8.dp),
+                    targetState = isColorCustom,
+                    transitionSpec = {
+                        fadeIn() + expandVertically() togetherWith fadeOut()
+                    }
+                ) {
+                    if (isColorCustom) {
+                        val customColor = remember { mutableStateOf(Color(course.color)) }
+                        ColorPicker(
+                            color = customColor,
+                            alphaSupported = false,
+                            style = ColorPickerStyle.COMMON,
+                            showColor = customColor.value.harmonize(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                true
+                            ),
+                            onColorChange = {
+                                course = course.copy(color = it.toArgb())
+                            }
+                        )
                     }
                 }
             }

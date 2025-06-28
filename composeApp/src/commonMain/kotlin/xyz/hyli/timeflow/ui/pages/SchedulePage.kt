@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import com.materialkolor.ktx.harmonize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -92,6 +94,7 @@ import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.datastore.Weekday
+import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
@@ -680,7 +683,8 @@ fun EmptyTableCell(
                                     week = WeekList(
                                         weekDescription = WeekDescriptionEnum.ALL,
                                         totalWeeks = totalWeeks
-                                    )
+                                    ),
+                                    color = COLORS.random().toArgb()
                                 )
                             )
                         },
@@ -826,7 +830,8 @@ fun CourseColumn(
                 week = WeekList(
                     weekDescription = WeekDescriptionEnum.ALL,
                     totalWeeks = schedule.totalWeeks()
-                )
+                ),
+                color = COLORS.random().toArgb()
             )
         )
     }
@@ -943,7 +948,8 @@ fun CourseColumn(
                 week = WeekList(
                     weekDescription = WeekDescriptionEnum.ALL,
                     totalWeeks = schedule.totalWeeks()
-                )
+                ),
+                color = COLORS.random().toArgb()
             ),
             showEditCourseDialog = showEditCourseDialog
         )
@@ -980,13 +986,20 @@ fun CourseCell(
     } else {
         return // 没有课程时不渲染
     }
-    val containerColor =
-        if (coursesForThisWeek.size > 1) MaterialTheme.colorScheme.error
-        else if (coursesForThisWeek.isNotEmpty()) MaterialTheme.colorScheme.secondaryContainer
-        else MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
-    val contentColor =
-        if (coursesForThisWeek.isNotEmpty()) MaterialTheme.colorScheme.onSecondaryContainer
-        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    var containerColor by remember { mutableStateOf(Color.Unspecified) }
+    var contentColor by remember { mutableStateOf(Color.Unspecified) }
+    if (coursesForThisWeek.size > 1) {
+        containerColor = MaterialTheme.colorScheme.error
+        contentColor = MaterialTheme.colorScheme.onError
+    } else if (coursesForThisWeek.isNotEmpty()) {
+        containerColor =
+            Color(course.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
+        contentColor =
+            Color(course.color).harmonize(MaterialTheme.colorScheme.onSecondaryContainer, true)
+    } else {
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
+        contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -1016,7 +1029,7 @@ fun CourseCell(
                             coursesForThisWeek.size
                         ),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onError
+                        color = contentColor
                     )
                 } else {
                     Text(
