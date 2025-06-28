@@ -7,14 +7,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,11 +37,13 @@ import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,14 +51,14 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -63,6 +66,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,6 +74,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.materialkolor.ktx.harmonize
@@ -90,6 +95,7 @@ import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_week_vacation
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_1
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
+import timeflow.composeapp.generated.resources.schedule_title_week_x_part_3
 import timeflow.composeapp.generated.resources.schedule_warning_multiple_courses
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
@@ -184,7 +190,6 @@ fun ScheduleScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // placeholder
                 IconButton(
                     onClick = {
                         // TODO: Add new schedule dialog
@@ -209,51 +214,51 @@ fun ScheduleScreen(
                         contentDescription = null
                     )
                 }
-                Box(
-                    modifier = Modifier.clickable {
-                        // TODO: Select week dialog (bottom sheet)
-                    },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val color = if (pagerState.currentPage < pagerState.pageCount - 1)
-                            MaterialTheme.colorScheme.onBackground
-                        else
-                            Color.Transparent
-                        Text(
-                            text = stringResource(Res.string.schedule_title_week_x_part_1),
-                            color = color,
-                        )
-                        Box(
-                            contentAlignment = Alignment.Center
-                        ) {
+                SubcomposeLayout { constraints ->
+                    val list = listOf(
+                        "part1" to Res.string.schedule_title_week_x_part_1,
+                        "part2" to Res.string.schedule_title_week_x_part_2,
+                        "part3" to Res.string.schedule_title_week_x_part_3,
+                        "vacation" to Res.string.schedule_title_week_vacation
+                    ).map {
+                        subcompose(it.first) {
                             Text(
-                                text = "${pagerState.currentPage + 1}",
-                                fontFamily = NotoSans,
-                                color = color,
+                                text =
+                                    if (it.first == "part2") "${pagerState.currentPage + 1}"
+                                    else stringResource(it.second)
                             )
-                            Text(
-                                text = "${pagerState.pageCount}",
-                                fontFamily = NotoSans,
-                                color = Color.Transparent
+                        }[0].measure(constraints)
+                    }
+                    val part2Max = subcompose("part2max") {
+                        Text(
+                            text = stringResource(
+                                Res.string.schedule_title_week_x_part_2,
+                                pagerState.pageCount + 1
+                            )
+                        )
+                    }[0].measure(constraints)
+                    val width = maxOf(list[0].width + part2Max.width + list[2].width, list[3].width)
+                    layout(width, constraints.minHeight) {
+                        if (pagerState.currentPage < pagerState.pageCount - 1) {
+                            list[0].placeRelative(
+                                0,
+                                -list[0].height / 2
+                            )
+                            list[1].placeRelative(
+                                (width - list[1].width) / 2,
+                                -list[1].height / 2
+                            )
+                            list[2].placeRelative(
+                                width - list[2].width,
+                                -list[2].height / 2
+                            )
+                        } else {
+                            list[3].placeRelative(
+                                (width - list[3].width) / 2,
+                                -list[3].height / 2
                             )
                         }
-                        Text(
-                            text = stringResource(Res.string.schedule_title_week_x_part_2),
-                            color = color,
-                        )
                     }
-
-                    Text(
-                        text = stringResource(Res.string.schedule_title_week_vacation),
-                        color =
-                            if (pagerState.currentPage < pagerState.pageCount - 1)
-                                Color.Transparent
-                            else
-                                MaterialTheme.colorScheme.onBackground,
-                    )
                 }
                 IconButton(
                     onClick = {
@@ -285,29 +290,17 @@ fun ScheduleScreen(
                 pageSpacing = 12.dp,
                 beyondViewportPageCount = 2, // 预加载前后各一页
             ) { page ->
-                Column {
-                    // 课程表表格
-                    ScheduleTable(
-                        viewModel = viewModel,
-                        rows = rows,
-                        columns = columns,
-                        schedule = schedule,
-                        currentWeek = page + 1,
-                        modifier = Modifier.fillMaxWidth(),
-                        navHostController = navHostController,
-                        navSuiteType = navSuiteType
-                    )
-                    Spacer(
-                        modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
-                        else Modifier.height(
-                            maxOf(
-                                WindowInsets.navigationBars.asPaddingValues()
-                                    .calculateBottomPadding(),
-                                24.dp
-                            )
-                        )
-                    )
-                }
+                // 课程表表格
+                ScheduleTable(
+                    viewModel = viewModel,
+                    rows = rows,
+                    columns = columns,
+                    schedule = schedule,
+                    currentWeek = page + 1,
+                    modifier = Modifier.fillMaxWidth(),
+                    navHostController = navHostController,
+                    navSuiteType = navSuiteType
+                )
             }
         }
     }
@@ -359,11 +352,24 @@ fun ScheduleTable(
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo.morning +
             schedule.lessonTimePeriodInfo.afternoon +
             schedule.lessonTimePeriodInfo.evening
+    val headerWidth = remember { mutableStateOf(48.dp) }
+    val headerHeight = remember { mutableStateOf(40.dp) }
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(
+                headerHeight.value + 64.dp * rows + maxOf(
+                    WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding(),
+                    24.dp
+                )
+            )
+    ) {
         val state = remember { mutableStateOf(TableState()) }
-        
-        // 自动重置状态的逻辑
+        val cellWidth = (maxWidth - headerWidth.value - 6.dp) / columns
+        val noGridCells = remember { mutableStateOf(setOf<Pair<Int, Int>>()) }
+        // 自动重置状态的逻辑 - 修复无限循环问题
         LaunchedEffect(state.value) {
             if (state.value.isClicked == 1) {
                 val current = state.value
@@ -375,39 +381,44 @@ fun ScheduleTable(
         }
         // 底层：表格框架
         TableGrid(
-            state = state,
-            modifier = Modifier.zIndex(1f),
+            headerWidth = headerWidth,
+            headerHeight = headerHeight,
+            cellWidth = cellWidth,
             rows = rows,
             columns = columns,
             dateList = schedule.dateList(currentWeek),
-            lessonTimePeriodInfo = lessonTimePeriodInfo
+            lessonTimePeriodInfo = lessonTimePeriodInfo,
+            noGridCells = noGridCells.value
         )
 
         // 覆盖层：课程内容
         CourseOverlay(
+            headerWidth = headerWidth,
+            headerHeight = headerHeight,
+            cellWidth = cellWidth,
             viewModel = viewModel,
             state = state,
             rows = rows,
             columns = columns,
             schedule = schedule,
             currentWeek = currentWeek,
-            modifier = Modifier
-                .fillMaxSize()
-                .zIndex(2f),
             navHostController = navHostController,
-            navSuiteType = navSuiteType
+            navSuiteType = navSuiteType,
+            noGridCells = noGridCells
         )
     }
 }
 
 @Composable
 fun TableGrid(
-    state: MutableState<TableState>,
-    modifier: Modifier = Modifier,
+    headerWidth: MutableState<Dp>,
+    headerHeight: MutableState<Dp>,
+    cellWidth: Dp,
     rows: Int,
     columns: Int,
     dateList: List<LocalDate>,
-    lessonTimePeriodInfo: List<Lesson>
+    lessonTimePeriodInfo: List<Lesson>,
+    noGridCells: Set<Pair<Int, Int>>
 ) {
     val weekdays = listOf(
         Res.string.monday,
@@ -419,145 +430,150 @@ fun TableGrid(
         Res.string.sunday
     ).map { stringResource(it) }
 
-    Row(modifier = modifier.fillMaxWidth()) {
-        // 时间列
-        TimeColumn(
-            modifier = Modifier.width(48.dp),
-            rows = rows,
-            allLessons = lessonTimePeriodInfo
-        )
-
-        // 每一天的空白列（只显示表头和边框）
-        for (dayIndex in 0 until columns) {
-            EmptyDayColumn(
-                state = state,
-                modifier = Modifier.weight(1f),
-                dayName = weekdays[dayIndex],
-                date = dateList[dayIndex],
-                dayIndex = dayIndex,
-                rows = rows,
-                isLastDay = dayIndex == columns - 1
+    for (dayIndex in 0 until columns) {
+        VerticalDivider(
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.offset(
+                x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                y = 0.dp
             )
-        }
+                .height(headerHeight.value + 64.dp * rows)
+        )
     }
-}
 
-@Composable
-fun TimeColumn(
-    modifier: Modifier = Modifier,
-    rows: Int,
-    allLessons: List<Lesson>
-) {
-    Column(
-        modifier = modifier.fillMaxHeight()
+    Row(
+        modifier = Modifier
+            .offset(
+                x = headerWidth.value + 6.dp,
+                y = 0.dp
+            )
     ) {
-        // 表头 - 空格
-        TableCell(
-            height = 40.dp,
-            isRightBorder = true,
-            isBottomBorder = true
-        ) { }
-
-        // 时间行
-        for (lessonIndex in 0 until rows) {
-            TableCell(
-                isRightBorder = true,
-                isBottomBorder = lessonIndex < rows - 1
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "${lessonIndex + 1}",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    if (lessonIndex < allLessons.size) {
+        for (dayIndex in 0 until columns) {
+            SubcomposeLayout(
+                modifier = Modifier.padding(end = 1.dp)
+            ) { constraints ->
+                val column = subcompose("day$dayIndex") {
+                    Column(
+                        modifier = Modifier
+                            .width(cellWidth - 1.dp)
+                            .height(IntrinsicSize.Max),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val color =
+                            if (dateList[dayIndex] == Clock.System.todayIn(TimeZone.currentSystemDefault())) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onBackground
+                            }
                         Text(
-                            text = "${allLessons[lessonIndex].start}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = NotoSans,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            textAlign = TextAlign.Center
+                            text = weekdays[dayIndex],
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = color
                         )
                         Text(
-                            text = "${allLessons[lessonIndex].end}",
+                            text = dateList[dayIndex].let {
+                                it.monthNumber.toString() + "/" + it.dayOfMonth.toString()
+                                    .padStart(2, '0')
+                            },
                             style = MaterialTheme.typography.labelSmall,
-                            fontFamily = NotoSans,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            color = color.copy(alpha = 0.6f)
                         )
                     }
+                }[0].measure(constraints)
+                headerHeight.value = column.height.toDp()
+                layout(cellWidth.roundToPx(), column.height) {
+                    column.placeRelative(
+                        x = 0,
+                        y = 0
+                    )
                 }
             }
         }
     }
-}
 
-@Composable
-fun EmptyDayColumn(
-    state: MutableState<TableState>,
-    modifier: Modifier = Modifier,
-    dayName: String,
-    date: LocalDate,
-    dayIndex: Int,
-    rows: Int,
-    isLastDay: Boolean
-) {
     Column(
-        modifier = modifier.fillMaxHeight()
+        modifier = Modifier
+            .offset(
+                x = 1.dp,
+                y = headerHeight.value - 1.dp
+            )
     ) {
-        // 表头 - 星期
-        TableCell(
-            height = 40.dp,
-            isRightBorder = !isLastDay,
-            isBottomBorder = true
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val color = if (date == Clock.System.todayIn(TimeZone.currentSystemDefault())) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onBackground
+        for (lessonIndex in 0 until rows) {
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier
+                    .width(headerWidth.value + 5.dp)
+            )
+            SubcomposeLayout { constraints ->
+                val column = subcompose("lesson$lessonIndex") {
+                    Column(
+                        modifier = Modifier
+                            .height(63.dp)
+                            .width(IntrinsicSize.Max),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${lessonIndex + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                        if (lessonIndex < lessonTimePeriodInfo.size) {
+                            Text(
+                                text = "${lessonTimePeriodInfo[lessonIndex].start}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = NotoSans,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "${lessonTimePeriodInfo[lessonIndex].end}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = NotoSans,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }[0].measure(constraints)
+                headerWidth.value = column.width.toDp()
+                layout(column.width, 63.dp.roundToPx()) {
+                    column.placeRelative(
+                        x = 0,
+                        y = 0
+                    )
                 }
-                Text(
-                    text = dayName,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    color = color
-                )
-                Text(
-                    text = "${date.monthNumber}/${date.dayOfMonth.toString().padStart(2, '0')}",
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                    color = color.copy(alpha = 0.6f)
-                )
             }
         }
+    }
 
-        // 空白课程单元格
-        for (lessonIndex in 1..rows) {
-            TableCell(
-                isRightBorder = !isLastDay,
-                isBottomBorder = lessonIndex < rows
-            ) {
-                // 空白单元格，只显示边框
-                if (state.value.row != lessonIndex ||
-                    state.value.column != dayIndex + 1
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(2.dp),
-                        colors = CardDefaults.cardColors().copy(
-                            containerColor = MaterialTheme.colorScheme.background,
-                            contentColor = MaterialTheme.colorScheme.onBackground
+    for (dayIndex in 0 until columns) {
+        Box(
+            modifier = Modifier.width(cellWidth)
+                .offset(
+                    x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                )
+        ) {
+            for (lessonIndex in 0 until rows) {
+                if (Pair(lessonIndex + 1, dayIndex + 1) in noGridCells) continue
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier
+                        .offset(
+                            y = headerHeight.value + 64.dp * lessonIndex - 1.dp
                         )
-                    ) { }
-                }
+                )
             }
         }
     }
@@ -565,92 +581,42 @@ fun EmptyDayColumn(
 
 @Composable
 fun CourseOverlay(
+    headerWidth: MutableState<Dp>,
+    headerHeight: MutableState<Dp>,
+    cellWidth: Dp,
     viewModel: TimeFlowViewModel,
     state: MutableState<TableState>,
     rows: Int,
     columns: Int,
     schedule: Schedule,
     currentWeek: Int,
-    modifier: Modifier = Modifier,
     navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType
+    navSuiteType: NavigationSuiteType,
+    noGridCells: MutableState<Set<Pair<Int, Int>>>
 ) {
-    Row(modifier = modifier) {
-        // 时间列占位（与底层对齐）
-        Box(modifier = Modifier.width(48.dp))
-
+    Row(
+        modifier = Modifier
+            .offset(
+                x = headerWidth.value + 6.dp,
+                y = headerHeight.value + 1.dp
+            )
+    ) {
         // 课程覆盖层
         for (dayIndex in 0 until columns) {
             CourseColumn(
                 viewModel = viewModel,
                 state = state,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .padding(end = 1.dp)
+                    .width(cellWidth - 1.dp),
                 dayIndex = dayIndex,
                 rows = rows,
                 schedule = schedule,
                 currentWeek = currentWeek,
                 navHostController = navHostController,
-                navSuiteType = navSuiteType
+                navSuiteType = navSuiteType,
+                noGridCells = noGridCells
             )
-        }
-    }
-}
-
-@Composable
-fun TableCell(
-    modifier: Modifier = Modifier,
-    height: Dp = 64.dp,
-    isRightBorder: Boolean = false,
-    isBottomBorder: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    val borderColor = MaterialTheme.colorScheme.outlineVariant
-    val borderWidth = 1.dp
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .background(
-                color = MaterialTheme.colorScheme.surface
-            )
-            // 绘制右边框
-            .then(
-                if (isRightBorder) {
-                    Modifier.drawBehind {
-                        drawLine(
-                            color = borderColor,
-                            start = Offset(size.width, 0f),
-                            end = Offset(size.width, size.height),
-                            strokeWidth = borderWidth.toPx()
-                        )
-                    }
-                } else Modifier
-            )
-            // 绘制底边框
-            .then(
-                if (isBottomBorder) {
-                    Modifier.drawBehind {
-                        drawLine(
-                            color = borderColor,
-                            start = Offset(0f, size.height),
-                            end = Offset(size.width, size.height),
-                            strokeWidth = borderWidth.toPx()
-                        )
-                    }
-                } else Modifier
-            )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    end = if (isRightBorder) borderWidth else 0.dp,
-                    bottom = if (isBottomBorder) borderWidth else 0.dp
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            content()
         }
     }
 }
@@ -812,15 +778,19 @@ fun CourseColumn(
     schedule: Schedule,
     currentWeek: Int,
     navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType
+    navSuiteType: NavigationSuiteType,
+    noGridCells: MutableState<Set<Pair<Int, Int>>>
 ) {
     val showEditCourseDialog = rememberDialogState()
-    val renderedTimeSlots = mutableSetOf<Int>()
-    val daySchedule = schedule.courses.filter {
-        it.weekday == weekdays[dayIndex]
+    val renderedTimeSlots = mutableStateSetOf<Int>()
+    var noGridCells by noGridCells
+    val daySchedule = remember {
+        schedule.courses.filter {
+            it.weekday == weekdays[dayIndex]
+        }.toMutableStateList()
     }
-    val dayScheduleTimeForCurrentWeek = mutableSetOf<Range>()
-    val dayScheduleTimeForOtherWeek = mutableSetOf<Range>()
+    val dayScheduleTimeForCurrentWeek = remember { mutableStateSetOf<Range>() }
+    val dayScheduleTimeForOtherWeek = remember { mutableStateSetOf<Range>() }
     daySchedule.forEach {
         if (it.week.week.contains(currentWeek) && currentWeek in 1..schedule.totalWeeks()) {
             dayScheduleTimeForCurrentWeek.add(it.time)
@@ -851,22 +821,31 @@ fun CourseColumn(
         dayScheduleTimeForCurrentWeek.forEach { time ->
             renderedTimeSlots.addAll(time.start..time.end)
             dayScheduleTimeForOtherWeek - time
+            if (time.end - time.start > 0) {
+                noGridCells = noGridCells.toMutableSet().let {
+                    it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
+                }
+            }
             Box(
                 modifier = Modifier
                     .height(64.dp * (time.end - time.start + 1))
-                    .padding(end = 1.dp, bottom = 1.dp)
+                    .padding(bottom = 1.dp)
                     .offset(
-                        y = 40.dp + ((time.start - 1) * 64).dp
+                        y = (time.start - 1) * 64.dp - 1.dp
                     )
                     .zIndex(100f),
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = daySchedule.filter { course ->
-                        course.time == time && course.week.week.contains(currentWeek)
+                    courses = remember {
+                        daySchedule.filter { course ->
+                            course.time == time && course.week.week.contains(currentWeek)
+                        }
                     },
-                    coursesForThisTime = daySchedule.filter { course ->
-                        course.time.end >= time.start && course.time.start <= time.end
+                    coursesForThisTime = remember {
+                        daySchedule.filter { course ->
+                            course.time.end >= time.start && course.time.start <= time.end
+                        }
                     },
                     current = true
                 )
@@ -878,8 +857,9 @@ fun CourseColumn(
                 return@forEachIndexed // 已经渲染过的时间段跳过
             }
             // 找出第一个未渲染的时间段
-            val firstSpaceToDisplay = (time.start..time.end).first { it !in renderedTimeSlots }
-            var lastSpaceToDisplay = firstSpaceToDisplay
+            val firstSpaceToDisplay =
+                remember { (time.start..time.end).first { it !in renderedTimeSlots } }
+            var lastSpaceToDisplay by remember { mutableStateOf(firstSpaceToDisplay) }
             (firstSpaceToDisplay..time.end).forEach {
                 if (it !in renderedTimeSlots) {
                     lastSpaceToDisplay = it
@@ -888,33 +868,42 @@ fun CourseColumn(
                 }
             }
             renderedTimeSlots.addAll(time.start..time.end)
+            if (time.end - time.start > 0) {
+                noGridCells = noGridCells.toMutableSet().let {
+                    it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
+                }
+            }
             Box(
                 modifier = Modifier
                     .height(64.dp * (time.end - time.start + 1))
-                    .padding(end = 1.dp, bottom = 1.dp)
+                    .padding(bottom = 1.dp)
                     .offset(
-                        y = 40.dp + ((time.start - 1) * 64).dp
+                        y = (time.start - 1) * 64.dp - 1.dp
                     )
-                    .zIndex((99 - (time.end - time.start + 1)).toFloat()) // 渲染顺序
+                    .zIndex(99f) // 渲染顺序
                 ,
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = daySchedule
-                        .filter { course ->
-                            course.time == time &&
-                                    (!course.week.week.contains(currentWeek) || currentWeek !in 1..schedule.totalWeeks())
+                    courses = remember {
+                        daySchedule
+                            .filter { course ->
+                                course.time == time &&
+                                        (!course.week.week.contains(currentWeek) || currentWeek !in 1..schedule.totalWeeks())
+                            }
+                            .sortedBy {
+                                // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
+                                it.week.week.minOfOrNull { week ->
+                                    (week - currentWeek).let {
+                                        if (it < 0) it + schedule.totalWeeks() else it
+                                    }
+                                } ?: Int.MAX_VALUE
+                            }
+                    },
+                    coursesForThisTime = remember {
+                        daySchedule.filter { course ->
+                            course.time.end >= time.start && course.time.start <= time.end
                         }
-                        .sortedBy {
-                            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
-                            it.week.week.minOfOrNull { week ->
-                                (week - currentWeek).let {
-                                    if (it < 0) it + schedule.totalWeeks() else it
-                                }
-                            } ?: Int.MAX_VALUE
-                        },
-                    coursesForThisTime = daySchedule.filter { course ->
-                        course.time.end >= time.start && course.time.start <= time.end
                     },
                     current = false,
                     displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
@@ -927,9 +916,9 @@ fun CourseColumn(
             Box(
                 modifier = Modifier
                     .height(64.dp)
-                    .padding(end = 1.dp, bottom = 1.dp)
+                    .padding(bottom = 1.dp)
                     .offset(
-                        y = 40.dp + ((index - 1) * 64).dp
+                        y = (index - 1) * 64.dp - 1.dp
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -1025,7 +1014,7 @@ fun CourseCell(
                         modifier = Modifier
                             .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
                             .size(minOf(20.dp, width / 4))
-                            .clip(RightBottomTriangleShape())
+                            .clip(RightBottomTriangleShape)
                             .clip(RoundedCornerShape(0.dp, 0.dp, 8.dp, 0.dp))
                             .background(contentColor)
                             .align(Alignment.BottomEnd)
@@ -1084,7 +1073,7 @@ fun CourseCell(
     }
 }
 
-private class RightBottomTriangleShape() : Shape {
+private object RightBottomTriangleShape : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,

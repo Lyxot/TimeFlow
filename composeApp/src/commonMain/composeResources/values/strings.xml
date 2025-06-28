@@ -22,7 +22,8 @@
 
     <!--    schedule page-->
     <string name="schedule_title_week_x_part_1">第 </string>
-    <string name="schedule_title_week_x_part_2"> 周</string>
+    <string name="schedule_title_week_x_part_2">%1$s</string>
+    <string name="schedule_title_week_x_part_3"> 周</string>
     <string name="schedule_title_week_vacation">假期中</string>
     <string name="schedule_title_edit_course">编辑课程</string>
     <string name="schedule_title_course_name">课程名称</string>
