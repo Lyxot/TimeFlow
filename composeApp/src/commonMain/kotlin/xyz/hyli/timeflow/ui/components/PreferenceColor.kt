@@ -44,7 +44,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.ktx.darken
 import com.materialkolor.ktx.lighten
 import com.materialkolor.rememberDynamicColorScheme
@@ -297,8 +296,7 @@ fun ThemeColorButton(
     val colorScheme = rememberDynamicColorScheme(
         seedColor = baseColor,
         isDark = isDark,
-        isAmoled = !currentPlatform().isDesktop(),
-        specVersion = ColorSpec.SpecVersion.SPEC_2025
+        isAmoled = !currentPlatform().isDesktop()
     )
     val color1 = colorScheme.primaryContainer
     val color2 = colorScheme.primaryContainer.let {
