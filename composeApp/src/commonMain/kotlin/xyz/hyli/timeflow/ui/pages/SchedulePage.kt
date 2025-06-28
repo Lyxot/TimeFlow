@@ -8,6 +8,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
@@ -51,14 +53,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
@@ -729,7 +739,7 @@ fun EditCourseDialog(
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]!!
     val newCourse = remember { mutableStateOf(initValue) }
-    var isNameValid =
+    val isNameValid =
         remember { mutableStateOf(newCourse.value.name.isNotBlank()) }
     val isTimeValid = remember {
         mutableStateOf(
@@ -812,7 +822,7 @@ fun CourseColumn(
     val dayScheduleTimeForCurrentWeek = mutableSetOf<Range>()
     val dayScheduleTimeForOtherWeek = mutableSetOf<Range>()
     daySchedule.forEach {
-        if (it.week.week.contains(currentWeek)) {
+        if (it.week.week.contains(currentWeek) && currentWeek in 1..schedule.totalWeeks()) {
             dayScheduleTimeForCurrentWeek.add(it.time)
         } else {
             dayScheduleTimeForOtherWeek.add(it.time)
@@ -839,9 +849,6 @@ fun CourseColumn(
     Box(modifier = modifier) {
         // 当前周的课程
         dayScheduleTimeForCurrentWeek.forEach { time ->
-            val courseForThisTime = daySchedule.filter { course ->
-                course.time == time
-            }
             renderedTimeSlots.addAll(time.start..time.end)
             dayScheduleTimeForOtherWeek - time
             Box(
@@ -855,9 +862,13 @@ fun CourseColumn(
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courseForThisTime,
-                    currentWeek = currentWeek,
-                    totalWeeks = schedule.totalWeeks(),
+                    courses = daySchedule.filter { course ->
+                        course.time == time && course.week.week.contains(currentWeek)
+                    },
+                    coursesForThisTime = daySchedule.filter { course ->
+                        course.time.end >= time.start && course.time.start <= time.end
+                    },
+                    current = true
                 )
             }
         }
@@ -865,9 +876,6 @@ fun CourseColumn(
         dayScheduleTimeForOtherWeek.sortedBy { it.end - it.start }.forEachIndexed { _, time ->
             if ((time.start..time.end).all { it in renderedTimeSlots }) {
                 return@forEachIndexed // 已经渲染过的时间段跳过
-            }
-            val courseForThisTime = daySchedule.filter { course ->
-                course.time == time
             }
             // 找出第一个未渲染的时间段
             val firstSpaceToDisplay = (time.start..time.end).first { it !in renderedTimeSlots }
@@ -892,9 +900,23 @@ fun CourseColumn(
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courseForThisTime,
-                    currentWeek = currentWeek,
-                    totalWeeks = schedule.totalWeeks(),
+                    courses = daySchedule
+                        .filter { course ->
+                            course.time == time &&
+                                    (!course.week.week.contains(currentWeek) || currentWeek !in 1..schedule.totalWeeks())
+                        }
+                        .sortedBy {
+                            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
+                            it.week.week.minOfOrNull { week ->
+                                (week - currentWeek).let {
+                                    if (it < 0) it + schedule.totalWeeks() else it
+                                }
+                            } ?: Int.MAX_VALUE
+                        },
+                    coursesForThisTime = daySchedule.filter { course ->
+                        course.time.end >= time.start && course.time.start <= time.end
+                    },
+                    current = false,
                     displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
                     displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp
                 )
@@ -958,40 +980,19 @@ fun CourseColumn(
 
 @Composable
 fun CourseCell(
+    courses: List<Course>,
     coursesForThisTime: List<Course>,
-    currentWeek: Int,
-    totalWeeks: Int,
+    current: Boolean,
     displayOffSet: Dp = 0.dp,
-    displayHeight: Dp = coursesForThisTime.first().time.let { (it.end - it.start + 1) * 64 }.dp
+    displayHeight: Dp = courses.first().time.let { (it.end - it.start + 1) * 64 }.dp
 ) {
-    val coursesForThisWeek = if (currentWeek in 1..totalWeeks) {
-        coursesForThisTime.filter { it.week.week.contains(currentWeek) }
-    } else {
-        emptyList()
-    }
-    val coursesForOtherWeek = coursesForThisTime
-        .filterNot { it in coursesForThisWeek }
-        .sortedBy {
-            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
-            it.week.week.minOfOrNull { week ->
-                (week - currentWeek).let {
-                    if (it < 0) it + totalWeeks else it
-                }
-            } ?: Int.MAX_VALUE
-        }
-    val course = if (coursesForThisWeek.isNotEmpty()) {
-        coursesForThisWeek.first()
-    } else if (coursesForOtherWeek.isNotEmpty()) {
-        coursesForOtherWeek.first()
-    } else {
-        return // 没有课程时不渲染
-    }
+    val course = courses.first()
     var containerColor by remember { mutableStateOf(Color.Unspecified) }
     var contentColor by remember { mutableStateOf(Color.Unspecified) }
-    if (coursesForThisWeek.size > 1) {
+    if (current && courses.size > 1) {
         containerColor = MaterialTheme.colorScheme.error
         contentColor = MaterialTheme.colorScheme.onError
-    } else if (coursesForThisWeek.isNotEmpty()) {
+    } else if (current) {
         containerColor =
             Color(course.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
         contentColor =
@@ -1000,65 +1001,112 @@ fun CourseCell(
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
         contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     }
-    Card(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .padding(2.dp),
-        onClick = {
-            // TODO: Dialog to show course details, edit and add new course
-        }
     ) {
-        Box(
+        val width = maxWidth
+        val height = maxHeight
+        Card(
             modifier = Modifier
                 .fillMaxSize()
-                .background(containerColor)
-                .padding(4.dp)
+                .padding(2.dp),
+            onClick = {
+                // TODO: Dialog to show course details, edit and add new course
+            }
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(displayHeight)
-                    .offset(
-                        y = displayOffSet
-                    )
+                    .fillMaxSize()
+                    .background(containerColor)
             ) {
-                if (coursesForThisWeek.size > 1) {
-                    Text(
-                        text = stringResource(
-                            Res.string.schedule_warning_multiple_courses,
-                            coursesForThisWeek.size
-                        ),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = contentColor
+                if (coursesForThisTime.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
+                            .size(minOf(20.dp, width / 4))
+                            .clip(RightBottomTriangleShape())
+                            .clip(RoundedCornerShape(0.dp, 0.dp, 8.dp, 0.dp))
+                            .background(contentColor)
+                            .align(Alignment.BottomEnd)
                     )
-                } else {
-                    Text(
-                        text = course.name,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        color = contentColor
-                    )
-                    if (course.classroom.isNotBlank()) {
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(displayHeight)
+                        .padding(
+                            minOf(width * 0.06f, height * 0.06f, 6.dp)
+                        )
+                        .offset(
+                            y = displayOffSet
+                        )
+                ) {
+                    if (current && courses.size > 1) {
                         Text(
-                            text = "@${course.classroom}",
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 2,
+                            text = stringResource(
+                                Res.string.schedule_warning_multiple_courses,
+                                courses.size
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = contentColor
+                        )
+                    } else {
+                        Text(
+                            text = course.name,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             color = contentColor
                         )
-                    }
-                    if (course.teacher.isNotBlank()) {
-                        Text(
-                            text = course.teacher,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = contentColor
-                        )
+                        if (course.classroom.isNotBlank()) {
+                            Text(
+                                text = "@${course.classroom}",
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                color = contentColor
+                            )
+                        }
+                        if (course.teacher.isNotBlank()) {
+                            Text(
+                                text = course.teacher,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = contentColor
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+private class RightBottomTriangleShape() : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val path = Path().apply {
+            moveTo(0f, size.height)
+            lineTo(size.width, size.height)
+            arcTo(
+                rect = Rect(
+                    left = size.width,
+                    top = size.height,
+                    right = size.width,
+                    bottom = size.height
+                ),
+                startAngleDegrees = 0f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            lineTo(size.width, 0f)
+            close()
+        }
+        return Outline.Generic(path)
     }
 }
