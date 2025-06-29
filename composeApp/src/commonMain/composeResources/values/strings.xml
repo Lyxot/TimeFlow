@@ -32,9 +32,13 @@
     <string name="schedule_title_course_time_start">上课时间</string>
     <string name="schedule_title_course_time_end">下课时间</string>
     <string name="schedule_value_course_time">第 %1$s - %2$s 节</string>
+    <string name="schedule_value_course_week">第 %1$s 周</string>
     <string name="schedule_title_course_week">上课周次</string>
     <string name="schedule_warning_multiple_courses">当前时间段有 %1$s 节课程，请重新选择时间</string>
     <string name="schedule_title_course_color">颜色</string>
+    <string name="schedule_title_course_detail">课程详情</string>
+    <string name="schedule_course_not_this_week">（非本周）</string>
+    <string name="schedule_button_edit">编辑</string>
 
     <!--    settings page-->
     <string name="settings_title_general">通用设置</string>

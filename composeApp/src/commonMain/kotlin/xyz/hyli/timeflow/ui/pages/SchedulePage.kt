@@ -65,9 +65,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -85,15 +88,21 @@ import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.cancel
+import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.friday
 import timeflow.composeapp.generated.resources.monday
 import timeflow.composeapp.generated.resources.saturday
 import timeflow.composeapp.generated.resources.save
+import timeflow.composeapp.generated.resources.schedule_button_edit
+import timeflow.composeapp.generated.resources.schedule_course_not_this_week
+import timeflow.composeapp.generated.resources.schedule_title_course_detail
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_week_vacation
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_1
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_3
+import timeflow.composeapp.generated.resources.schedule_value_course_time
+import timeflow.composeapp.generated.resources.schedule_value_course_week
 import timeflow.composeapp.generated.resources.schedule_warning_multiple_courses
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
@@ -776,6 +785,142 @@ fun EditCourseDialog(
 }
 
 @Composable
+fun CourseListDialog(
+    courses: List<Course>,
+    currentWeek: Int,
+    totalWeeks: Int,
+    time: Range,
+    showCourseListDialog: DialogState,
+    onClick: (Course) -> Unit
+) {
+    MyDialog(
+        state = showCourseListDialog,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(Res.string.schedule_title_course_detail)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        onClick(
+                            Course(
+                                name = "",
+                                time = time,
+                                weekday = courses.first().weekday,
+                                week = WeekList(
+                                    weekDescription = WeekDescriptionEnum.ALL,
+                                    totalWeeks = totalWeeks
+                                ),
+                                color = COLORS.random().toArgb()
+                            )
+                        )
+                        showCourseListDialog.dismiss()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+                }
+            }
+        },
+        buttons = DialogDefaults.buttons(
+            positive = DialogButton(stringResource(Res.string.confirm)),
+            negative = DialogButton.DISABLED,
+        )
+    ) {
+        Column {
+            courses.forEachIndexed { index, course ->
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = course.name.let {
+                                if (course.week.week.contains(currentWeek)) it
+                                else it + " " + stringResource(Res.string.schedule_course_not_this_week)
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = buildAnnotatedString {
+                                append(
+                                    stringResource(
+                                        Res.string.schedule_value_course_week,
+                                        course.week.getString()
+                                    )
+                                )
+                                withStyle(
+                                    SpanStyle(
+                                        fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                                    )
+                                ) {
+                                    append(" | ")
+                                }
+                                append(
+                                    stringResource(
+                                        Res.string.schedule_value_course_time,
+                                        course.time.start,
+                                        course.time.end
+                                    )
+                                )
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        if (course.classroom.isNotBlank() || course.teacher.isNotBlank()) {
+                            Text(
+                                buildAnnotatedString {
+                                    append(course.classroom)
+                                    if (course.classroom.isNotBlank() && course.teacher.isNotBlank()) {
+                                        withStyle(
+                                            SpanStyle(
+                                                fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                                            )
+                                        ) {
+                                            append(" | ")
+                                        }
+                                    }
+                                    append(course.teacher)
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                    Spacer(
+                        modifier = Modifier.weight(1f)
+                    )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        ),
+                        onClick = {
+                            onClick(course)
+                            showCourseListDialog.dismiss()
+                        },
+                    ) {
+                        Text(
+                            stringResource(Res.string.schedule_button_edit),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+                if (index < courses.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CourseColumn(
     viewModel: TimeFlowViewModel,
     state: MutableState<TableState>,
@@ -813,22 +958,27 @@ fun CourseColumn(
     val emptySlots = remember(rows, renderedTimeSlots) {
         (1..rows).filterNot { it in renderedTimeSlots }
     }
+    var selectCourse by remember { mutableStateOf<Course?>(null) }
 
-    var selectedCourse by remember {
-        mutableStateOf(
-            Course(
-                name = "",
-                time = Range(
-                    1,
-                    1
-                ),
-                weekday = weekdays[dayIndex],
-                week = WeekList(
-                    weekDescription = WeekDescriptionEnum.ALL,
-                    totalWeeks = schedule.totalWeeks()
-                ),
-                color = COLORS.random().toArgb()
+    fun editCourse(course: Course) {
+        if (navSuiteType !in NavigationBarType) {
+            selectCourse = course
+            showEditCourseDialog.show()
+        } else {
+            navHostController.navigate(
+                EditCourseDestination(
+                    course
+                )
             )
+        }
+    }
+
+    if (showEditCourseDialog.visible) {
+        EditCourseDialog(
+            state = state,
+            viewModel = viewModel,
+            initValue = selectCourse!!,
+            showEditCourseDialog = showEditCourseDialog
         )
     }
 
@@ -863,7 +1013,11 @@ fun CourseColumn(
                             course.time.end >= time.start && course.time.start <= time.end
                         }
                     },
-                    current = true
+                    currentWeek = currentWeek,
+                    totalWeeks = schedule.totalWeeks(),
+                    onClick = { course ->
+                        editCourse(course)
+                    }
                 )
             }
         }
@@ -898,7 +1052,7 @@ fun CourseColumn(
                     .offset(
                         y = (time.start - 1) * 64.dp - 1.dp
                     )
-                    .zIndex((99 - (time.end - time.start + 1)).toFloat()) // 渲染顺序
+                    .zIndex(99 - time.start + 1.0f / (time.end - time.start)) // 渲染顺序
                 ,
                 contentAlignment = Alignment.Center
             ) {
@@ -923,9 +1077,13 @@ fun CourseColumn(
                             course.time.end >= time.start && course.time.start <= time.end
                         }
                     },
-                    current = false,
+                    currentWeek = currentWeek,
+                    totalWeeks = schedule.totalWeeks(),
                     displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
-                    displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp
+                    displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
+                    onClick = { course ->
+                        editCourse(course)
+                    }
                 )
             }
         }
@@ -949,39 +1107,11 @@ fun CourseColumn(
                         state.value = state.value.copy(
                             isClicked = 2, // 点击后等待重置
                         )
-                        selectedCourse = course
-                        if (navSuiteType !in NavigationBarType) {
-                            showEditCourseDialog.show()
-                        } else {
-                            navHostController.navigate(
-                                EditCourseDestination(
-                                    selectedCourse
-                                )
-                            )
-                        }
+                        editCourse(course)
                     }
                 )
             }
         }
-    }
-    if (showEditCourseDialog.visible) {
-        EditCourseDialog(
-            state = state,
-            viewModel = viewModel,
-            initValue = schedule.courses.firstOrNull {
-                it.weekday == weekdays[dayIndex] && it.time.start == state.value.row
-            } ?: Course(
-                name = "",
-                time = Range(state.value.row, state.value.row),
-                weekday = weekdays[dayIndex],
-                week = WeekList(
-                    weekDescription = WeekDescriptionEnum.ALL,
-                    totalWeeks = schedule.totalWeeks()
-                ),
-                color = COLORS.random().toArgb()
-            ),
-            showEditCourseDialog = showEditCourseDialog
-        )
     }
 }
 
@@ -989,17 +1119,20 @@ fun CourseColumn(
 fun CourseCell(
     courses: List<Course>,
     coursesForThisTime: List<Course>,
-    current: Boolean,
+    currentWeek: Int,
+    totalWeeks: Int,
     displayOffSet: Dp = 0.dp,
-    displayHeight: Dp = courses.first().time.let { (it.end - it.start + 1) * 64 }.dp
+    displayHeight: Dp = courses.first().time.let { (it.end - it.start + 1) * 64 }.dp,
+    onClick: (Course) -> Unit
 ) {
+    val showCourseListDialog = rememberDialogState()
     val course = courses.first()
     var containerColor by remember { mutableStateOf(Color.Unspecified) }
     var contentColor by remember { mutableStateOf(Color.Unspecified) }
-    if (current && courses.size > 1) {
+    if (course.week.week.contains(currentWeek) && courses.size > 1) {
         containerColor = MaterialTheme.colorScheme.error
         contentColor = MaterialTheme.colorScheme.onError
-    } else if (current) {
+    } else if (course.week.week.contains(currentWeek)) {
         containerColor =
             Color(course.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
         contentColor =
@@ -1008,6 +1141,17 @@ fun CourseCell(
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
         contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     }
+    if (showCourseListDialog.visible) {
+        CourseListDialog(
+            courses = coursesForThisTime,
+            currentWeek = currentWeek,
+            totalWeeks = totalWeeks,
+            time = course.time,
+            showCourseListDialog = showCourseListDialog,
+            onClick = onClick
+        )
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -1019,7 +1163,7 @@ fun CourseCell(
                 .fillMaxSize()
                 .padding(2.dp),
             onClick = {
-                // TODO: Dialog to show course details, edit and add new course
+                showCourseListDialog.show()
             }
         ) {
             Box(
@@ -1049,7 +1193,7 @@ fun CourseCell(
                             y = displayOffSet
                         )
                 ) {
-                    if (current && courses.size > 1) {
+                    if (course.week.week.contains(currentWeek) && courses.size > 1) {
                         Text(
                             text = stringResource(
                                 Res.string.schedule_warning_multiple_courses,

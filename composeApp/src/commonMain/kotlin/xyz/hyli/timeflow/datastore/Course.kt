@@ -87,6 +87,37 @@ data class WeekList(
     constructor(weekRange: WeekRange) : this(
         week = weekRange.range.flatMap { it.start..it.end }.distinct()
     )
+
+    fun getString(): String {
+        if (week.isEmpty()) return ""
+
+        val sortedWeeks = week.sorted()
+        val result = mutableListOf<String>()
+        var start = sortedWeeks[0]
+        var end = sortedWeeks[0]
+
+        for (i in 1 until sortedWeeks.size) {
+            if (sortedWeeks[i] == end + 1) {
+                end = sortedWeeks[i]
+            } else {
+                if (start == end) {
+                    result.add(start.toString())
+                } else {
+                    result.add("$start-$end")
+                }
+                start = sortedWeeks[i]
+                end = sortedWeeks[i]
+            }
+        }
+
+        if (start == end) {
+            result.add(start.toString())
+        } else {
+            result.add("$start-$end")
+        }
+
+        return result.joinToString(", ")
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
