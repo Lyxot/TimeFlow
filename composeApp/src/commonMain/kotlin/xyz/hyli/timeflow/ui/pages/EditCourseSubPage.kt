@@ -240,12 +240,11 @@ fun EditCourseScreen(
 @Composable
 fun EditCourseDialog(
     state: MutableState<TableState>,
-    viewModel: TimeFlowViewModel,
+    scheduleParams: ScheduleParams,
     initValue: Course,
     showEditCourseDialog: DialogState
 ) {
-    val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]!!
+    val schedule = scheduleParams.schedule
     val course = remember { mutableStateOf(initValue) }
     val isNameValid =
         remember { mutableStateOf(course.value.name.isNotBlank()) }
@@ -286,7 +285,7 @@ fun EditCourseDialog(
         ),
         onEvent = { event ->
             if (event.isPositiveButton) {
-                viewModel.updateSchedule(
+                scheduleParams.viewModel.updateSchedule(
                     schedule = schedule.copy(
                         courses = if (initValue in schedule.courses) {
                             schedule.courses.map { if (it == initValue) course.value else it }
@@ -305,7 +304,7 @@ fun EditCourseDialog(
         ) {
             EditCourseContent(
                 style = EditCourseStyle.Dialog,
-                viewModel = viewModel,
+                viewModel = scheduleParams.viewModel,
                 initValue = initValue,
                 courseValue = course,
                 isNameValid = isNameValid,
@@ -316,7 +315,7 @@ fun EditCourseDialog(
             if (initValue in schedule.courses) {
                 DeleteCourseButton(
                     onClick = {
-                        viewModel.updateSchedule(
+                        scheduleParams.viewModel.updateSchedule(
                             schedule = schedule.copy(
                                 courses = schedule.courses - course.value
                             )

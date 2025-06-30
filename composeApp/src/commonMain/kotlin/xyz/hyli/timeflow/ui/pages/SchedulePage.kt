@@ -129,6 +129,24 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 
+data class ScheduleLayoutParams(
+    val headerWidth: MutableState<Dp>,
+    val headerHeight: MutableState<Dp>,
+    val cellWidth: Dp,
+    val rows: Int,
+    val columns: Int,
+    val noGridCells: MutableState<Set<Pair<Int, Int>>>
+)
+
+data class ScheduleParams(
+    val viewModel: TimeFlowViewModel,
+    val navHostController: NavHostController,
+    val navSuiteType: NavigationSuiteType,
+    val schedule: Schedule,
+    val currentWeek: Int,
+    val totalWeeks: Int = schedule.totalWeeks()
+)
+
 val weekdays = listOf(
     Weekday.MONDAY,
     Weekday.TUESDAY,
@@ -296,14 +314,16 @@ fun ScheduleScreen(
             ) { page ->
                 // 课程表表格
                 ScheduleTable(
-                    viewModel = viewModel,
+                    scheduleParams = ScheduleParams(
+                        viewModel = viewModel,
+                        navHostController = navHostController,
+                        navSuiteType = navSuiteType,
+                        schedule = schedule,
+                        currentWeek = page + 1
+                    ),
                     rows = rows,
                     columns = columns,
-                    schedule = schedule,
-                    currentWeek = page + 1,
-                    modifier = Modifier.fillMaxWidth(),
-                    navHostController = navHostController,
-                    navSuiteType = navSuiteType
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -344,18 +364,14 @@ data class TableState(
 
 @Composable
 fun ScheduleTable(
-    viewModel: TimeFlowViewModel,
+    scheduleParams: ScheduleParams,
     rows: Int,
     columns: Int,
-    schedule: Schedule,
-    currentWeek: Int,
-    modifier: Modifier = Modifier,
-    navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType
+    modifier: Modifier = Modifier
 ) {
-    val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo.morning +
-            schedule.lessonTimePeriodInfo.afternoon +
-            schedule.lessonTimePeriodInfo.evening
+    val lessonTimePeriodInfo = scheduleParams.schedule.lessonTimePeriodInfo.morning +
+            scheduleParams.schedule.lessonTimePeriodInfo.afternoon +
+            scheduleParams.schedule.lessonTimePeriodInfo.evening
     val headerWidth = remember { mutableStateOf(48.dp) }
     val headerHeight = remember { mutableStateOf(40.dp) }
 
@@ -383,46 +399,36 @@ fun ScheduleTable(
                 }
             }
         }
-        // 底层：表格框架
-        TableGrid(
+        val layoutParams = ScheduleLayoutParams(
             headerWidth = headerWidth,
             headerHeight = headerHeight,
             cellWidth = cellWidth,
             rows = rows,
             columns = columns,
-            dateList = schedule.dateList(currentWeek),
-            lessonTimePeriodInfo = lessonTimePeriodInfo,
-            noGridCells = noGridCells.value
+            noGridCells = noGridCells
+        )
+
+        // 底层：表格框架
+        TableGrid(
+            layoutParams = layoutParams,
+            dateList = scheduleParams.schedule.dateList(scheduleParams.currentWeek),
+            lessonTimePeriodInfo = lessonTimePeriodInfo
         )
 
         // 覆盖层：课程内容
         CourseOverlay(
-            headerWidth = headerWidth,
-            headerHeight = headerHeight,
-            cellWidth = cellWidth,
-            viewModel = viewModel,
-            state = state,
-            rows = rows,
-            columns = columns,
-            schedule = schedule,
-            currentWeek = currentWeek,
-            navHostController = navHostController,
-            navSuiteType = navSuiteType,
-            noGridCells = noGridCells
+            layoutParams = layoutParams,
+            scheduleParams = scheduleParams,
+            state = state
         )
     }
 }
 
 @Composable
 fun TableGrid(
-    headerWidth: MutableState<Dp>,
-    headerHeight: MutableState<Dp>,
-    cellWidth: Dp,
-    rows: Int,
-    columns: Int,
+    layoutParams: ScheduleLayoutParams,
     dateList: List<LocalDate>,
-    lessonTimePeriodInfo: List<Lesson>,
-    noGridCells: Set<Pair<Int, Int>>
+    lessonTimePeriodInfo: List<Lesson>
 ) {
     val weekdays = listOf(
         Res.string.monday,
@@ -435,33 +441,33 @@ fun TableGrid(
     ).map { stringResource(it) }
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
 
-    for (dayIndex in 0 until columns) {
+    for (dayIndex in 0 until layoutParams.columns) {
         VerticalDivider(
             thickness = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier.offset(
-                x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
                 y = 0.dp
             )
-                .height(headerHeight.value + 64.dp * rows)
+                .height(layoutParams.headerHeight.value + 64.dp * layoutParams.rows)
         )
     }
 
     Row(
         modifier = Modifier
             .offset(
-                x = headerWidth.value + 6.dp,
+                x = layoutParams.headerWidth.value + 6.dp,
                 y = 0.dp
             )
     ) {
-        for (dayIndex in 0 until columns) {
+        for (dayIndex in 0 until layoutParams.columns) {
             SubcomposeLayout(
                 modifier = Modifier.padding(end = 1.dp)
             ) { constraints ->
                 val column = subcompose("day$dayIndex") {
                     Column(
                         modifier = Modifier
-                            .width(cellWidth - 1.dp)
+                            .width(layoutParams.cellWidth - 1.dp)
                             .height(IntrinsicSize.Max),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -491,10 +497,10 @@ fun TableGrid(
                     }
                 }[0].measure(constraints)
                 val newHeight = column.height.toDp()
-                if (headerHeight.value != newHeight) {
-                    headerHeight.value = newHeight
+                if (layoutParams.headerHeight.value != newHeight) {
+                    layoutParams.headerHeight.value = newHeight
                 }
-                layout(cellWidth.roundToPx(), column.height) {
+                layout(layoutParams.cellWidth.roundToPx(), column.height) {
                     column.placeRelative(
                         x = 0,
                         y = 0
@@ -508,15 +514,15 @@ fun TableGrid(
         modifier = Modifier
             .offset(
                 x = 1.dp,
-                y = headerHeight.value - 1.dp
+                y = layoutParams.headerHeight.value - 1.dp
             )
     ) {
-        for (lessonIndex in 0 until rows) {
+        for (lessonIndex in 0 until layoutParams.rows) {
             HorizontalDivider(
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
                 modifier = Modifier
-                    .width(headerWidth.value + 5.dp)
+                    .width(layoutParams.headerWidth.value + 5.dp)
             )
             SubcomposeLayout { constraints ->
                 val column = subcompose("lesson$lessonIndex") {
@@ -555,8 +561,8 @@ fun TableGrid(
                     }
                 }[0].measure(constraints)
                 val newWidth = column.width.toDp()
-                if (headerWidth.value != newWidth) {
-                    headerWidth.value = newWidth
+                if (layoutParams.headerWidth.value != newWidth) {
+                    layoutParams.headerWidth.value = newWidth
                 }
                 layout(column.width, 63.dp.roundToPx()) {
                     column.placeRelative(
@@ -568,21 +574,21 @@ fun TableGrid(
         }
     }
 
-    for (dayIndex in 0 until columns) {
+    for (dayIndex in 0 until layoutParams.columns) {
         Box(
-            modifier = Modifier.width(cellWidth)
+            modifier = Modifier.width(layoutParams.cellWidth)
                 .offset(
-                    x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                    x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
                 )
         ) {
-            for (lessonIndex in 0 until rows) {
-                if (Pair(lessonIndex + 1, dayIndex + 1) in noGridCells) continue
+            for (lessonIndex in 0 until layoutParams.rows) {
+                if (Pair(lessonIndex + 1, dayIndex + 1) in layoutParams.noGridCells.value) continue
                 HorizontalDivider(
                     thickness = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier
                         .offset(
-                            y = headerHeight.value + 64.dp * lessonIndex - 1.dp
+                            y = layoutParams.headerHeight.value + 64.dp * lessonIndex - 1.dp
                         )
                 )
             }
@@ -592,41 +598,27 @@ fun TableGrid(
 
 @Composable
 fun CourseOverlay(
-    headerWidth: MutableState<Dp>,
-    headerHeight: MutableState<Dp>,
-    cellWidth: Dp,
-    viewModel: TimeFlowViewModel,
-    state: MutableState<TableState>,
-    rows: Int,
-    columns: Int,
-    schedule: Schedule,
-    currentWeek: Int,
-    navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType,
-    noGridCells: MutableState<Set<Pair<Int, Int>>>
+    layoutParams: ScheduleLayoutParams,
+    scheduleParams: ScheduleParams,
+    state: MutableState<TableState>
 ) {
     Row(
         modifier = Modifier
             .offset(
-                x = headerWidth.value + 6.dp,
-                y = headerHeight.value + 1.dp
+                x = layoutParams.headerWidth.value + 6.dp,
+                y = layoutParams.headerHeight.value + 1.dp
             )
     ) {
         // 课程覆盖层
-        for (dayIndex in 0 until columns) {
+        for (dayIndex in 0 until layoutParams.columns) {
             CourseColumn(
-                viewModel = viewModel,
+                layoutParams = layoutParams,
+                scheduleParams = scheduleParams,
                 state = state,
                 modifier = Modifier
                     .padding(end = 1.dp)
-                    .width(cellWidth - 1.dp),
-                dayIndex = dayIndex,
-                rows = rows,
-                schedule = schedule,
-                currentWeek = currentWeek,
-                navHostController = navHostController,
-                navSuiteType = navSuiteType,
-                noGridCells = noGridCells
+                    .width(layoutParams.cellWidth - 1.dp),
+                dayIndex = dayIndex
             )
         }
     }
@@ -842,32 +834,28 @@ fun CourseListDialog(
 
 @Composable
 fun CourseColumn(
-    viewModel: TimeFlowViewModel,
+    layoutParams: ScheduleLayoutParams,
+    scheduleParams: ScheduleParams,
     state: MutableState<TableState>,
     modifier: Modifier,
-    dayIndex: Int,
-    rows: Int,
-    schedule: Schedule,
-    currentWeek: Int,
-    navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType,
-    noGridCells: MutableState<Set<Pair<Int, Int>>>
+    dayIndex: Int
 ) {
     val showEditCourseDialog = rememberDialogState()
     val renderedTimeSlots = mutableSetOf<Int>()
-    var noGridCells by noGridCells
+    var noGridCells by layoutParams.noGridCells
 
     val (daySchedule, dayScheduleTimeForCurrentWeek, dayScheduleTimeForOtherWeek) = remember(
-        schedule.courses,
+        scheduleParams.schedule.courses,
         dayIndex,
-        currentWeek
+        scheduleParams.currentWeek
     ) {
-        val filteredSchedule = schedule.courses.filter { it.weekday == weekdays[dayIndex] }
+        val filteredSchedule =
+            scheduleParams.schedule.courses.filter { it.weekday == weekdays[dayIndex] }
         val currentWeekTimes = mutableSetOf<Range>()
         val otherWeekTimes = mutableListOf<Range>()
 
         filteredSchedule.forEach { course ->
-            if (course.week.week.contains(currentWeek) && currentWeek in 1..schedule.totalWeeks()) {
+            if (course.week.week.contains(scheduleParams.currentWeek) && scheduleParams.currentWeek in 1..scheduleParams.totalWeeks) {
                 currentWeekTimes.add(course.time)
             } else {
                 otherWeekTimes.add(course.time)
@@ -875,17 +863,17 @@ fun CourseColumn(
         }
         Triple(filteredSchedule, currentWeekTimes, otherWeekTimes.sortedBy { it.end - it.start })
     }
-    val emptySlots = remember(rows, renderedTimeSlots) {
-        (1..rows).filterNot { it in renderedTimeSlots }
+    val emptySlots = remember(layoutParams.rows, renderedTimeSlots) {
+        (1..layoutParams.rows).filterNot { it in renderedTimeSlots }
     }
     var selectCourse by remember { mutableStateOf<Course?>(null) }
 
     fun editCourse(course: Course) {
-        if (navSuiteType !in NavigationBarType) {
+        if (scheduleParams.navSuiteType !in NavigationBarType) {
             selectCourse = course
             showEditCourseDialog.show()
         } else {
-            navHostController.navigate(
+            scheduleParams.navHostController.navigate(
                 EditCourseDestination(
                     course
                 )
@@ -896,7 +884,7 @@ fun CourseColumn(
     if (showEditCourseDialog.visible) {
         EditCourseDialog(
             state = state,
-            viewModel = viewModel,
+            scheduleParams = scheduleParams,
             initValue = selectCourse!!,
             showEditCourseDialog = showEditCourseDialog
         )
@@ -923,9 +911,9 @@ fun CourseColumn(
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = remember(daySchedule, time, currentWeek) {
+                    courses = remember(daySchedule, time, scheduleParams.currentWeek) {
                         daySchedule.filter { course ->
-                            course.time == time && course.week.week.contains(currentWeek)
+                            course.time == time && course.week.week.contains(scheduleParams.currentWeek)
                         }
                     },
                     coursesForThisTime = remember(daySchedule, time) {
@@ -933,8 +921,8 @@ fun CourseColumn(
                             course.time.end >= time.start && course.time.start <= time.end
                         }
                     },
-                    currentWeek = currentWeek,
-                    totalWeeks = schedule.totalWeeks(),
+                    currentWeek = scheduleParams.currentWeek,
+                    totalWeeks = scheduleParams.totalWeeks,
                     onClick = { course ->
                         editCourse(course)
                     }
@@ -977,17 +965,17 @@ fun CourseColumn(
                 contentAlignment = Alignment.Center
             ) {
                 CourseCell(
-                    courses = remember(daySchedule, time, currentWeek) {
+                    courses = remember(daySchedule, time, scheduleParams.currentWeek) {
                         daySchedule
                             .filter { course ->
                                 course.time == time &&
-                                        (!course.week.week.contains(currentWeek) || currentWeek !in 1..schedule.totalWeeks())
+                                        (!course.week.week.contains(scheduleParams.currentWeek) || scheduleParams.currentWeek !in 1..scheduleParams.totalWeeks)
                             }
                             .sortedBy {
                                 // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
                                 it.week.week.minOfOrNull { week ->
-                                    (week - currentWeek).let {
-                                        if (it < 0) it + schedule.totalWeeks() else it
+                                    (week - scheduleParams.currentWeek).let {
+                                        if (it < 0) it + scheduleParams.totalWeeks else it
                                     }
                                 } ?: Int.MAX_VALUE
                             }
@@ -997,8 +985,8 @@ fun CourseColumn(
                             course.time.end >= time.start && course.time.start <= time.end
                         }
                     },
-                    currentWeek = currentWeek,
-                    totalWeeks = schedule.totalWeeks(),
+                    currentWeek = scheduleParams.currentWeek,
+                    totalWeeks = scheduleParams.totalWeeks,
                     displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
                     displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
                     onClick = { course ->
@@ -1025,7 +1013,7 @@ fun CourseColumn(
                     state = state,
                     index = index,
                     dayIndex = dayIndex,
-                    totalWeeks = schedule.totalWeeks(),
+                    totalWeeks = scheduleParams.totalWeeks,
                     onClick = { course ->
                         state.value = state.value.copy(
                             isClicked = 2, // 点击后等待重置
