@@ -26,6 +26,7 @@
     <string name="schedule_title_week_x_part_3"> 周</string>
     <string name="schedule_title_week_vacation">假期中</string>
     <string name="schedule_title_edit_course">编辑课程</string>
+    <string name="schedule_title_add_course">添加课程</string>
     <string name="schedule_title_course_name">课程名称</string>
     <string name="schedule_title_course_classroom">教室</string>
     <string name="schedule_title_course_teacher">老师</string>
@@ -39,6 +40,8 @@
     <string name="schedule_title_course_detail">课程详情</string>
     <string name="schedule_course_not_this_week">（非本周）</string>
     <string name="schedule_button_edit">编辑</string>
+    <string name="schedule_button_delete_course">删除课程</string>
+    <string name="schedule_button_confirm_delete">确认删除</string>
 
     <!--    settings page-->
     <string name="settings_title_general">通用设置</string>

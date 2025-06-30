@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.SyncAlt
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -87,7 +88,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.cancel
 import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.friday
 import timeflow.composeapp.generated.resources.monday
@@ -96,7 +96,6 @@ import timeflow.composeapp.generated.resources.save
 import timeflow.composeapp.generated.resources.schedule_button_edit
 import timeflow.composeapp.generated.resources.schedule_course_not_this_week
 import timeflow.composeapp.generated.resources.schedule_title_course_detail
-import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_week_vacation
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_1
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
@@ -119,7 +118,6 @@ import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.datastore.Weekday
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.DialogButton
-import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
 import xyz.hyli.timeflow.ui.components.DialogState
 import xyz.hyli.timeflow.ui.components.MyDialog
@@ -712,79 +710,6 @@ fun EmptyTableCell(
 }
 
 @Composable
-fun EditCourseDialog(
-    state: MutableState<TableState>,
-    viewModel: TimeFlowViewModel,
-    initValue: Course,
-    showEditCourseDialog: DialogState
-) {
-    val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]!!
-    val newCourse = remember { mutableStateOf(initValue) }
-    val isNameValid =
-        remember { mutableStateOf(newCourse.value.name.isNotBlank()) }
-    val isTimeValid = remember {
-        mutableStateOf(
-            if (newCourse.value.time.start > newCourse.value.time.end) {
-                false
-            } else {
-                schedule.courses.none {
-                    it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday && it.week.week.any { it in newCourse.value.week.week }
-                }
-            }
-        )
-    }
-    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
-        it - schedule.courses.filter {
-            it != initValue && it.time.start <= newCourse.value.time.end && it.time.end >= newCourse.value.time.start && it.weekday == newCourse.value.weekday
-        }.flatMap { it.week.week }
-    }
-    val isWeekValid =
-        remember { mutableStateOf(newCourse.value.week.week.isNotEmpty() && newCourse.value.week.week.all { it in validWeeks }) }
-    showEditCourseDialog.enableButton(
-        button = DialogButtonType.Positive,
-        enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
-    )
-    MyDialog(
-        state = showEditCourseDialog,
-        title = {
-            Text(
-                text = stringResource(Res.string.schedule_title_edit_course)
-            )
-        },
-        buttons = DialogDefaults.buttons(
-            positive = DialogButton(stringResource(Res.string.save)),
-            negative = DialogButton(stringResource(Res.string.cancel)),
-        ),
-        onEvent = { event ->
-            if (event.isPositiveButton) {
-                viewModel.updateSchedule(
-                    schedule = schedule.copy(
-                        courses = if (initValue in schedule.courses) {
-                            schedule.courses.map { if (it == initValue) newCourse.value else it }
-                        } else {
-                            schedule.courses + newCourse.value
-                        }
-                    )
-                )
-            }
-            state.value = TableState() // 重置状态
-        }
-    ) {
-        EditCourseContent(
-            style = EditCourseStyle.Dialog,
-            viewModel = viewModel,
-            initValue = initValue,
-            courseValue = newCourse,
-            isNameValid = isNameValid,
-            isTimeValid = isTimeValid,
-            isWeekValid = isWeekValid,
-            validWeeks = validWeeks
-        )
-    }
-}
-
-@Composable
 fun CourseListDialog(
     courses: List<Course>,
     currentWeek: Int,
@@ -893,19 +818,14 @@ fun CourseListDialog(
                     Spacer(
                         modifier = Modifier.weight(1f)
                     )
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        ),
+                    Button(
                         onClick = {
                             onClick(course)
                             showCourseListDialog.dismiss()
-                        },
+                        }
                     ) {
                         Text(
-                            stringResource(Res.string.schedule_button_edit),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            stringResource(Res.string.schedule_button_edit)
                         )
                     }
                 }
@@ -1089,6 +1009,9 @@ fun CourseColumn(
         }
         // 渲染空白单元格
         emptySlots.forEach { index ->
+            noGridCells = noGridCells.toMutableSet().let {
+                it - Pair(index + 1, dayIndex + 1) - Pair(index, dayIndex + 1)
+            }
             Box(
                 modifier = Modifier
                     .height(64.dp)
