@@ -615,9 +615,6 @@ fun CourseOverlay(
                 layoutParams = layoutParams,
                 scheduleParams = scheduleParams,
                 state = state,
-                modifier = Modifier
-                    .padding(end = 1.dp)
-                    .width(layoutParams.cellWidth - 1.dp),
                 dayIndex = dayIndex
             )
         }
@@ -837,36 +834,45 @@ fun CourseColumn(
     layoutParams: ScheduleLayoutParams,
     scheduleParams: ScheduleParams,
     state: MutableState<TableState>,
-    modifier: Modifier,
     dayIndex: Int
 ) {
     val showEditCourseDialog = rememberDialogState()
     val renderedTimeSlots = mutableSetOf<Int>()
     var noGridCells by layoutParams.noGridCells
+    var daySchedule by remember { mutableStateOf<List<Course>?>(null) }
+    var dayScheduleTimeForCurrentWeek by remember { mutableStateOf<Set<Range>?>(null) }
+    var dayScheduleTimeForOtherWeek by remember { mutableStateOf<Set<Range>?>(null) }
+    var selectCourse by remember { mutableStateOf<Course?>(null) }
 
-    val (daySchedule, dayScheduleTimeForCurrentWeek, dayScheduleTimeForOtherWeek) = remember(
+    LaunchedEffect(
         scheduleParams.schedule.courses,
         dayIndex,
-        scheduleParams.currentWeek
+        scheduleParams.currentWeek,
+        layoutParams.rows
     ) {
-        val filteredSchedule =
-            scheduleParams.schedule.courses.filter { it.weekday == weekdays[dayIndex] }
+        val filteredSchedule = scheduleParams.schedule.courses.filter {
+            it.weekday == weekdays[dayIndex]
+        }
         val currentWeekTimes = mutableSetOf<Range>()
-        val otherWeekTimes = mutableListOf<Range>()
+        val otherWeekTimes = mutableSetOf<Range>()
 
         filteredSchedule.forEach { course ->
-            if (course.week.week.contains(scheduleParams.currentWeek) && scheduleParams.currentWeek in 1..scheduleParams.totalWeeks) {
+            if (course.week.week.contains(scheduleParams.currentWeek) &&
+                scheduleParams.currentWeek in 1..scheduleParams.totalWeeks
+            ) {
                 currentWeekTimes.add(course.time)
             } else {
                 otherWeekTimes.add(course.time)
             }
         }
-        Triple(filteredSchedule, currentWeekTimes, otherWeekTimes.sortedBy { it.end - it.start })
+
+        daySchedule = filteredSchedule
+        dayScheduleTimeForCurrentWeek = currentWeekTimes
+        dayScheduleTimeForOtherWeek = otherWeekTimes.sortedBy { it.end - it.start }.toSet()
     }
     val emptySlots = remember(layoutParams.rows, renderedTimeSlots) {
         (1..layoutParams.rows).filterNot { it in renderedTimeSlots }
     }
-    var selectCourse by remember { mutableStateOf<Course?>(null) }
 
     fun editCourse(course: Course) {
         if (scheduleParams.navSuiteType !in NavigationBarType) {
@@ -890,137 +896,162 @@ fun CourseColumn(
         )
     }
 
-    Box(modifier = modifier) {
-        // 当前周的课程
-        dayScheduleTimeForCurrentWeek.forEach { time ->
-            renderedTimeSlots.addAll(time.start..time.end)
-            dayScheduleTimeForOtherWeek - time
-            if (time.end - time.start > 0) {
-                noGridCells = noGridCells.toMutableSet().let {
-                    it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .height(64.dp * (time.end - time.start + 1))
-                    .padding(bottom = 1.dp)
-                    .offset(
-                        y = (time.start - 1) * 64.dp - 1.dp
-                    )
-                    .zIndex(100f),
-                contentAlignment = Alignment.Center
-            ) {
-                CourseCell(
-                    courses = remember(daySchedule, time, scheduleParams.currentWeek) {
-                        daySchedule.filter { course ->
-                            course.time == time && course.week.week.contains(scheduleParams.currentWeek)
-                        }
-                    },
-                    coursesForThisTime = remember(daySchedule, time) {
-                        daySchedule.filter { course ->
-                            course.time.end >= time.start && course.time.start <= time.end
-                        }
-                    },
-                    currentWeek = scheduleParams.currentWeek,
-                    totalWeeks = scheduleParams.totalWeeks,
-                    onClick = { course ->
-                        editCourse(course)
-                    }
-                )
-            }
-        }
-        // 非当前周的课程
-        dayScheduleTimeForOtherWeek.forEachIndexed { _, time ->
-            if ((time.start..time.end).all { it in renderedTimeSlots }) {
-                return@forEachIndexed // 已经渲染过的时间段跳过
-            }
-            // 找出第一个未渲染的时间段
-            val (firstSpaceToDisplay, lastSpaceToDisplay) = remember(time, renderedTimeSlots) {
-                val first = (time.start..time.end).first { it !in renderedTimeSlots }
-                var last = first
-                (first..time.end).forEach { slot ->
-                    if (slot !in renderedTimeSlots) {
-                        last = slot
-                    } else {
-                        return@remember Pair(first, last)
+    Box(
+        modifier = Modifier
+            .padding(end = 1.dp)
+            .width(layoutParams.cellWidth - 1.dp)
+    ) {
+        if (daySchedule != null && dayScheduleTimeForCurrentWeek != null && dayScheduleTimeForOtherWeek != null) {
+            // 当前周的课程
+            dayScheduleTimeForCurrentWeek!!.forEach { time ->
+                renderedTimeSlots.addAll(time.start..time.end)
+                dayScheduleTimeForOtherWeek!! - time
+                if (time.end - time.start > 0) {
+                    noGridCells = noGridCells.toMutableSet().let {
+                        it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
                     }
                 }
-                Pair(first, last)
-            }
-            renderedTimeSlots.addAll(time.start..time.end)
-            if (time.end - time.start > 0) {
-                noGridCells = noGridCells.toMutableSet().let {
-                    it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .height(64.dp * (time.end - time.start + 1))
-                    .padding(bottom = 1.dp)
-                    .offset(
-                        y = (time.start - 1) * 64.dp - 1.dp
-                    )
-                    .zIndex(99 - time.start + 1.0f / (time.end - time.start)) // 渲染顺序
-                ,
-                contentAlignment = Alignment.Center
-            ) {
-                CourseCell(
-                    courses = remember(daySchedule, time, scheduleParams.currentWeek) {
-                        daySchedule
-                            .filter { course ->
-                                course.time == time &&
-                                        (!course.week.week.contains(scheduleParams.currentWeek) || scheduleParams.currentWeek !in 1..scheduleParams.totalWeeks)
-                            }
-                            .sortedBy {
-                                // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
-                                it.week.week.minOfOrNull { week ->
-                                    (week - scheduleParams.currentWeek).let {
-                                        if (it < 0) it + scheduleParams.totalWeeks else it
-                                    }
-                                } ?: Int.MAX_VALUE
-                            }
-                    },
-                    coursesForThisTime = remember(daySchedule, time) {
-                        daySchedule.filter { course ->
-                            course.time.end >= time.start && course.time.start <= time.end
-                        }
-                    },
-                    currentWeek = scheduleParams.currentWeek,
-                    totalWeeks = scheduleParams.totalWeeks,
-                    displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
-                    displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
-                    onClick = { course ->
-                        editCourse(course)
+                var courses by remember { mutableStateOf<List<Course>?>(null) }
+                var coursesForThisTime by remember { mutableStateOf<List<Course>?>(null) }
+                LaunchedEffect(daySchedule, time, scheduleParams.currentWeek) {
+                    courses = daySchedule!!.filter { course ->
+                        course.time == time && course.week.week.contains(scheduleParams.currentWeek)
                     }
-                )
-            }
-        }
-        // 渲染空白单元格
-        emptySlots.forEach { index ->
-            noGridCells = noGridCells.toMutableSet().let {
-                it - Pair(index + 1, dayIndex + 1) - Pair(index, dayIndex + 1)
-            }
-            Box(
-                modifier = Modifier
-                    .height(64.dp)
-                    .padding(bottom = 1.dp)
-                    .offset(
-                        y = (index - 1) * 64.dp - 1.dp
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                EmptyTableCell(
-                    state = state,
-                    index = index,
-                    dayIndex = dayIndex,
-                    totalWeeks = scheduleParams.totalWeeks,
-                    onClick = { course ->
-                        state.value = state.value.copy(
-                            isClicked = 2, // 点击后等待重置
+                    coursesForThisTime = daySchedule!!.filter { course ->
+                        course.time.end >= time.start && course.time.start <= time.end
+                    }
+                }
+                AnimatedContent(
+                    targetState = courses != null || coursesForThisTime != null,
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(300)
+                        ) togetherWith fadeOut(animationSpec = tween(300))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp * (time.end - time.start + 1))
+                        .padding(bottom = 1.dp)
+                        .offset(
+                            y = (time.start - 1) * 64.dp - 1.dp
                         )
-                        editCourse(course)
+                        .zIndex(100f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (it) {
+                        CourseCell(
+                            courses = courses!!,
+                            coursesForThisTime = coursesForThisTime!!,
+                            currentWeek = scheduleParams.currentWeek,
+                            totalWeeks = scheduleParams.totalWeeks,
+                            onClick = { course ->
+                                editCourse(course)
+                            }
+                        )
                     }
-                )
+                }
+            }
+            // 非当前周的课程
+            dayScheduleTimeForOtherWeek!!.forEachIndexed { _, time ->
+                if ((time.start..time.end).all { it in renderedTimeSlots }) {
+                    return@forEachIndexed // 已经渲染过的时间段跳过
+                }
+                // 找出第一个未渲染的时间段
+                val (firstSpaceToDisplay, lastSpaceToDisplay) = remember(time, renderedTimeSlots) {
+                    val first = (time.start..time.end).first { it !in renderedTimeSlots }
+                    var last = first
+                    (first..time.end).forEach { slot ->
+                        if (slot !in renderedTimeSlots) {
+                            last = slot
+                        } else {
+                            return@remember Pair(first, last)
+                        }
+                    }
+                    Pair(first, last)
+                }
+                renderedTimeSlots.addAll(time.start..time.end)
+                if (time.end - time.start > 0) {
+                    noGridCells = noGridCells.toMutableSet().let {
+                        it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
+                    }
+                }
+                var courses by remember { mutableStateOf<List<Course>?>(null) }
+                var coursesForThisTime by remember { mutableStateOf<List<Course>?>(null) }
+                LaunchedEffect(daySchedule, time, scheduleParams.currentWeek) {
+                    courses = daySchedule!!
+                        .filter { course ->
+                            course.time == time &&
+                                    (!course.week.week.contains(scheduleParams.currentWeek) || scheduleParams.currentWeek !in 1..scheduleParams.totalWeeks)
+                        }
+                        .sortedBy {
+                            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
+                            it.week.week.minOfOrNull { week ->
+                                (week - scheduleParams.currentWeek).let {
+                                    if (it < 0) it + scheduleParams.totalWeeks else it
+                                }
+                            } ?: Int.MAX_VALUE
+                        }
+                    coursesForThisTime = daySchedule!!.filter { course ->
+                        course.time.end >= time.start && course.time.start <= time.end
+                    }
+                }
+                AnimatedContent(
+                    targetState = courses != null || coursesForThisTime != null,
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(300)
+                        ) togetherWith fadeOut(animationSpec = tween(300))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp * (time.end - time.start + 1))
+                        .padding(bottom = 1.dp)
+                        .offset(
+                            y = (time.start - 1) * 64.dp - 1.dp
+                        )
+                        .zIndex(99 - time.start + 1.0f / (time.end - time.start)) // 渲染顺序
+                    ,
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (it) {
+                        CourseCell(
+                            courses = courses!!,
+                            coursesForThisTime = coursesForThisTime!!,
+                            currentWeek = scheduleParams.currentWeek,
+                            totalWeeks = scheduleParams.totalWeeks,
+                            displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
+                            displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
+                            onClick = { course ->
+                                editCourse(course)
+                            }
+                        )
+                    }
+                }
+            }
+            // 渲染空白单元格
+            emptySlots.forEach { index ->
+                Box(
+                    modifier = Modifier
+                        .height(64.dp)
+                        .padding(bottom = 1.dp)
+                        .offset(
+                            y = (index - 1) * 64.dp - 1.dp
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyTableCell(
+                        state = state,
+                        index = index,
+                        dayIndex = dayIndex,
+                        totalWeeks = scheduleParams.totalWeeks,
+                        onClick = { course ->
+                            state.value = state.value.copy(
+                                isClicked = 2, // 点击后等待重置
+                            )
+                            editCourse(course)
+                        }
+                    )
+                }
             }
         }
     }
