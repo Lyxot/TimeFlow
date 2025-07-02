@@ -1,16 +1,19 @@
 package xyz.hyli.timeflow.datastore
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -21,7 +24,7 @@ data class Date(
 ) {
     companion object {
         fun fromLocalDate(localDate: LocalDate): Date {
-            return Date(localDate.year, localDate.monthNumber, localDate.dayOfMonth)
+            return Date(localDate.year, localDate.month.number, localDate.day)
         }
     }
     override fun toString(): String =
@@ -173,7 +176,7 @@ data class LessonTimePeriodInfo(
     }
 }
 
-@OptIn(ExperimentalSerializationApi::class)
+@OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
 @Serializable
 data class Schedule(
     @ProtoNumber(1) val name: String = "",
@@ -188,7 +191,7 @@ data class Schedule(
         fun defaultTermStartDate(): Date {
             val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
             val year = currentDate.year
-            val month = if (currentDate.monthNumber in 3..8) 3 else 9
+            val month = if (currentDate.month.number in 3..8) 3 else 9
             val day = 1
             return Date(year, month, day)
         }
@@ -205,8 +208,8 @@ data class Schedule(
         if (date < startDate) return 0
 
         // 计算每个日期在周中的位置偏移（周一=0，周日=6）
-        val startOffset = startDate.dayOfWeek.ordinal - 1
-        val endOffset = date.dayOfWeek.ordinal - 1
+        val startOffset = startDate.dayOfWeek.isoDayNumber - 1
+        val endOffset = date.dayOfWeek.isoDayNumber - 1
 
         // 计算调整后的天数差
         val daysBetween = startDate.daysUntil(date)

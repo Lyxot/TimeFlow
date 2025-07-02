@@ -82,9 +82,9 @@ import androidx.navigation.NavHostController
 import com.materialkolor.ktx.harmonize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -128,6 +128,8 @@ import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 data class ScheduleLayoutParams(
     val headerWidth: MutableState<Dp>,
@@ -424,6 +426,7 @@ fun ScheduleTable(
     }
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
 fun TableGrid(
     layoutParams: ScheduleLayoutParams,
@@ -487,7 +490,7 @@ fun TableGrid(
                         )
                         Text(
                             text = dateList[dayIndex].let {
-                                it.monthNumber.toString() + "/" + it.dayOfMonth.toString()
+                                it.month.number.toString() + "/" + it.day.toString()
                                     .padStart(2, '0')
                             },
                             style = MaterialTheme.typography.labelSmall,
