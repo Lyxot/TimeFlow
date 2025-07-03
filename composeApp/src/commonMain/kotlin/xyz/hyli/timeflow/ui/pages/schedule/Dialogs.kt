@@ -49,25 +49,57 @@ import timeflow.composeapp.generated.resources.schedule_course_not_this_week
 import timeflow.composeapp.generated.resources.schedule_title_add_course
 import timeflow.composeapp.generated.resources.schedule_title_course_detail
 import timeflow.composeapp.generated.resources.schedule_title_course_time_start
+import timeflow.composeapp.generated.resources.schedule_title_create_schedule
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_value_course_time
 import timeflow.composeapp.generated.resources.schedule_value_course_week
+import timeflow.composeapp.generated.resources.schedule_value_schedule_name_empty
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
+import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
+import xyz.hyli.timeflow.ui.components.DialogInputValidator
 import xyz.hyli.timeflow.ui.components.DialogState
 import xyz.hyli.timeflow.ui.components.MyDialog
+import xyz.hyli.timeflow.ui.components.TextInputDialog
 import xyz.hyli.timeflow.ui.components.WheelPicker
+import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.DeleteCourseButton
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseContent
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseStyle
 import xyz.hyli.timeflow.ui.theme.NotoSans
+import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+
+@Composable
+fun AddScheduleDialog(
+    state: MutableState<Boolean>,
+    viewModel: TimeFlowViewModel
+) {
+    val stringScheduleNameEmpty = stringResource(Res.string.schedule_value_schedule_name_empty)
+    TextInputDialog(
+        title = stringResource(Res.string.schedule_title_create_schedule),
+        initialValue = "",
+        onValueChange = { newValue ->
+            viewModel.createSchedule(Schedule(name = newValue))
+            state.value = false
+        },
+        onDismiss = { state.value = false },
+        validator = rememberDialogInputValidator(
+            validate = {
+                if (it.isNotEmpty())
+                    DialogInputValidator.Result.Valid
+                else
+                    DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+            }
+        )
+    )
+}
 
 @Composable
 fun CourseListDialog(

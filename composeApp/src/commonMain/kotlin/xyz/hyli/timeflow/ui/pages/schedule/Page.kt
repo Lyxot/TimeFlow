@@ -151,6 +151,7 @@ fun ScheduleScreen(
             )
         }
         val coroutineScope = rememberCoroutineScope()
+        val showAddScheduleDialog = remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -167,11 +168,11 @@ fun ScheduleScreen(
             ) {
                 IconButton(
                     onClick = {
-                        // TODO: Add new schedule dialog
+                        // TODO: Select a schedule
                     },
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Default.SyncAlt,
                         contentDescription = stringResource(Res.string.save)
                     )
                 }
@@ -251,11 +252,11 @@ fun ScheduleScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        // TODO: Select a schedule
+                        showAddScheduleDialog.value = true
                     },
                 ) {
                     Icon(
-                        imageVector = Icons.Default.SyncAlt,
+                        imageVector = Icons.Default.Add,
                         contentDescription = stringResource(Res.string.save)
                     )
                 }
@@ -278,6 +279,12 @@ fun ScheduleScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+        if (showAddScheduleDialog.value) {
+            AddScheduleDialog(
+                state = showAddScheduleDialog,
+                viewModel = viewModel
+            )
         }
     }
 
