@@ -1,8 +1,3 @@
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -21,17 +16,9 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
     ) {
         window.minimumSize = Dimension(480, 540)
-        // TODO: Remove this workaround when CMP-8323 resolved
-        // https://youtrack.jetbrains.com/issue/CMP-8323
-        var showContent: Boolean by remember { mutableStateOf(false) }
-        if (showContent) {
-            App(
-                viewModel = ViewModelOwner(appContainer).timeFlowViewModel
-            )
-        }
-        LaunchedEffect(Unit) {
-            showContent = true
-        }
+        App(
+            viewModel = ViewModelOwner(appContainer).timeFlowViewModel
+        )
     }
 }
 
