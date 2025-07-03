@@ -29,6 +29,12 @@ class TimeFlowViewModel(
                 initialValue = Settings(initialized = false)
             )
 
+    fun updateFirstLaunch(versionCode: Int) {
+        viewModelScope.launch {
+            repository.updateFirstLaunch(versionCode)
+        }
+    }
+
     fun updateTheme(theme: Int) {
         viewModelScope.launch {
             repository.updateTheme(theme)

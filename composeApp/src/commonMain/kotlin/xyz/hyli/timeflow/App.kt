@@ -9,6 +9,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -26,6 +27,11 @@ import xyz.hyli.timeflow.utils.isDesktop
 internal fun App(
     viewModel: TimeFlowViewModel
 ) = AppTheme(viewModel) {
+    LaunchedEffect(viewModel.settings.value.initialized) {
+        if (viewModel.settings.value.initialized && viewModel.settings.value.firstLaunch < BuildConfig.APP_VERSION_CODE) {
+            viewModel.updateFirstLaunch(BuildConfig.APP_VERSION_CODE)
+        }
+    }
     val navController = rememberNavController()
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val customNavSuiteType = with(adaptiveInfo) {

@@ -186,6 +186,11 @@ data class Schedule(
     @ProtoNumber(5) val termEndDate: Date = defaultTermEndDate(),
     @ProtoNumber(6) val lessonTimePeriodInfo: LessonTimePeriodInfo = LessonTimePeriodInfo.fromPeriodCounts(),
     @ProtoNumber(7) val displayWeekends: Boolean = false,
+    @ProtoNumber(8) val reserved8: String? = null,
+    @ProtoNumber(9) val reserved9: String? = null,
+    @ProtoNumber(10) val reserved10: String? = null,
+    @ProtoNumber(11) val reserved11: String? = null,
+    @ProtoNumber(12) val reserved12: String? = null,
 ) {
     companion object {
         fun defaultTermStartDate(): Date {

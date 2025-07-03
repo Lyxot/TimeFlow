@@ -11,6 +11,9 @@ class DataRepository(
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     val settings: Flow<Settings> = settingsDataStore.settings
+    suspend fun updateFirstLaunch(versionCode: Int) {
+        settingsDataStore.updateFirstLaunch(versionCode)
+    }
     suspend fun updateTheme(theme: Int) {
         settingsDataStore.updateTheme(theme)
     }

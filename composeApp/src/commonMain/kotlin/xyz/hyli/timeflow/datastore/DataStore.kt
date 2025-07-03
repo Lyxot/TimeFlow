@@ -49,6 +49,12 @@ class SettingsDataStore(
         )
     )
     val settings: Flow<Settings> = db.data
+    suspend fun updateFirstLaunch(versionCode: Int) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(firstLaunch = versionCode)
+        }
+    }
+
     suspend fun updateTheme(theme: Int) {
         db.updateData { currentSettings ->
             currentSettings.copy(theme = theme)

@@ -3,10 +3,12 @@ package xyz.hyli.timeflow.proto;
 import "schedule.proto";
 
 message Settings {
+  optional bool initialized = 999;
   optional int32 firstLaunch = 1;
   optional int32 theme = 2;
   optional bool themeDynamicColor = 3;
-  optional int64 themeColor = 4;
+  optional int32 themeColor = 4;
   map<string, Schedule> schedule = 5;
   optional string selectedSchedule = 6;
+  reserved 7, 8, 9, 10, 11;
 }

@@ -129,5 +129,10 @@ data class Course(
     @ProtoNumber(4) val time: Range,
     @ProtoNumber(5) val weekday: Weekday,
     @ProtoNumber(6) val week: WeekList,
-    @ProtoNumber(7) val color: Int
+    @ProtoNumber(7) val color: Int,
+    @ProtoNumber(8) val reserved8: String? = null,
+    @ProtoNumber(9) val reserved9: String? = null,
+    @ProtoNumber(10) val reserved10: String? = null,
+    @ProtoNumber(11) val reserved11: String? = null,
+    @ProtoNumber(12) val reserved12: String? = null,
 )

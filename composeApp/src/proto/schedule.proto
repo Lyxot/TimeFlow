@@ -3,25 +3,25 @@ package xyz.hyli.timeflow.proto;
 import "course.proto";
 
 message Date {
-  optional int32 year = 1;
-  optional int32 month = 2;
-  optional int32 day = 3;
-}
-
-message Time {
-  optional int32 hour = 1;
-  optional int32 minute = 2;
-}
-
-message Lesson {
-  optional Time start = 1;
-  optional Time end = 2;
+  required int32 year = 1;
+  required int32 month = 2;
+  required int32 day = 3;
 }
 
 message LessonTimePeriodInfo {
   repeated Lesson morning = 1;
   repeated Lesson afternoon = 2;
   repeated Lesson evening = 3;
+}
+
+message Lesson {
+  required Time start = 1;
+  required Time end = 2;
+}
+
+message Time {
+  required int32 hour = 1;
+  required int32 minute = 2;
 }
 
 message Schedule {
@@ -32,4 +32,5 @@ message Schedule {
   optional Date termEndDate = 5;
   optional LessonTimePeriodInfo lessonTimePeriodInfo = 6;
   optional bool displayWeekends = 7;
+  reserved 8, 9, 10, 11, 12;
 }

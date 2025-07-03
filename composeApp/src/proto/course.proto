@@ -1,48 +1,32 @@
 syntax = "proto2";
 package xyz.hyli.timeflow.proto;
 
-message Weekday {
-  enum Weekday {
-    MONDAY = 1;
-    TUESDAY = 2;
-    WEDNESDAY = 3;
-    THURSDAY = 4;
-    FRIDAY = 5;
-    SATURDAY = 6;
-    SUNDAY = 7;
-  }
-}
-
 message Course {
-  optional string name = 1;
+  required string name = 1;
   optional string teacher = 2;
   optional string classroom = 3;
-  optional Range time = 4;
-  optional Weekday weekday = 5;
-  oneof week {
-    WeekDescription weekDescription = 6;
-    WeekRange weekRange = 7;
-    WeekList weekList = 8;
-  }
+  required Range time = 4;
+  required Weekday weekday = 5;
+  required WeekList week = 6;
+  required int32 color = 7;
+  reserved 8, 9, 10, 11, 12;
 }
 
-message WeekDescription {
-  enum description {
-    ALL = 1;
-    ODD = 2;
-    EVEN = 3;
-  }
+message Range {
+  required int32 start = 1;
+  required int32 end = 2;
 }
 
-message WeekRange {
-  repeated Range range = 1;
+enum Weekday {
+  MONDAY = 1;
+  TUESDAY = 2;
+  WEDNESDAY = 3;
+  THURSDAY = 4;
+  FRIDAY = 5;
+  SATURDAY = 6;
+  SUNDAY = 7;
 }
 
 message WeekList {
   repeated int32 week = 1;
-}
-
-message Range {
-  optional int32 start = 1;
-  optional int32 end = 2;
 }
