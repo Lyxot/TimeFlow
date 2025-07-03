@@ -1,4 +1,4 @@
-package xyz.hyli.timeflow.ui.pages
+package xyz.hyli.timeflow.ui.pages.settings.subpage
 
 import androidx.collection.IntSet
 import androidx.collection.MutableIntSet
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,11 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -69,276 +64,35 @@ import timeflow.composeapp.generated.resources.lesson_6
 import timeflow.composeapp.generated.resources.lesson_7
 import timeflow.composeapp.generated.resources.lesson_8
 import timeflow.composeapp.generated.resources.lesson_9
-import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.save
-import timeflow.composeapp.generated.resources.settings_subtitle_create_schedule
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_lessons_per_day
-import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
-import timeflow.composeapp.generated.resources.settings_subtitle_theme_dynamic_color
-import timeflow.composeapp.generated.resources.settings_theme_dark
-import timeflow.composeapp.generated.resources.settings_theme_light
-import timeflow.composeapp.generated.resources.settings_theme_system
-import timeflow.composeapp.generated.resources.settings_title_create_schedule
-import timeflow.composeapp.generated.resources.settings_title_display_weekends
-import timeflow.composeapp.generated.resources.settings_title_general
 import timeflow.composeapp.generated.resources.settings_title_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_afternoon
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_morning
-import timeflow.composeapp.generated.resources.settings_title_schedule
-import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_afternoon
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_evening
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
-import timeflow.composeapp.generated.resources.settings_title_schedule_name
-import timeflow.composeapp.generated.resources.settings_title_schedule_term_end_date
-import timeflow.composeapp.generated.resources.settings_title_schedule_term_start_date
-import timeflow.composeapp.generated.resources.settings_title_selected_schedule
-import timeflow.composeapp.generated.resources.settings_title_theme
-import timeflow.composeapp.generated.resources.settings_title_theme_color
-import timeflow.composeapp.generated.resources.settings_title_theme_dynamic_color
 import timeflow.composeapp.generated.resources.settings_warning_lessons_per_day_empty
 import timeflow.composeapp.generated.resources.settings_warning_lessons_time_conflict
-import timeflow.composeapp.generated.resources.settings_warning_schedule_name_empty
-import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.LessonTimePeriodInfo
-import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Time
 import xyz.hyli.timeflow.ui.components.BasePreference
-import xyz.hyli.timeflow.ui.components.Dependency
-import xyz.hyli.timeflow.ui.components.DialogInputValidator
-import xyz.hyli.timeflow.ui.components.PreferenceBool
-import xyz.hyli.timeflow.ui.components.PreferenceBoolStyle
-import xyz.hyli.timeflow.ui.components.PreferenceColor
-import xyz.hyli.timeflow.ui.components.PreferenceDate
 import xyz.hyli.timeflow.ui.components.PreferenceDivider
-import xyz.hyli.timeflow.ui.components.PreferenceInputText
-import xyz.hyli.timeflow.ui.components.PreferenceList
-import xyz.hyli.timeflow.ui.components.PreferenceListStyle
 import xyz.hyli.timeflow.ui.components.PreferenceNumber
 import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
-import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.components.rememberDialogState
-import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
-import xyz.hyli.timeflow.utils.supportDynamicColor
 
 @Composable
-fun SettingsScreen(
-    viewModel: TimeFlowViewModel,
-    navHostController: NavHostController
-) {
-    val settingsState = viewModel.settings.collectAsState()
-    val settings by viewModel.settings.collectAsState()
-    PreferenceScreen(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        if (currentPlatform().isDesktop()) {
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-        }
-        Text(
-            text = stringResource(Res.string.page_settings),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-        // General Settings
-        PreferenceSection(
-            title = stringResource(Res.string.settings_title_general)
-        ) {
-            // Theme Settings
-            val themeList = listOf(
-                stringResource(Res.string.settings_theme_system),
-                stringResource(Res.string.settings_theme_light),
-                stringResource(Res.string.settings_theme_dark)
-            )
-            PreferenceList(
-                style = PreferenceListStyle.Style.SegmentedButtons,
-                value = settings.theme,
-                onValueChange = {
-                    viewModel.updateTheme(it)
-                },
-                items = listOf(0, 1, 2),
-                itemTextProvider = { themeList[it] },
-                title = stringResource(Res.string.settings_title_theme)
-            )
-            // Dynamic Color Settings
-            val themeDynamicColorDependency =
-                Dependency.State(mutableStateOf(currentPlatform())) {
-                    currentPlatform().supportDynamicColor()
-                }
-            PreferenceBool(
-                style = PreferenceBoolStyle.Style.Switch,
-                value = settings.themeDynamicColor,
-                onValueChange = {
-                    viewModel.updateThemeDynamicColor(it)
-                },
-                title = stringResource(Res.string.settings_title_theme_dynamic_color),
-                subtitle = stringResource(Res.string.settings_subtitle_theme_dynamic_color),
-                visible = themeDynamicColorDependency,
-            )
-            // Theme Color Settings
-            if (!settings.themeDynamicColor || !currentPlatform().supportDynamicColor()) {
-                PreferenceColor(
-                    value = Color(settings.themeColor),
-                    onValueChange = {
-                        viewModel.updateThemeColor(it.toArgb())
-                    },
-                    title = stringResource(Res.string.settings_title_theme_color)
-                )
-            }
-            // Current selected schedule settings
-            val selectedScheduleDependency = Dependency.State(settingsState) {
-                it.schedule.values.any { !it.deleted }
-            }
-            PreferenceList(
-                value = settings.selectedSchedule,
-                onValueChange = {
-                    viewModel.updateSelectedSchedule(it)
-                },
-                items = settings.schedule.keys.toList(),
-                itemTextProvider = { settings.schedule[it]?.name ?: "" },
-                title = stringResource(Res.string.settings_title_selected_schedule),
-                subtitle =
-                    if (!settings.schedule.values.any { !it.deleted })
-                        stringResource(Res.string.settings_subtitle_schedule_empty)
-                    else
-                        null,
-                enabled = selectedScheduleDependency
-            )
-            // Add New Schedule
-            val stringScheduleNameEmpty = stringResource(Res.string.settings_warning_schedule_name_empty)
-            PreferenceInputText(
-                value = "",
-                onValueChange = { newScheduleName ->
-                    if (newScheduleName.isNotEmpty()) {
-                        val newSchedule = Schedule(
-                            name = newScheduleName
-                        )
-                        viewModel.createSchedule(
-                            newSchedule
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_create_schedule),
-                subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
-                validator = rememberDialogInputValidator(
-                    validate = {
-                        if (it.isNotEmpty())
-                            DialogInputValidator.Result.Valid
-                        else
-                            DialogInputValidator.Result.Error(stringScheduleNameEmpty)
-                    }
-                )
-            )
-        }
-        PreferenceDivider()
-        // Schedule Settings
-        val scheduleDependency = Dependency.State(settingsState) {
-            it.selectedSchedule.isNotEmpty()
-        }
-        PreferenceSection(
-            title = stringResource(Res.string.settings_title_schedule),
-            subtitle =
-                if (settings.selectedSchedule.isNotEmpty())
-                    null
-                else if (!settings.schedule.values.any { !it.deleted })
-                    stringResource(Res.string.settings_subtitle_schedule_empty)
-                else
-                    stringResource(Res.string.settings_subtitle_schedule_not_selected),
-            enabled = scheduleDependency
-        ) {
-            // Schedule Name
-            PreferenceInputText(
-                value = settings.schedule[settings.selectedSchedule]?.name ?: "",
-                onValueChange = { newName ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(name = newName)
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_name),
-                enabled = scheduleDependency
-            )
-            // Term Start and End Dates
-            PreferenceDate(
-                value = settings.schedule[settings.selectedSchedule]?.termStartDate?.toLocalDate()
-                    ?: Schedule.defaultTermStartDate().toLocalDate(),
-                onValueChange = { newDate ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(termStartDate = Date.fromLocalDate(newDate))
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_term_start_date),
-                enabled = scheduleDependency
-            )
-            PreferenceDate(
-                value = settings.schedule[settings.selectedSchedule]?.termEndDate?.toLocalDate()
-                    ?: Schedule.defaultTermEndDate().toLocalDate(),
-                onValueChange = { newDate ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(termEndDate = Date.fromLocalDate(newDate))
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_term_end_date),
-                enabled = scheduleDependency
-            )
-            // Lessons Per Day Settings
-            BasePreference(
-                title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
-                subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
-                onClick = {
-                    navHostController.navigate(SettingsDestination.LessonsPerDay.name)
-                },
-                enabled = scheduleDependency
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                    contentDescription = null
-                )
-            }
-            PreferenceBool(
-                style = PreferenceBoolStyle.Style.Switch,
-                value = settings.schedule[settings.selectedSchedule]?.displayWeekends == true,
-                onValueChange = {
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(displayWeekends = it)
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_display_weekends),
-                enabled = scheduleDependency
-            )
-        }
-        Spacer(modifier = Modifier.height(
-            if (currentPlatform().isDesktop()) 12.dp
-            else 24.dp
-        ))
-    }
-}
-
-@Composable
-fun SettingsLessonsPerDayScreen(
+fun LessonsPerDayScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController
 ) {
@@ -346,7 +100,7 @@ fun SettingsLessonsPerDayScreen(
     val lessonTimePeriodInfo = remember {
         mutableStateOf(
             settings.schedule[settings.selectedSchedule]?.lessonTimePeriodInfo
-                ?: LessonTimePeriodInfo.fromPeriodCounts()
+                ?: LessonTimePeriodInfo.Companion.fromPeriodCounts()
         )
     }
     val morningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.morning.size) }
@@ -356,13 +110,13 @@ fun SettingsLessonsPerDayScreen(
     val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
 
     Column(
-        modifier = Modifier
+        modifier = Modifier.Companion
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.Companion.statusBars)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.Companion.fillMaxWidth(),
+            verticalAlignment = Alignment.Companion.CenterVertically,
         ) {
             IconButton(
                 onClick = {
@@ -374,12 +128,12 @@ fun SettingsLessonsPerDayScreen(
                     contentDescription = stringResource(Res.string.back)
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.Companion.weight(1f))
             if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_per_day_empty),
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .background(
                             MaterialTheme.colorScheme.errorContainer,
                             RoundedCornerShape(8.dp)
@@ -390,15 +144,15 @@ fun SettingsLessonsPerDayScreen(
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_time_conflict),
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .background(
                             MaterialTheme.colorScheme.errorContainer,
-                            RoundedCornerShape(8.dp)
+                            androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                         )
                         .padding(horizontal = 12.dp)
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.Companion.weight(1f))
             if (isModified.value) {
                 IconButton(
                     onClick = {
@@ -421,7 +175,7 @@ fun SettingsLessonsPerDayScreen(
             }
         }
         PreferenceScreen(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.Companion.fillMaxWidth()
         ) {
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_lessons_per_day)
@@ -433,7 +187,7 @@ fun SettingsLessonsPerDayScreen(
                     onValueChange = { newCount ->
                         morningCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            morning = LessonTimePeriodInfo.generateLessons(
+                            morning = LessonTimePeriodInfo.Companion.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.morning.getOrNull(0)?.start ?: Time(
                                     8,
@@ -460,7 +214,7 @@ fun SettingsLessonsPerDayScreen(
                     onValueChange = { newCount ->
                         afternoonCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            afternoon = LessonTimePeriodInfo.generateLessons(
+                            afternoon = LessonTimePeriodInfo.Companion.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.afternoon.getOrNull(0)?.start ?: Time(
                                     13,
@@ -487,7 +241,7 @@ fun SettingsLessonsPerDayScreen(
                     onValueChange = { newCount ->
                         eveningCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            evening = LessonTimePeriodInfo.generateLessons(
+                            evening = LessonTimePeriodInfo.Companion.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.evening.getOrNull(0)?.start ?: Time(
                                     18,
@@ -586,28 +340,29 @@ fun SettingsLessonsPerDayScreen(
                                                     lessonTimePeriodInfo.value.copy(
                                                         morning = lessonTimePeriodInfo.value.morning.toMutableList()
                                                             .apply {
-                                                        this[i] = Lesson(
-                                                            start = startTime,
-                                                            end = endTime
-                                                        )
-                                                    }
-                                                )
+                                                                this[i] = Lesson(
+                                                                    start = startTime,
+                                                                    end = endTime
+                                                                )
+                                                            }
+                                                    )
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
-                                            morningCount.value - i,
-                                            startTime,
-                                            endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(
-                                                lessonTimePeriodInfo.value.morning[i - 1].end
+                                        val updatedLessons =
+                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                                morningCount.value - i,
+                                                startTime,
+                                                endTime.minutesSince(startTime),
+                                                if (i == 0) 10 else startTime.minutesSince(
+                                                    lessonTimePeriodInfo.value.morning[i - 1].end
+                                                )
                                             )
-                                        )
                                         lessonTimePeriodInfo.value =
                                             lessonTimePeriodInfo.value.copy(
                                                 morning = lessonTimePeriodInfo.value.morning.toMutableList()
-                                                .subList(0, i) + updatedLessons
-                                        )
+                                                    .subList(0, i) + updatedLessons
+                                            )
                                         isModified.value = true
                                     }
                                 )
@@ -659,28 +414,29 @@ fun SettingsLessonsPerDayScreen(
                                                     lessonTimePeriodInfo.value.copy(
                                                         afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
                                                             .apply {
-                                                        this[i] = Lesson(
-                                                            start = startTime,
-                                                            end = endTime
-                                                        )
-                                                    }
-                                                )
+                                                                this[i] = Lesson(
+                                                                    start = startTime,
+                                                                    end = endTime
+                                                                )
+                                                            }
+                                                    )
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
-                                            afternoonCount.value - i,
-                                            startTime,
-                                            endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(
-                                                lessonTimePeriodInfo.value.afternoon[i - 1].end
+                                        val updatedLessons =
+                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                                afternoonCount.value - i,
+                                                startTime,
+                                                endTime.minutesSince(startTime),
+                                                if (i == 0) 10 else startTime.minutesSince(
+                                                    lessonTimePeriodInfo.value.afternoon[i - 1].end
+                                                )
                                             )
-                                        )
                                         lessonTimePeriodInfo.value =
                                             lessonTimePeriodInfo.value.copy(
                                                 afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
-                                                .subList(0, i) + updatedLessons
-                                        )
+                                                    .subList(0, i) + updatedLessons
+                                            )
                                         isModified.value = true
                                     }
                                 )
@@ -732,28 +488,29 @@ fun SettingsLessonsPerDayScreen(
                                                     lessonTimePeriodInfo.value.copy(
                                                         evening = lessonTimePeriodInfo.value.evening.toMutableList()
                                                             .apply {
-                                                        this[i] = Lesson(
-                                                            start = startTime,
-                                                            end = endTime
-                                                        )
-                                                    }
-                                                )
+                                                                this[i] = Lesson(
+                                                                    start = startTime,
+                                                                    end = endTime
+                                                                )
+                                                            }
+                                                    )
                                                 return@TimePeriodPickerDialog
                                             }
                                         }
-                                        val updatedLessons = LessonTimePeriodInfo.generateLessons(
-                                            eveningCount.value - i,
-                                            startTime,
-                                            endTime.minutesSince(startTime),
-                                            if (i == 0) 10 else startTime.minutesSince(
-                                                lessonTimePeriodInfo.value.evening[i - 1].end
+                                        val updatedLessons =
+                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                                eveningCount.value - i,
+                                                startTime,
+                                                endTime.minutesSince(startTime),
+                                                if (i == 0) 10 else startTime.minutesSince(
+                                                    lessonTimePeriodInfo.value.evening[i - 1].end
+                                                )
                                             )
-                                        )
                                         lessonTimePeriodInfo.value =
                                             lessonTimePeriodInfo.value.copy(
                                                 evening = lessonTimePeriodInfo.value.evening.toMutableList()
-                                                .subList(0, i) + updatedLessons
-                                        )
+                                                    .subList(0, i) + updatedLessons
+                                            )
                                         isModified.value = true
                                     }
                                 )
@@ -763,13 +520,14 @@ fun SettingsLessonsPerDayScreen(
                 }
             }
             Spacer(
-                modifier = if (currentPlatform().isDesktop()) Modifier.height(12.dp)
-                    else Modifier.height(
-                        maxOf(
-                            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-                            24.dp
-                        )
+                modifier = if (currentPlatform().isDesktop()) Modifier.Companion.height(12.dp)
+                else Modifier.Companion.height(
+                    maxOf(
+                        WindowInsets.Companion.navigationBars.asPaddingValues()
+                            .calculateBottomPadding(),
+                        24.dp
                     )
+                )
             )
         }
     }

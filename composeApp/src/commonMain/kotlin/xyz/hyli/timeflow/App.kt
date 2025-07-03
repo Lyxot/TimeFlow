@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
-import xyz.hyli.timeflow.ui.navigation.navHost
+import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -53,7 +53,7 @@ internal fun App(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(horizontal = 8.dp)
         ) {
-            navHost(
+            TimeFlowNavHost(
                 viewModel = viewModel,
                 navHostController = navController,
                 navSuiteType = customNavSuiteType,

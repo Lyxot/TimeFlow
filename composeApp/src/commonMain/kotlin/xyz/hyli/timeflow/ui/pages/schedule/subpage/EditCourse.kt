@@ -1,4 +1,4 @@
-package xyz.hyli.timeflow.ui.pages
+package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -68,7 +68,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -78,10 +77,7 @@ import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.all_week
 import timeflow.composeapp.generated.resources.back
-import timeflow.composeapp.generated.resources.cancel
 import timeflow.composeapp.generated.resources.confirm
-import timeflow.composeapp.generated.resources.dialog_course_time_picker_section
-import timeflow.composeapp.generated.resources.dialog_title_course_time_picker
 import timeflow.composeapp.generated.resources.even_week
 import timeflow.composeapp.generated.resources.odd_week
 import timeflow.composeapp.generated.resources.required
@@ -97,7 +93,6 @@ import timeflow.composeapp.generated.resources.schedule_title_course_time_end
 import timeflow.composeapp.generated.resources.schedule_title_course_time_start
 import timeflow.composeapp.generated.resources.schedule_title_course_week
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
-import timeflow.composeapp.generated.resources.schedule_value_course_time
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
@@ -106,15 +101,8 @@ import xyz.hyli.timeflow.ui.components.ColorButton
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.ColorPicker
 import xyz.hyli.timeflow.ui.components.ColorPickerStyle
-import xyz.hyli.timeflow.ui.components.DialogButton
-import xyz.hyli.timeflow.ui.components.DialogButtonType
-import xyz.hyli.timeflow.ui.components.DialogDefaults
-import xyz.hyli.timeflow.ui.components.DialogState
 import xyz.hyli.timeflow.ui.components.IntTextField
-import xyz.hyli.timeflow.ui.components.MyDialog
-import xyz.hyli.timeflow.ui.components.WheelPicker
-import xyz.hyli.timeflow.ui.components.rememberDialogState
-import xyz.hyli.timeflow.ui.theme.NotoSans
+import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 enum class EditCourseStyle {
@@ -234,97 +222,6 @@ fun EditCourseScreen(
                 )
             )
         )
-    }
-}
-
-@Composable
-fun EditCourseDialog(
-    state: MutableState<TableState>,
-    scheduleParams: ScheduleParams,
-    initValue: Course,
-    showEditCourseDialog: DialogState
-) {
-    val schedule = scheduleParams.schedule
-    val course = remember { mutableStateOf(initValue) }
-    val isNameValid =
-        remember { mutableStateOf(course.value.name.isNotBlank()) }
-    val isTimeValid = remember {
-        mutableStateOf(
-            if (course.value.time.start > course.value.time.end) {
-                false
-            } else {
-                schedule.courses.none {
-                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.week.any { it in course.value.week.week }
-                }
-            }
-        )
-    }
-    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
-        it - schedule.courses.filter {
-            it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMap { it.week.week }
-    }
-    val isWeekValid =
-        remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
-    showEditCourseDialog.enableButton(
-        button = DialogButtonType.Positive,
-        enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
-    )
-    MyDialog(
-        state = showEditCourseDialog,
-        title = {
-            Text(
-                text =
-                    if (initValue in schedule.courses) stringResource(Res.string.schedule_title_edit_course)
-                    else stringResource(Res.string.schedule_title_add_course)
-            )
-        },
-        buttons = DialogDefaults.buttons(
-            positive = DialogButton(stringResource(Res.string.save)),
-            negative = DialogButton(stringResource(Res.string.cancel)),
-        ),
-        onEvent = { event ->
-            if (event.isPositiveButton) {
-                scheduleParams.viewModel.updateSchedule(
-                    schedule = schedule.copy(
-                        courses = if (initValue in schedule.courses) {
-                            schedule.courses.map { if (it == initValue) course.value else it }
-                        } else {
-                            schedule.courses + course.value
-                        }
-                    )
-                )
-            }
-            state.value = TableState() // 重置状态
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-        ) {
-            EditCourseContent(
-                style = EditCourseStyle.Dialog,
-                viewModel = scheduleParams.viewModel,
-                initValue = initValue,
-                courseValue = course,
-                isNameValid = isNameValid,
-                isTimeValid = isTimeValid,
-                isWeekValid = isWeekValid,
-                validWeeks = validWeeks
-            )
-            if (initValue in schedule.courses) {
-                DeleteCourseButton(
-                    onClick = {
-                        scheduleParams.viewModel.updateSchedule(
-                            schedule = schedule.copy(
-                                courses = schedule.courses - course.value
-                            )
-                        )
-                        showEditCourseDialog.dismiss()
-                    }
-                )
-            }
-        }
     }
 }
 
@@ -671,122 +568,6 @@ fun EditCourseContent(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun CourseTimeDialog(
-    initStartTime: Int,
-    initEndTime: Int,
-    totalLessonsCount: Int,
-    containerColor: Color,
-    borderColor: Color,
-    onCourseTimeChange: (Range) -> Unit,
-) {
-    val showCourseTimePickerDialog = rememberDialogState()
-    var startTime by remember { mutableStateOf(initStartTime) }
-    var endTime by remember { mutableStateOf(initEndTime) }
-    Card(
-        modifier = Modifier.padding(top = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-        ),
-        border = BorderStroke(1.dp, borderColor),
-        onClick = { showCourseTimePickerDialog.show() }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = stringResource(Res.string.schedule_title_course_time_start)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                stringResource(
-                    Res.string.schedule_value_course_time,
-                    startTime, endTime
-                )
-            )
-        }
-    }
-    if (showCourseTimePickerDialog.visible) {
-        MyDialog(
-            state = showCourseTimePickerDialog,
-            title = { Text(stringResource(Res.string.dialog_title_course_time_picker)) },
-            buttons = DialogDefaults.buttons(
-                positive = DialogButton(stringResource(Res.string.confirm)),
-                negative = DialogButton(stringResource(Res.string.cancel)),
-            ),
-            onEvent = { event ->
-                if (event.isPositiveButton) {
-                    onCourseTimeChange(Range(startTime, endTime))
-                }
-            }
-        ) {
-            LaunchedEffect(startTime, endTime) {
-                showCourseTimePickerDialog.enableButton(
-                    DialogButtonType.Positive,
-                    startTime <= endTime
-                )
-            }
-
-            Row(
-                modifier = Modifier.height(128.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                WheelPicker(
-                    data = (1..totalLessonsCount).toList(),
-                    selectIndex = initStartTime - 1,
-                    visibleCount = 3,
-                    onSelect = { _, time ->
-                        startTime = time
-                        onCourseTimeChange(Range(startTime, endTime))
-                    }
-                ) {
-                    Text(
-                        modifier = Modifier.width(32.dp),
-                        text = it.toString(),
-                        fontFamily = NotoSans,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Text(
-                    text = stringResource(Res.string.dialog_course_time_picker_section),
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "—",
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = NotoSans
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                WheelPicker(
-                    data = (1..totalLessonsCount).toList(),
-                    selectIndex = initEndTime - 1,
-                    visibleCount = 3,
-                    onSelect = { _, time ->
-                        endTime = time
-                        onCourseTimeChange(Range(startTime, endTime))
-                    }
-                ) {
-                    Text(
-                        modifier = Modifier.width(32.dp),
-                        text = it.toString(),
-                        fontFamily = NotoSans,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Text(
-                    text = stringResource(Res.string.dialog_course_time_picker_section),
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

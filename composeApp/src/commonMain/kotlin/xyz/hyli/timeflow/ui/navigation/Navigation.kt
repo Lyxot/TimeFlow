@@ -46,11 +46,11 @@ import timeflow.composeapp.generated.resources.page_schedule
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.page_today
 import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.ui.pages.EditCourseScreen
-import xyz.hyli.timeflow.ui.pages.ScheduleScreen
-import xyz.hyli.timeflow.ui.pages.SettingsLessonsPerDayScreen
-import xyz.hyli.timeflow.ui.pages.SettingsScreen
-import xyz.hyli.timeflow.ui.pages.TodayScreen
+import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
+import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
+import xyz.hyli.timeflow.ui.pages.settings.SettingsScreen
+import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayScreen
+import xyz.hyli.timeflow.ui.pages.today.TodayScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 enum class Destination {
@@ -150,7 +150,7 @@ fun AdaptiveNavigation(
 
 @OptIn(ExperimentalSerializationApi::class)
 @Composable
-fun navHost(
+fun TimeFlowNavHost(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController,
     navSuiteType: NavigationSuiteType
@@ -174,7 +174,7 @@ fun navHost(
         }
         composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
         subScreenComposable(SettingsDestination.LessonsPerDay.name) {
-            SettingsLessonsPerDayScreen(viewModel, navHostController)
+            LessonsPerDayScreen(viewModel, navHostController)
         }
         composable<EditCourseDestination>(
             enterTransition = NavigationAnimation.enterSlideIn,
