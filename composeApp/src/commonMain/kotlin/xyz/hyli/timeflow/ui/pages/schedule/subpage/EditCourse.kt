@@ -95,6 +95,7 @@ import timeflow.composeapp.generated.resources.schedule_title_course_week
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
+import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.ui.components.ColorButton
@@ -170,18 +171,13 @@ fun EditCourseScreen(
             Spacer(modifier = Modifier.weight(1f))
             IconButton(
                 onClick = {
-                    if (isNameValid.value && isTimeValid.value && isWeekValid.value) {
-                        viewModel.updateSchedule(
-                            schedule = schedule.copy(
-                                courses = if (initValue in schedule.courses) {
-                                    schedule.courses.map { if (it == initValue) course.value else it }
-                                } else {
-                                    schedule.courses + course.value
-                                }
-                            )
-                        )
-                        navHostController.popBackStack()
-                    }
+                    confirmEditCourse(
+                        courseValue = course,
+                        initValue = initValue,
+                        viewModel = viewModel,
+                        schedule = schedule
+                    )
+                    navHostController.popBackStack()
                 },
                 enabled = isNameValid.value && isTimeValid.value && isWeekValid.value,
             ) {
@@ -260,7 +256,7 @@ fun EditCourseContent(
         // Course Name
         OutlinedTextField(
             value = course.name,
-            onValueChange = { course = course.copy(name = it) },
+            onValueChange = { course = course.copy(name = it.trim()) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = !isNameValid.value,
@@ -471,7 +467,7 @@ fun EditCourseContent(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                var isColorCustom by remember { mutableStateOf(Color(course.color) !in COLORS) }
+                var isColorCustom by remember { mutableStateOf(Color(course.color) !in COLORS && course.color != -1) }
                 Text(
                     text = stringResource(Res.string.schedule_title_course_color),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
@@ -688,4 +684,29 @@ fun DeleteCourseButton(
             }
         }
     }
+}
+
+fun confirmEditCourse(
+    courseValue: MutableState<Course>,
+    initValue: Course,
+    viewModel: TimeFlowViewModel,
+    schedule: Schedule,
+) {
+    var course by courseValue
+    if (course.color == -1) {
+        course = course.copy(
+            color =
+                schedule.courses.firstOrNull { it.name == course.name }?.color
+                    ?: COLORS.random().toArgb()
+        )
+    }
+    viewModel.updateSchedule(
+        schedule = schedule.copy(
+            courses = if (initValue in schedule.courses) {
+                schedule.courses.map { if (it == initValue) course else it }
+            } else {
+                schedule.courses + course
+            }
+        )
+    )
 }

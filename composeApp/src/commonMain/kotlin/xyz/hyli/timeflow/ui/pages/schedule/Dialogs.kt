@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -61,7 +60,6 @@ import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
-import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults
@@ -75,6 +73,7 @@ import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.DeleteCourseButton
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseContent
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseStyle
+import xyz.hyli.timeflow.ui.pages.schedule.subpage.confirmEditCourse
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
@@ -133,7 +132,7 @@ fun CourseListDialog(
                                     weekDescription = WeekDescriptionEnum.ALL,
                                     totalWeeks = totalWeeks
                                 ),
-                                color = COLORS.random().toArgb()
+                                color = -1
                             )
                         )
                         showCourseListDialog.dismiss()
@@ -300,14 +299,11 @@ fun EditCourseDialog(
         ),
         onEvent = { event ->
             if (event.isPositiveButton) {
-                scheduleParams.viewModel.updateSchedule(
-                    schedule = schedule.copy(
-                        courses = if (initValue in schedule.courses) {
-                            schedule.courses.map { if (it == initValue) course.value else it }
-                        } else {
-                            schedule.courses + course.value
-                        }
-                    )
+                confirmEditCourse(
+                    courseValue = course,
+                    initValue = initValue,
+                    viewModel = scheduleParams.viewModel,
+                    schedule = schedule
                 )
             }
             state.value = TableState() // 重置状态
@@ -412,7 +408,6 @@ fun CourseTimeDialog(
                     visibleCount = 3,
                     onSelect = { _, time ->
                         startTime = time
-                        onCourseTimeChange(Range(startTime, endTime))
                     }
                 ) {
                     Text(
@@ -439,7 +434,6 @@ fun CourseTimeDialog(
                     visibleCount = 3,
                     onSelect = { _, time ->
                         endTime = time
-                        onCourseTimeChange(Range(startTime, endTime))
                     }
                 ) {
                     Text(

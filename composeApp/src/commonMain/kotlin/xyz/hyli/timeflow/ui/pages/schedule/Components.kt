@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -74,7 +73,6 @@ import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
-import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import kotlin.time.Clock
@@ -295,7 +293,7 @@ fun EmptyTableCell(
                                         weekDescription = WeekDescriptionEnum.ALL,
                                         totalWeeks = totalWeeks
                                     ),
-                                    color = COLORS.random().toArgb()
+                                    color = -1
                                 )
                             )
                         },
