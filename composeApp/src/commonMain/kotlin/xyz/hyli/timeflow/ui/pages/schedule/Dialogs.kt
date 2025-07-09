@@ -1,6 +1,7 @@
 package xyz.hyli.timeflow.ui.pages.schedule
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -149,50 +151,52 @@ fun CourseListDialog(
             negative = DialogButton.DISABLED,
         )
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+        ) {
             courses.forEachIndexed { index, course ->
-                Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = course.name.let {
-                                if (course.week.week.contains(currentWeek)) it
-                                else it + " " + stringResource(Res.string.schedule_course_not_this_week)
-                            },
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = buildAnnotatedString {
-                                append(
-                                    stringResource(
-                                        Res.string.schedule_value_course_week,
-                                        course.week.getString()
-                                    )
-                                )
-                                withStyle(
-                                    SpanStyle(
-                                        fontSize = MaterialTheme.typography.bodyLarge.fontSize
-                                    )
-                                ) {
-                                    append(" | ")
-                                }
-                                append(
-                                    stringResource(
-                                        Res.string.schedule_value_course_time,
-                                        course.time.start,
-                                        course.time.end
-                                    )
-                                )
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (course.classroom.isNotBlank() || course.teacher.isNotBlank()) {
+                SubcomposeLayout { constraints ->
+                    val button = subcompose("button") {
+                        Button(
+                            modifier = Modifier,
+                            onClick = {
+                                onClick(course)
+                                showCourseListDialog.dismiss()
+                            }
+                        ) {
                             Text(
-                                buildAnnotatedString {
-                                    append(course.classroom)
-                                    if (course.classroom.isNotBlank() && course.teacher.isNotBlank()) {
+                                text = stringResource(Res.string.schedule_button_edit),
+                                maxLines = 1
+                            )
+                        }
+                    }[0].measure(constraints)
+                    val info = subcompose("info") {
+                        Row(
+                            modifier = Modifier
+                                .width((constraints.maxWidth - button.width).toDp())
+                                .padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(
+                                modifier = Modifier
+                            ) {
+                                Text(
+                                    text = course.name.let {
+                                        if (course.week.week.contains(currentWeek)) it
+                                        else it + " " + stringResource(Res.string.schedule_course_not_this_week)
+                                    },
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append(
+                                            stringResource(
+                                                Res.string.schedule_value_course_week,
+                                                course.week.getString()
+                                            )
+                                        )
                                         withStyle(
                                             SpanStyle(
                                                 fontSize = MaterialTheme.typography.bodyLarge.fontSize
@@ -200,25 +204,41 @@ fun CourseListDialog(
                                         ) {
                                             append(" | ")
                                         }
-                                    }
-                                    append(course.teacher)
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                                        append(
+                                            stringResource(
+                                                Res.string.schedule_value_course_time,
+                                                course.time.start,
+                                                course.time.end
+                                            )
+                                        )
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                if (course.classroom.isNotBlank() || course.teacher.isNotBlank()) {
+                                    Text(
+                                        buildAnnotatedString {
+                                            append(course.classroom)
+                                            if (course.classroom.isNotBlank() && course.teacher.isNotBlank()) {
+                                                withStyle(
+                                                    SpanStyle(
+                                                        fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                                                    )
+                                                ) {
+                                                    append(" | ")
+                                                }
+                                            }
+                                            append(course.teacher)
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                            }
                         }
-                    }
-                    Spacer(
-                        modifier = Modifier.weight(1f)
-                    )
-                    Button(
-                        onClick = {
-                            onClick(course)
-                            showCourseListDialog.dismiss()
-                        }
-                    ) {
-                        Text(
-                            stringResource(Res.string.schedule_button_edit)
-                        )
+                    }[0].measure(constraints)
+                    val height = maxOf(button.height, info.height)
+                    layout(constraints.maxWidth, height) {
+                        info.place(0, (height - info.height) / 2)
+                        button.place(info.width, (height - button.height) / 2)
                     }
                 }
                 if (index < courses.size - 1) {
