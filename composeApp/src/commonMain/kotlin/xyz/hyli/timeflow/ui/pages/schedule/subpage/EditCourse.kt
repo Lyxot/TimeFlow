@@ -146,7 +146,6 @@ fun EditCourseScreen(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .verticalScroll(rememberScrollState())
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -187,37 +186,43 @@ fun EditCourseScreen(
                 )
             }
         }
-        EditCourseContent(
-            style = EditCourseStyle.Screen,
-            viewModel = viewModel,
-            initValue = initValue,
-            courseValue = course,
-            isNameValid = isNameValid,
-            isTimeValid = isTimeValid,
-            isWeekValid = isWeekValid,
-            validWeeks = validWeeks
-        )
-        if (initValue in schedule.courses) {
-            DeleteCourseButton(
-                onClick = {
-                    viewModel.updateSchedule(
-                        schedule = schedule.copy(
-                            courses = schedule.courses - course.value
-                        )
-                    )
-                    navHostController.popBackStack()
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            EditCourseContent(
+                style = EditCourseStyle.Screen,
+                viewModel = viewModel,
+                initValue = initValue,
+                courseValue = course,
+                isNameValid = isNameValid,
+                isTimeValid = isTimeValid,
+                isWeekValid = isWeekValid,
+                validWeeks = validWeeks
             )
-        }
-        Spacer(
-            modifier = Modifier.height(
-                maxOf(
-                    WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding(),
-                    24.dp
+            if (initValue in schedule.courses) {
+                DeleteCourseButton(
+                    onClick = {
+                        viewModel.updateSchedule(
+                            schedule = schedule.copy(
+                                courses = schedule.courses - course.value
+                            )
+                        )
+                        navHostController.popBackStack()
+                    }
+                )
+            }
+            Spacer(
+                modifier = Modifier.height(
+                    maxOf(
+                        WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding(),
+                        24.dp
+                    )
                 )
             )
-        )
+        }
     }
 }
 
