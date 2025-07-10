@@ -13,9 +13,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import androidx.window.core.layout.WindowSizeClass
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
-import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -35,8 +35,12 @@ internal fun App(
     val navController = rememberNavController()
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val customNavSuiteType = with(adaptiveInfo) {
+        // use NavigationRail on landscape phone & desktop
         NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo).let {
-            if (currentPlatform().isDesktop() && it in NavigationBarType) {
+            if (!windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+                && windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+                || currentPlatform().isDesktop()
+            ) {
                 NavigationSuiteType.NavigationRail
             } else {
                 it
