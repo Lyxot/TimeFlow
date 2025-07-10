@@ -403,8 +403,7 @@ fun BasePreference(
                         dampingRatio = 0.8f,
                         stiffness = 400f
                     )
-                )
-                .clickable(enabled = isEnabled && onClick != null) { onClick?.invoke() },
+                ),
             shape = getPreferenceItemShape(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -415,40 +414,45 @@ fun BasePreference(
                 animationSpec = tween(200),
                 label = "alpha_animation"
             )
-
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .alpha(alphaValue),
-                verticalAlignment = Alignment.CenterVertically
+                    .clickable(enabled = isEnabled && onClick != null) { onClick?.invoke() }
             ) {
-                leadingContent?.let {
-                    it()
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .alpha(alphaValue),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    subtitle?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    leadingContent?.let {
+                        it()
+                        Spacer(modifier = Modifier.width(16.dp))
                     }
-                }
 
-                trailingContent?.let {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    it()
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        subtitle?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+                    trailingContent?.let {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        it()
+                    }
                 }
             }
         }
