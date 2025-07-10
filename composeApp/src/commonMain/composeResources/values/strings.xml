@@ -44,6 +44,11 @@
     <string name="schedule_button_confirm_delete">确认删除</string>
     <string name="schedule_title_create_schedule">创建课程表</string>
     <string name="schedule_value_schedule_name_empty">课程表名称不能为空</string>
+    <string name="schedule_title_all_schedules">全部课程表</string>
+    <string name="schedule_title_selected_schedule">当前使用的课程表</string>
+    <string name="schedule_title_other_schedules">其他课程表</string>
+    <string name="schedule_title_update_selected_schedule">设置为当前课程表</string>
+    <string name="schedule_value_update_selected_schedule">是否将“%1$s”设置为当前课程表？</string>
 
     <!--    settings page-->
     <string name="settings_title_general">通用设置</string>

@@ -71,6 +71,7 @@ import xyz.hyli.timeflow.datastore.Weekday
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
+import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -168,7 +169,7 @@ fun ScheduleScreen(
             ) {
                 IconButton(
                     onClick = {
-                        // TODO: Select a schedule
+                        navHostController.navigate(ScheduleDestination.ScheduleList.name)
                     },
                 ) {
                     Icon(

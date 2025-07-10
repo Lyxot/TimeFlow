@@ -48,6 +48,7 @@ import timeflow.composeapp.generated.resources.page_today
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
+import xyz.hyli.timeflow.ui.pages.schedule.subpage.ScheduleListScreen
 import xyz.hyli.timeflow.ui.pages.settings.SettingsScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
@@ -57,6 +58,10 @@ enum class Destination {
     Schedule,
     Today,
     Settings
+}
+
+enum class ScheduleDestination {
+    ScheduleList
 }
 
 enum class SettingsDestination {
@@ -104,16 +109,18 @@ fun AdaptiveNavigation(
         navigationSuiteItems = {
             item(
                 icon = { Icon(
-                    if (currentPage == Destination.Schedule.name ||
-                        currentPage?.contains("EditCourseDestination") == true
+                    if (currentPage == Destination.Schedule.name
+                        || currentPage?.contains("EditCourseDestination") == true
+                        || currentPage in ScheduleDestination.entries.map { it.name }
                     )
                         Icons.AutoMirrored.Filled.EventNote
                     else
                         Icons.AutoMirrored.Outlined.EventNote,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_schedule)) },
-                selected = currentPage == Destination.Schedule.name ||
-                        currentPage?.contains("EditCourseDestination") == true,
+                selected = currentPage == Destination.Schedule.name
+                        || currentPage?.contains("EditCourseDestination") == true
+                        || currentPage in ScheduleDestination.entries.map { it.name },
                 onClick = { switchPageSingleTop(navHostController, Destination.Schedule) }
             )
             item(
@@ -129,16 +136,16 @@ fun AdaptiveNavigation(
             )
             item(
                 icon = { Icon(
-                    if (currentPage == Destination.Settings.name ||
-                        currentPage in SettingsDestination.entries.map { it.name }
+                    if (currentPage == Destination.Settings.name
+                        || currentPage in SettingsDestination.entries.map { it.name }
                     )
                         Icons.Filled.Settings
                     else
                         Icons.Outlined.Settings,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_settings)) },
-                selected = currentPage == Destination.Settings.name ||
-                        currentPage in SettingsDestination.entries.map { it.name },
+                selected = currentPage == Destination.Settings.name
+                        || currentPage in SettingsDestination.entries.map { it.name },
                 onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
             )
         }
@@ -173,6 +180,9 @@ fun TimeFlowNavHost(
             )
         }
         composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
+        subScreenComposable(ScheduleDestination.ScheduleList.name) {
+            ScheduleListScreen(viewModel, navHostController)
+        }
         subScreenComposable(SettingsDestination.LessonsPerDay.name) {
             LessonsPerDayScreen(viewModel, navHostController)
         }

@@ -52,9 +52,11 @@ import timeflow.composeapp.generated.resources.schedule_title_course_detail
 import timeflow.composeapp.generated.resources.schedule_title_course_time_start
 import timeflow.composeapp.generated.resources.schedule_title_create_schedule
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
+import timeflow.composeapp.generated.resources.schedule_title_update_selected_schedule
 import timeflow.composeapp.generated.resources.schedule_value_course_time
 import timeflow.composeapp.generated.resources.schedule_value_course_week
 import timeflow.composeapp.generated.resources.schedule_value_schedule_name_empty
+import timeflow.composeapp.generated.resources.schedule_value_update_selected_schedule
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.Schedule
@@ -100,6 +102,35 @@ fun AddScheduleDialog(
             }
         )
     )
+}
+
+@Composable
+fun ConfirmSelectScheduleDialog(
+    name: String,
+    showConfirmSelectScheduleDialog: DialogState,
+    onConfirm: () -> Unit
+) {
+    MyDialog(
+        state = showConfirmSelectScheduleDialog,
+        title = {
+            Text(
+                text = stringResource(Res.string.schedule_title_update_selected_schedule)
+            )
+        },
+        buttons = DialogDefaults.buttons(
+            positive = DialogButton(stringResource(Res.string.confirm)),
+            negative = DialogButton(stringResource(Res.string.cancel)),
+        ),
+        onEvent = { event ->
+            if (event.isPositiveButton) {
+                onConfirm()
+            }
+        }
+    ) {
+        Text(
+            text = stringResource(Res.string.schedule_value_update_selected_schedule, name),
+        )
+    }
 }
 
 @Composable
