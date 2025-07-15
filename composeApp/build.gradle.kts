@@ -76,8 +76,9 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.material3AdaptiveNavigationSuite)
+            // https://github.com/JetBrains/compose-multiplatform/commit/2dfb657dec3eb5e00cf64a0c8cd283bc4ba78ab7
+            implementation(libs.material3)
+            implementation(libs.material3.adaptive.navigation.suite)
             implementation(compose.materialIconsExtended)
             implementation(compose.runtime)
             implementation(libs.adaptive)

@@ -1,6 +1,6 @@
 [versions]
 agp = "8.11.0"
-adaptive = "1.2.0-alpha03"
+adaptive = "1.2.0+dev2672"
 androidx-activity-compose = "1.10.1"
 androidx-lifecycle = "2.9.1"
 androidx-navigation = "2.9.10-alpha01"
@@ -8,7 +8,7 @@ androidx-startup-runtime = "1.2.0"
 appdirs = "1.4.0"
 build-config = "5.6.7"
 coil = "3.2.0"
-compose = "1.9.0-alpha03"
+compose = "1.9.0+dev2672"
 composables = "1.36.1"
 datastore = "1.1.7"
 desugar_jdk_libs = "2.1.5"
@@ -46,6 +46,8 @@ kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "compose" }
+material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "compose" }
 material-kolor = { group = "com.materialkolor", name = "material-kolor", version.ref = "material-kolor" }
 
 [plugins]
