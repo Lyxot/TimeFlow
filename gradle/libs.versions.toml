@@ -23,7 +23,7 @@ kotlinx-datetime = "0.7.1-0.6.x-compat"
 kotlinx-serialization = "1.9.0"
 ksp = "2.2.10-2.0.2"
 material3-adaptive-navigation-suite = "1.9.0-beta01"
-material-kolor = "2.1.1"
+material-kolor = "3.0.1"
 
 [libraries]
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
