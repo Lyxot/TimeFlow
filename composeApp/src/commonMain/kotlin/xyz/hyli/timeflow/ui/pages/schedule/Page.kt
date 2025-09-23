@@ -145,7 +145,10 @@ fun ScheduleScreen(
 
         val pagerState = schedule.totalWeeks().let {
             rememberPagerState(
-                initialPage = (schedule.weeksTill() - 1).coerceIn(0, it), // page 0 for week 1
+                initialPage = (schedule.termStartDate.weeksTill() - 1).coerceIn(
+                    0,
+                    it
+                ), // page 0 for week 1
                 pageCount = {
                     it + 1 // +1 for vacation
                 }

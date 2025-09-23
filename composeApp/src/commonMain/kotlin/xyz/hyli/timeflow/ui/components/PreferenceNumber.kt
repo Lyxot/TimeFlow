@@ -56,6 +56,8 @@ sealed class PreferenceNumberStyle {
 
     data class TextField(val keyboardType: KeyboardType = KeyboardType.Number) :
         PreferenceNumberStyle()
+
+    data object Wheel : PreferenceNumberStyle()
 }
 
 @Composable
@@ -214,6 +216,42 @@ fun PreferenceNumber(
                 )
             }
         }
+
+        is PreferenceNumberStyle.Wheel -> {
+            var showDialog by remember { mutableStateOf(false) }
+
+            BasePreference(
+                title = title,
+                subtitle = subtitle,
+                enabled = enabled,
+                visible = visible,
+                onClick = if (isEnabled) {
+                    { showDialog = true }
+                } else null,
+                trailingContent = {
+                    Text(
+                        text = value.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            )
+
+            if (showDialog) {
+                NumberWheelPickerDialog(
+                    title = title,
+                    initialValue = value,
+                    min = min,
+                    max = max,
+                    stepSize = stepSize,
+                    onValueChange = { newValue ->
+                        onValueChange(newValue)
+                        showDialog = false
+                    },
+                    onDismiss = { showDialog = false }
+                )
+            }
+        }
     }
 }
 
@@ -331,4 +369,60 @@ fun NumberInputDialog(
             }
         }
     }
-} 
+}
+
+@Composable
+fun NumberWheelPickerDialog(
+    title: String,
+    initialValue: Int,
+    min: Int,
+    max: Int,
+    stepSize: Int = 1,
+    onValueChange: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val dialogState = rememberDialogState()
+    var selectedValue by remember { mutableStateOf(initialValue) }
+    val numbers = remember { (min..max step stepSize).toList() }
+
+    LaunchedEffect(Unit) {
+        dialogState.show()
+    }
+
+    if (dialogState.visible) {
+        MyDialog(
+            state = dialogState,
+            title = { Text(title) },
+            buttons = DialogDefaults.buttons(
+                positive = DialogButton(stringResource(Res.string.confirm)),
+                negative = DialogButton(stringResource(Res.string.cancel))
+            ),
+            onEvent = { event ->
+                when (event) {
+                    is DialogEvent.Button -> {
+                        if (event.isPositiveButton) {
+                            onValueChange(selectedValue)
+                        } else {
+                            onDismiss()
+                        }
+                    }
+
+                    DialogEvent.Dismissed -> onDismiss()
+                }
+            }
+        ) {
+            val initialIndex = numbers.indexOf(initialValue).coerceAtLeast(0)
+            WheelPicker(
+                data = numbers,
+                selectIndex = initialIndex,
+                visibleCount = 3,
+                modifier = Modifier.height(120.dp),
+                onSelect = { _, item ->
+                    selectedValue = item
+                }
+            ) { item ->
+                Text(text = item.toString())
+            }
+        }
+    }
+}

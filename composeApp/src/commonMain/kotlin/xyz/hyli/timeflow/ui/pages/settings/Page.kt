@@ -37,6 +37,7 @@ import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_p
 import timeflow.composeapp.generated.resources.settings_title_schedule_name
 import timeflow.composeapp.generated.resources.settings_title_schedule_term_end_date
 import timeflow.composeapp.generated.resources.settings_title_schedule_term_start_date
+import timeflow.composeapp.generated.resources.settings_title_schedule_total_weeks
 import timeflow.composeapp.generated.resources.settings_title_selected_schedule
 import timeflow.composeapp.generated.resources.settings_title_theme
 import timeflow.composeapp.generated.resources.settings_title_theme_color
@@ -55,6 +56,8 @@ import xyz.hyli.timeflow.ui.components.PreferenceDivider
 import xyz.hyli.timeflow.ui.components.PreferenceInputText
 import xyz.hyli.timeflow.ui.components.PreferenceList
 import xyz.hyli.timeflow.ui.components.PreferenceListStyle
+import xyz.hyli.timeflow.ui.components.PreferenceNumber
+import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
@@ -232,6 +235,29 @@ fun SettingsScreen(
                 },
                 title = stringResource(Res.string.settings_title_schedule_term_end_date),
                 enabled = scheduleDependency
+            )
+            // Term Weeks
+            PreferenceNumber(
+                style =
+                    if (currentPlatform().isDesktop())
+                        PreferenceNumberStyle.TextField()
+                    else
+                        PreferenceNumberStyle.Wheel,
+                value = settings.schedule[settings.selectedSchedule]?.totalWeeks()
+                    ?: 16,
+                min = 1,
+                max = 60,
+                onValueChange = {
+                    val currentSchedule = settings.schedule[settings.selectedSchedule]
+                    if (currentSchedule != null) {
+                        val newEndDate = currentSchedule.termStartDate.addWeeks(it)
+                        viewModel.updateSchedule(
+                            schedule = currentSchedule.copy(termEndDate = newEndDate)
+                        )
+                    }
+                },
+                title = stringResource(Res.string.settings_title_schedule_total_weeks),
+                enabled = scheduleDependency,
             )
             // Lessons Per Day Settings
             BasePreference(

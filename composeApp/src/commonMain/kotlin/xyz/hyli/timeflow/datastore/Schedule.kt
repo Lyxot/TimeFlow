@@ -39,8 +39,34 @@ data class Date(
 
     fun toLocalDate(): LocalDate = LocalDate(year, month, day)
 
-    fun addWeeks(weeks: Int): Date =
-        fromLocalDate(this.toLocalDate().plus(weeks, DateTimeUnit.WEEK))
+    @OptIn(ExperimentalTime::class)
+    fun weeksTill(date: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {
+        val startDate = this.toLocalDate()
+        if (date < startDate) return 0
+
+        // 计算每个日期在周中的位置偏移（周一=0，周日=6）
+        val startOffset = startDate.dayOfWeek.isoDayNumber - 1
+        val endOffset = date.dayOfWeek.isoDayNumber - 1
+
+        // 计算调整后的天数差
+        val daysBetween = startDate.daysUntil(date)
+        val adjustedDays = daysBetween + startOffset - endOffset
+
+        // 计算周数
+        return (adjustedDays / 7) + 1
+    }
+
+    fun weeksTill(date: Date): Int {
+        return weeksTill(date.toLocalDate())
+    }
+
+    fun addWeeks(weeks: Int): Date {
+        var current = this.toLocalDate().plus(weeks, DateTimeUnit.WEEK)
+        while (this.weeksTill(current) > weeks) {
+            current = current.minus(1, DateTimeUnit.DAY)
+        }
+        return fromLocalDate(current)
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -205,27 +231,7 @@ data class Schedule(
     }
 
     fun totalWeeks(): Int {
-        return weeksTill(this.termEndDate)
-    }
-
-    fun weeksTill(date: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {
-        val startDate = this.termStartDate.toLocalDate()
-        if (date < startDate) return 0
-
-        // 计算每个日期在周中的位置偏移（周一=0，周日=6）
-        val startOffset = startDate.dayOfWeek.isoDayNumber - 1
-        val endOffset = date.dayOfWeek.isoDayNumber - 1
-
-        // 计算调整后的天数差
-        val daysBetween = startDate.daysUntil(date)
-        val adjustedDays = daysBetween + startOffset - endOffset
-
-        // 计算周数
-        return (adjustedDays / 7) + 1
-    }
-
-    fun weeksTill(date: Date): Int {
-        return weeksTill(date.toLocalDate())
+        return this.termStartDate.weeksTill(this.termEndDate)
     }
 
     fun dateList(week: Int): List<LocalDate> {
