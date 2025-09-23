@@ -242,6 +242,10 @@ fun EditCourseContent(
     val schedule = settings.schedule[settings.selectedSchedule]!!
     var course by courseValue
 
+    var isColorChanged by remember { mutableStateOf(false) }
+    var isClassroomChanged by remember { mutableStateOf(false) }
+    var isTeacherChanged by remember { mutableStateOf(false) }
+
     LaunchedEffect(course) {
         isNameValid.value = course.name.isNotBlank()
         isTimeValid.value = if (course.time.start > course.time.end) {
@@ -253,6 +257,43 @@ fun EditCourseContent(
         }
         isWeekValid.value =
             course.week.week.isNotEmpty() && course.week.week.all { it in validWeeks }
+    }
+
+    // Auto select color, classroom, teacher if they are the same in other sections
+    LaunchedEffect(course.name) {
+        schedule.courses.filter { it.name == course.name }.let { courseList ->
+            if (courseList.isEmpty()) {
+                course.let {
+                    var copy = it.copy()
+                    if (!isColorChanged) copy = it.copy(color = -1)
+                    if (!isClassroomChanged) copy = copy.copy(classroom = initValue.classroom)
+                    if (!isTeacherChanged) copy = copy.copy(teacher = initValue.teacher)
+                    course = copy
+                }
+                return@let
+            }
+            if (!isColorChanged && course.color == -1) {
+                courseList.map { it.color }.toSet().let {
+                    if (it.size == 1) {
+                        course = course.copy(color = it.first())
+                    }
+                }
+            }
+            if (!isClassroomChanged && course.classroom.isBlank()) {
+                courseList.map { it.classroom }.toSet().let {
+                    if (it.size == 1) {
+                        course = course.copy(classroom = it.first())
+                    }
+                }
+            }
+            if (!isTeacherChanged && course.teacher.isBlank()) {
+                courseList.map { it.teacher }.toSet().let {
+                    if (it.size == 1) {
+                        course = course.copy(teacher = it.first())
+                    }
+                }
+            }
+        }
     }
 
     Column(
@@ -280,7 +321,10 @@ fun EditCourseContent(
         // Classroom
         OutlinedTextField(
             value = course.classroom,
-            onValueChange = { course = course.copy(classroom = it) },
+            onValueChange = {
+                course = course.copy(classroom = it)
+                isClassroomChanged = true
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             label = {
@@ -293,7 +337,10 @@ fun EditCourseContent(
         // Teacher
         OutlinedTextField(
             value = course.teacher,
-            onValueChange = { course = course.copy(teacher = it) },
+            onValueChange = {
+                course = course.copy(teacher = it)
+                isTeacherChanged = true
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             label = {
@@ -490,6 +537,7 @@ fun EditCourseContent(
                             ),
                             onClick = {
                                 course = course.copy(color = it.toArgb())
+                                isColorChanged = true
                                 isColorCustom = false
                             },
                             selected = it.toArgb() == course.color && !isColorCustom,
@@ -506,6 +554,7 @@ fun EditCourseContent(
                         shape = CardDefaults.shape,
                         color = Color.Transparent,
                         onClick = {
+                            isColorChanged = true
                             isColorCustom = true
                         },
                         enabled = true,
