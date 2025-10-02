@@ -31,7 +31,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -40,7 +40,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Setup Debug Session
         uses: mxschmitt/action-tmate@v3
@@ -94,7 +94,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -103,7 +103,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Setup Signing
         id: sign
