@@ -20,7 +20,7 @@ kotlin-inject = "0.8.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1-0.6.x-compat"
 kotlinx-serialization = "1.9.0"
-ksp = "2.2.10-2.0.2"
+ksp = "2.2.20-2.0.4"
 material-kolor = "2.1.1"
 
 [libraries]
