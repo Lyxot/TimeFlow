@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <!-- 背景：留空（可由外部样式决定填充） -->
+    <rect x="0" y="0" width="512" height="512" rx="120" fill="none" />
+
+    <!-- 上方波浪 -->
+    <path d="M100 320 Q180 240 260 320 T420 320" fill="none" stroke="black" stroke-width="34"
+        stroke-linecap="round" />
+
+    <!-- 下方波浪 -->
+    <path d="M100 400 Q180 320 260 400 T420 400" fill="none" stroke="black" stroke-width="29.5"
+        stroke-linecap="round" />
+
+    <!-- 时间指针 -->
+    <circle cx="256" cy="226" r="28" fill="black" />
+    <line x1="256" y1="226" x2="256" y2="104" stroke="black" stroke-width="22"
+        stroke-linecap="round" />
+</svg>

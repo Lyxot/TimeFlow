@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <!-- 上方波浪 -->
+    <path d="M100 320 Q180 240 260 320 T420 320" fill="none" stroke="url(#waveGradientLight)"
+        stroke-width="34" stroke-linecap="round" />
+
+    <!-- 下方波浪 -->
+    <path d="M100 400 Q180 320 260 400 T420 400" fill="none" stroke="url(#waveGradientStrong)"
+        stroke-width="29.5" stroke-linecap="round" />
+
+    <!-- 时间指针：更粗 + 更长 -->
+    <circle cx="256" cy="226" r="28" fill="white" opacity="0.95" />
+    <line x1="256" y1="226" x2="256" y2="104" stroke="white" stroke-width="22"
+        stroke-linecap="round" opacity="0.95" />
+
+    <!-- 渐变定义 -->
+    <defs>
+        <!-- 上方波浪：明亮青蓝 -->
+        <linearGradient id="waveGradientLight" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#38BDF8" /> <!-- 亮青蓝 -->
+            <stop offset="100%" stop-color="#93C5FD" /> <!-- 浅蓝 -->
+        </linearGradient>
+
+        <!-- 下方波浪：亮蓝紫，更突出 -->
+        <linearGradient id="waveGradientStrong" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#6366F1" /> <!-- 明亮靛蓝 -->
+            <stop offset="100%" stop-color="#3B82F6" /> <!-- 鲜明蓝色 -->
+        </linearGradient>
+    </defs>
+</svg>
