@@ -114,11 +114,13 @@ fun ScheduleListScreen(
                         )
                     }
                 }
-                PreferenceDivider()
             }
             if (settings.selectedSchedule.isNotEmpty()
-                && settings.schedule.values.any { !it.deleted }
+                && settings.schedule.values.any {
+                    !it.deleted && it != settings.schedule[settings.selectedSchedule]
+                }
             ) {
+                PreferenceDivider()
                 PreferenceSection(
                     title = stringResource(Res.string.schedule_title_other_schedules)
                 ) {
