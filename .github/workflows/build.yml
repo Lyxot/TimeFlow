@@ -1,51 +1,9 @@
 name: Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      debug:
-        type: boolean
-        required: false
-        default: false
-      debug-runner:
-        type: choice
-        required: true
-        default: "macos-latest"
-        options:
-          - macos-latest
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-          - windows-latest
-          - windows-11-arm
-
   push:
 
 jobs:
-  debug:
-    runs-on: ${{ inputs.debug-runner }}
-    if: inputs.debug == true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: 'recursive'
-
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 17
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Setup Debug Session
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 15
-
   build:
     strategy:
       fail-fast: false
@@ -89,21 +47,21 @@ jobs:
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: 'recursive'
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
 
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Setup Signing
         id: sign
@@ -121,7 +79,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }}
           path: ${{ matrix.path }}

@@ -1,0 +1,40 @@
+name: Debug
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug-runner:
+        type: choice
+        required: true
+        default: "macos-latest"
+        options:
+          - macos-latest
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - windows-latest
+          - windows-11-arm
+
+jobs:
+  debug:
+    runs-on: ${{ inputs.debug-runner }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Setup Debug Session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
