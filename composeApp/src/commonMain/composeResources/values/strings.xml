@@ -50,6 +50,11 @@
     <string name="schedule_title_update_selected_schedule">设置为当前课程表</string>
     <string name="schedule_value_update_selected_schedule">是否将“%1$s”设置为当前课程表？</string>
 
+    <!--    today page-->
+    <string name="today_title_no_courses">今日无课程</string>
+    <string name="today_value_idle">空闲</string>
+    <string name="today_value_date">%1$s月%2$s日 星期%3$s</string>
+
     <!--    settings page-->
     <string name="settings_title_general">通用设置</string>
     <string name="settings_title_theme">外观设置</string>
@@ -125,6 +130,14 @@
     <string name="friday">周五</string>
     <string name="saturday">周六</string>
     <string name="sunday">周日</string>
+
+    <string name="monday_short">一</string>
+    <string name="tuesday_short">二</string>
+    <string name="wednesday_short">三</string>
+    <string name="thursday_short">四</string>
+    <string name="friday_short">五</string>
+    <string name="saturday_short">六</string>
+    <string name="sunday_short">日</string>
 
     <string name="preference_dialog_close">关闭</string>
     <string name="preference_color_dialog_title">选择颜色</string>

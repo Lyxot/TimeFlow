@@ -171,7 +171,7 @@ fun TimeFlowNavHost(
         popEnterTransition = NavigationAnimation.enterFadeIn,
         popExitTransition = NavigationAnimation.exitFadeOut
     ) {
-        composable(Destination.Today.name) { TodayScreen(viewModel, navHostController) }
+        composable(Destination.Today.name) { TodayScreen(viewModel) }
         composable(Destination.Schedule.name) {
             ScheduleScreen(
                 viewModel,

@@ -200,6 +200,15 @@ data class LessonTimePeriodInfo(
     fun getTotalLessons(): Int {
         return morning.size + afternoon.size + evening.size
     }
+
+    fun getLessonByIndex(index: Int): Lesson {
+        return when (index) {
+            in 1..morning.size -> morning[index - 1]
+            in (morning.size + 1)..(morning.size + afternoon.size) -> afternoon[index - morning.size - 1]
+            in (morning.size + afternoon.size + 1)..getTotalLessons() -> evening[index - morning.size - afternoon.size - 1]
+            else -> throw IndexOutOfBoundsException("Lesson index out of range")
+        }
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
