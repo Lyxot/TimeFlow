@@ -53,7 +53,7 @@ import timeflow.composeapp.generated.resources.schedule_title_course_time_start
 import timeflow.composeapp.generated.resources.schedule_title_create_schedule
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_update_selected_schedule
-import timeflow.composeapp.generated.resources.schedule_value_course_time
+import timeflow.composeapp.generated.resources.schedule_value_course_time_period
 import timeflow.composeapp.generated.resources.schedule_value_course_week
 import timeflow.composeapp.generated.resources.schedule_value_schedule_name_empty
 import timeflow.composeapp.generated.resources.schedule_value_update_selected_schedule
@@ -236,7 +236,7 @@ fun CourseListDialog(
                                         }
                                         append(
                                             stringResource(
-                                                Res.string.schedule_value_course_time,
+                                                Res.string.schedule_value_course_time_period,
                                                 course.time.start,
                                                 course.time.end
                                             )
@@ -401,7 +401,7 @@ fun CourseTimeDialog(
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 stringResource(
-                    Res.string.schedule_value_course_time,
+                    Res.string.schedule_value_course_time_period,
                     startTime, endTime
                 )
             )

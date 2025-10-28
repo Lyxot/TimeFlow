@@ -34,37 +34,8 @@ import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.back
-import timeflow.composeapp.generated.resources.lesson_1
-import timeflow.composeapp.generated.resources.lesson_10
-import timeflow.composeapp.generated.resources.lesson_11
-import timeflow.composeapp.generated.resources.lesson_12
-import timeflow.composeapp.generated.resources.lesson_13
-import timeflow.composeapp.generated.resources.lesson_14
-import timeflow.composeapp.generated.resources.lesson_15
-import timeflow.composeapp.generated.resources.lesson_16
-import timeflow.composeapp.generated.resources.lesson_17
-import timeflow.composeapp.generated.resources.lesson_18
-import timeflow.composeapp.generated.resources.lesson_19
-import timeflow.composeapp.generated.resources.lesson_2
-import timeflow.composeapp.generated.resources.lesson_20
-import timeflow.composeapp.generated.resources.lesson_21
-import timeflow.composeapp.generated.resources.lesson_22
-import timeflow.composeapp.generated.resources.lesson_23
-import timeflow.composeapp.generated.resources.lesson_24
-import timeflow.composeapp.generated.resources.lesson_25
-import timeflow.composeapp.generated.resources.lesson_26
-import timeflow.composeapp.generated.resources.lesson_27
-import timeflow.composeapp.generated.resources.lesson_28
-import timeflow.composeapp.generated.resources.lesson_29
-import timeflow.composeapp.generated.resources.lesson_3
-import timeflow.composeapp.generated.resources.lesson_30
-import timeflow.composeapp.generated.resources.lesson_4
-import timeflow.composeapp.generated.resources.lesson_5
-import timeflow.composeapp.generated.resources.lesson_6
-import timeflow.composeapp.generated.resources.lesson_7
-import timeflow.composeapp.generated.resources.lesson_8
-import timeflow.composeapp.generated.resources.lesson_9
 import timeflow.composeapp.generated.resources.save
+import timeflow.composeapp.generated.resources.schedule_value_course_time
 import timeflow.composeapp.generated.resources.settings_title_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_afternoon
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
@@ -263,38 +234,6 @@ fun LessonsPerDayScreen(
                     title = stringResource(Res.string.settings_title_schedule_lessons_per_day_evening) + ":\t${eveningCount.value}",
                 )
             }
-            val lessonStringResourceList = listOf(
-                Res.string.lesson_1,
-                Res.string.lesson_2,
-                Res.string.lesson_3,
-                Res.string.lesson_4,
-                Res.string.lesson_5,
-                Res.string.lesson_6,
-                Res.string.lesson_7,
-                Res.string.lesson_8,
-                Res.string.lesson_9,
-                Res.string.lesson_10,
-                Res.string.lesson_11,
-                Res.string.lesson_12,
-                Res.string.lesson_13,
-                Res.string.lesson_14,
-                Res.string.lesson_15,
-                Res.string.lesson_16,
-                Res.string.lesson_17,
-                Res.string.lesson_18,
-                Res.string.lesson_19,
-                Res.string.lesson_20,
-                Res.string.lesson_21,
-                Res.string.lesson_22,
-                Res.string.lesson_23,
-                Res.string.lesson_24,
-                Res.string.lesson_25,
-                Res.string.lesson_26,
-                Res.string.lesson_27,
-                Res.string.lesson_28,
-                Res.string.lesson_29,
-                Res.string.lesson_30
-            )
 
             // Lessons Time Settings
             if (morningCount.value > 0) {
@@ -306,7 +245,7 @@ fun LessonsPerDayScreen(
                         val lesson = lessonTimePeriodInfo.value.morning[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
-                            title = stringResource(lessonStringResourceList[i]),
+                            title = stringResource(Res.string.schedule_value_course_time, i + 1),
                             onClick = { dialogState.show() }
                         ) {
                             if (i in conflictSet) {
@@ -380,7 +319,10 @@ fun LessonsPerDayScreen(
                         val lesson = lessonTimePeriodInfo.value.afternoon[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
-                            title = stringResource(lessonStringResourceList[i + morningCount.value]),
+                            title = stringResource(
+                                Res.string.schedule_value_course_time,
+                                i + morningCount.value + 1
+                            ),
                             onClick = { dialogState.show() }
                         ) {
                             if (i + morningCount.value in conflictSet) {
@@ -454,7 +396,10 @@ fun LessonsPerDayScreen(
                         val lesson = lessonTimePeriodInfo.value.evening[i]
                         val dialogState = rememberDialogState()
                         BasePreference(
-                            title = stringResource(lessonStringResourceList[i + morningCount.value + afternoonCount.value]),
+                            title = stringResource(
+                                Res.string.schedule_value_course_time,
+                                i + morningCount.value + afternoonCount.value + 1
+                            ),
                             onClick = { dialogState.show() }
                         ) {
                             if (i + morningCount.value + afternoonCount.value in conflictSet) {

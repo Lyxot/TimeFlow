@@ -27,53 +27,24 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.friday_short
-import timeflow.composeapp.generated.resources.lesson_1
-import timeflow.composeapp.generated.resources.lesson_10
-import timeflow.composeapp.generated.resources.lesson_11
-import timeflow.composeapp.generated.resources.lesson_12
-import timeflow.composeapp.generated.resources.lesson_13
-import timeflow.composeapp.generated.resources.lesson_14
-import timeflow.composeapp.generated.resources.lesson_15
-import timeflow.composeapp.generated.resources.lesson_16
-import timeflow.composeapp.generated.resources.lesson_17
-import timeflow.composeapp.generated.resources.lesson_18
-import timeflow.composeapp.generated.resources.lesson_19
-import timeflow.composeapp.generated.resources.lesson_2
-import timeflow.composeapp.generated.resources.lesson_20
-import timeflow.composeapp.generated.resources.lesson_21
-import timeflow.composeapp.generated.resources.lesson_22
-import timeflow.composeapp.generated.resources.lesson_23
-import timeflow.composeapp.generated.resources.lesson_24
-import timeflow.composeapp.generated.resources.lesson_25
-import timeflow.composeapp.generated.resources.lesson_26
-import timeflow.composeapp.generated.resources.lesson_27
-import timeflow.composeapp.generated.resources.lesson_28
-import timeflow.composeapp.generated.resources.lesson_29
-import timeflow.composeapp.generated.resources.lesson_3
-import timeflow.composeapp.generated.resources.lesson_30
-import timeflow.composeapp.generated.resources.lesson_4
-import timeflow.composeapp.generated.resources.lesson_5
-import timeflow.composeapp.generated.resources.lesson_6
-import timeflow.composeapp.generated.resources.lesson_7
-import timeflow.composeapp.generated.resources.lesson_8
-import timeflow.composeapp.generated.resources.lesson_9
-import timeflow.composeapp.generated.resources.monday_short
-import timeflow.composeapp.generated.resources.saturday_short
+import timeflow.composeapp.generated.resources.friday_long
+import timeflow.composeapp.generated.resources.monday_long
+import timeflow.composeapp.generated.resources.saturday_long
+import timeflow.composeapp.generated.resources.schedule_value_course_time
+import timeflow.composeapp.generated.resources.schedule_value_course_time_period
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_afternoon
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_morning
-import timeflow.composeapp.generated.resources.sunday_short
-import timeflow.composeapp.generated.resources.thursday_short
+import timeflow.composeapp.generated.resources.sunday_long
+import timeflow.composeapp.generated.resources.thursday_long
 import timeflow.composeapp.generated.resources.today_value_date
 import timeflow.composeapp.generated.resources.today_value_idle
-import timeflow.composeapp.generated.resources.tuesday_short
-import timeflow.composeapp.generated.resources.wednesday_short
+import timeflow.composeapp.generated.resources.tuesday_long
+import timeflow.composeapp.generated.resources.wednesday_long
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.LessonTimePeriodInfo
 import xyz.hyli.timeflow.datastore.Time
@@ -127,13 +98,13 @@ fun TodayScreen(
             .sortedBy { it.time.start }
 
     val weekdays = listOf(
-        stringResource(Res.string.monday_short),
-        stringResource(Res.string.tuesday_short),
-        stringResource(Res.string.wednesday_short),
-        stringResource(Res.string.thursday_short),
-        stringResource(Res.string.friday_short),
-        stringResource(Res.string.saturday_short),
-        stringResource(Res.string.sunday_short)
+        stringResource(Res.string.monday_long),
+        stringResource(Res.string.tuesday_long),
+        stringResource(Res.string.wednesday_long),
+        stringResource(Res.string.thursday_long),
+        stringResource(Res.string.friday_long),
+        stringResource(Res.string.saturday_long),
+        stringResource(Res.string.sunday_long)
     )
 
     Column(
@@ -202,38 +173,6 @@ fun TodayCourseSection(
     courses: List<Course>,
     timePeriodInfo: LessonTimePeriodInfo
 ) {
-    val lessonStringResourceList = listOf(
-        Res.string.lesson_1,
-        Res.string.lesson_2,
-        Res.string.lesson_3,
-        Res.string.lesson_4,
-        Res.string.lesson_5,
-        Res.string.lesson_6,
-        Res.string.lesson_7,
-        Res.string.lesson_8,
-        Res.string.lesson_9,
-        Res.string.lesson_10,
-        Res.string.lesson_11,
-        Res.string.lesson_12,
-        Res.string.lesson_13,
-        Res.string.lesson_14,
-        Res.string.lesson_15,
-        Res.string.lesson_16,
-        Res.string.lesson_17,
-        Res.string.lesson_18,
-        Res.string.lesson_19,
-        Res.string.lesson_20,
-        Res.string.lesson_21,
-        Res.string.lesson_22,
-        Res.string.lesson_23,
-        Res.string.lesson_24,
-        Res.string.lesson_25,
-        Res.string.lesson_26,
-        Res.string.lesson_27,
-        Res.string.lesson_28,
-        Res.string.lesson_29,
-        Res.string.lesson_30
-    )
 
     Column(
         modifier = Modifier
@@ -254,7 +193,6 @@ fun TodayCourseSection(
                 FreePeriodItem(
                     freeStart = currentLesson,
                     freeEnd = course.time.start - 1,
-                    lessonStringResourceList = lessonStringResourceList,
                     timePeriodInfo = timePeriodInfo
                 )
             }
@@ -264,14 +202,13 @@ fun TodayCourseSection(
                 title = course.name,
                 subtitle = listOfNotNull(
                     if (course.time.start == course.time.end)
-                        stringResource(
-                            lessonStringResourceList[course.time.start - 1]
-                        )
+                        stringResource(Res.string.schedule_value_course_time, course.time.start)
                     else
-                        listOf(
-                            stringResource(lessonStringResourceList[course.time.start - 1]),
-                            stringResource(lessonStringResourceList[course.time.end - 1])
-                        ).joinToString(" - "),
+                        stringResource(
+                            Res.string.schedule_value_course_time_period,
+                            course.time.start,
+                            course.time.end
+                        ),
                     course.teacher.takeIf { it.isNotEmpty() },
                     course.classroom.takeIf { it.isNotEmpty() }
                 ).joinToString(" | "),
@@ -296,7 +233,6 @@ fun TodayCourseSection(
             FreePeriodItem(
                 freeStart = currentLesson,
                 freeEnd = end,
-                lessonStringResourceList = lessonStringResourceList,
                 timePeriodInfo = timePeriodInfo
             )
         }
@@ -311,18 +247,14 @@ fun TodayCourseSection(
 fun FreePeriodItem(
     freeStart: Int,
     freeEnd: Int,
-    lessonStringResourceList: List<StringResource>,
     timePeriodInfo: LessonTimePeriodInfo
 ) {
     TodayCourseItem(
         title = stringResource(Res.string.today_value_idle),
         subtitle = if (freeStart == freeEnd)
-            stringResource(lessonStringResourceList[freeStart - 1])
+            stringResource(Res.string.schedule_value_course_time, freeStart)
         else
-            listOf(
-                stringResource(lessonStringResourceList[freeStart - 1]),
-                stringResource(lessonStringResourceList[freeEnd - 1])
-            ).joinToString(" - "),
+            stringResource(Res.string.schedule_value_course_time_period, freeStart, freeEnd),
         textColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         barColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         startTime = timePeriodInfo.getLessonByIndex(freeStart).start,

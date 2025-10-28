@@ -1,11 +1,5 @@
 <resources>
     <string name="app_name">TimeFlow</string>
-    <string name="greeting">Hello, %1$s!</string>
-    <string name="cyclone">Cyclone</string>
-    <string name="open_github">Open github</string>
-    <string name="run">Run</string>
-    <string name="stop">Stop</string>
-    <string name="theme">Theme</string>
     <string name="back">返回</string>
     <string name="cancel">取消</string>
     <string name="confirm">确定</string>
@@ -32,7 +26,8 @@
     <string name="schedule_title_course_teacher">老师</string>
     <string name="schedule_title_course_time_start">上课时间</string>
     <string name="schedule_title_course_time_end">下课时间</string>
-    <string name="schedule_value_course_time">第 %1$s - %2$s 节</string>
+    <string name="schedule_value_course_time">第 %1$s 节</string>
+    <string name="schedule_value_course_time_period">第 %1$s - %2$s 节</string>
     <string name="schedule_value_course_week">第 %1$s 周</string>
     <string name="schedule_title_course_week">上课周次</string>
     <string name="schedule_warning_multiple_courses">当前时间段有 %1$s 节课程，请重新选择时间</string>
@@ -53,7 +48,7 @@
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>
     <string name="today_value_idle">空闲</string>
-    <string name="today_value_date">%1$s月%2$s日 星期%3$s</string>
+    <string name="today_value_date">%1$s月%2$s日 %3$s</string>
 
     <!--    settings page-->
     <string name="settings_title_general">通用设置</string>
@@ -88,41 +83,6 @@
     <string name="settings_warning_lessons_time_conflict">标红课程时间冲突，请重新设置</string>
     <string name="settings_title_display_weekends">显示周末</string>
 
-    <string name="dialog_title_time_period_picker">选择时间段</string>
-    <string name="dialog_title_course_time_picker">选择节数</string>
-    <string name="dialog_course_time_picker_section">节</string>
-
-    <string name="lesson_1">第一节</string>
-    <string name="lesson_2">第二节</string>
-    <string name="lesson_3">第三节</string>
-    <string name="lesson_4">第四节</string>
-    <string name="lesson_5">第五节</string>
-    <string name="lesson_6">第六节</string>
-    <string name="lesson_7">第七节</string>
-    <string name="lesson_8">第八节</string>
-    <string name="lesson_9">第九节</string>
-    <string name="lesson_10">第十节</string>
-    <string name="lesson_11">第十一节</string>
-    <string name="lesson_12">第十二节</string>
-    <string name="lesson_13">第十三节</string>
-    <string name="lesson_14">第十四节</string>
-    <string name="lesson_15">第十五节</string>
-    <string name="lesson_16">第十六节</string>
-    <string name="lesson_17">第十七节</string>
-    <string name="lesson_18">第十八节</string>
-    <string name="lesson_19">第十九节</string>
-    <string name="lesson_20">第二十节</string>
-    <string name="lesson_21">第二十一节</string>
-    <string name="lesson_22">第二十二节</string>
-    <string name="lesson_23">第二十三节</string>
-    <string name="lesson_24">第二十四节</string>
-    <string name="lesson_25">第二十五节</string>
-    <string name="lesson_26">第二十六节</string>
-    <string name="lesson_27">第二十七节</string>
-    <string name="lesson_28">第二十八节</string>
-    <string name="lesson_29">第二十九节</string>
-    <string name="lesson_30">第三十节</string>
-
     <string name="monday">周一</string>
     <string name="tuesday">周二</string>
     <string name="wednesday">周三</string>
@@ -131,13 +91,17 @@
     <string name="saturday">周六</string>
     <string name="sunday">周日</string>
 
-    <string name="monday_short">一</string>
-    <string name="tuesday_short">二</string>
-    <string name="wednesday_short">三</string>
-    <string name="thursday_short">四</string>
-    <string name="friday_short">五</string>
-    <string name="saturday_short">六</string>
-    <string name="sunday_short">日</string>
+    <string name="monday_long">星期一</string>
+    <string name="tuesday_long">星期二</string>
+    <string name="wednesday_long">星期三</string>
+    <string name="thursday_long">星期四</string>
+    <string name="friday_long">星期五</string>
+    <string name="saturday_long">星期六</string>
+    <string name="sunday_long">星期日</string>
+
+    <string name="dialog_title_time_period_picker">选择时间段</string>
+    <string name="dialog_title_course_time_picker">选择节数</string>
+    <string name="dialog_course_time_picker_section">节</string>
 
     <string name="preference_dialog_close">关闭</string>
     <string name="preference_color_dialog_title">选择颜色</string>
