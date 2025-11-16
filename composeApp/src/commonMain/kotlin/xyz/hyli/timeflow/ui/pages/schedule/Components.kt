@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -108,12 +107,8 @@ fun TableGrid(
         )
     }
 
-    Row(
-        modifier = Modifier
-            .offset(
-                x = layoutParams.headerWidth.value + 6.dp,
-                y = 0.dp
-            )
+    Box(
+        modifier = Modifier.fillMaxWidth()
     ) {
         for (dayIndex in 0 until layoutParams.columns) {
             SubcomposeLayout(
@@ -123,7 +118,11 @@ fun TableGrid(
                     Column(
                         modifier = Modifier
                             .width(layoutParams.cellWidth - 1.dp)
-                            .height(IntrinsicSize.Max),
+                            .height(IntrinsicSize.Max)
+                            .offset(
+                                x = layoutParams.headerWidth.value + 6.dp + layoutParams.cellWidth * dayIndex,
+                                y = 0.dp
+                            ),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {

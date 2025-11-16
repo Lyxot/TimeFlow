@@ -387,22 +387,14 @@ fun CourseOverlay(
     scheduleParams: ScheduleParams,
     state: MutableState<TableState>
 ) {
-    Row(
-        modifier = Modifier
-            .offset(
-                x = layoutParams.headerWidth.value + 6.dp,
-                y = layoutParams.headerHeight.value + 1.dp
-            )
-    ) {
-        // 课程覆盖层
-        for (dayIndex in 0 until layoutParams.columns) {
-            CourseColumn(
-                layoutParams = layoutParams,
-                scheduleParams = scheduleParams,
-                state = state,
-                dayIndex = dayIndex
-            )
-        }
+    // 课程覆盖层
+    for (dayIndex in 0 until layoutParams.columns) {
+        CourseColumn(
+            layoutParams = layoutParams,
+            scheduleParams = scheduleParams,
+            state = state,
+            dayIndex = dayIndex
+        )
     }
 }
 
@@ -477,6 +469,10 @@ fun CourseColumn(
         modifier = Modifier
             .padding(end = 1.dp)
             .width(layoutParams.cellWidth - 1.dp)
+            .offset(
+                x = layoutParams.headerWidth.value + 6.dp + layoutParams.cellWidth * dayIndex,
+                y = layoutParams.headerHeight.value + 1.dp
+            )
     ) {
         if (daySchedule != null && dayScheduleTimeForCurrentWeek != null && dayScheduleTimeForOtherWeek != null) {
             // 当前周的课程
