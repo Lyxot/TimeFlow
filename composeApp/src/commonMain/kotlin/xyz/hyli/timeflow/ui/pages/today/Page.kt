@@ -29,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.materialkolor.ktx.harmonize
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -61,6 +64,7 @@ import timeflow.composeapp.generated.resources.tuesday_long
 import timeflow.composeapp.generated.resources.wednesday_long
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Schedule
+import xyz.hyli.timeflow.datastore.Time
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -159,20 +163,31 @@ fun TimelineCourseList(
     schedule: Schedule,
     courses: List<Course>,
 ) {
+    val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).let {
+        Time(it.hour, it.minute)
+    }
+    var currentLessonFlag by remember { mutableStateOf(false) }
+    val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
     Column {
         courses.forEachIndexed { index, course ->
-            val isCurrent = index == 1 // TODO: 根据实际时间判断当前课程
-            val isPast = index == 0 // TODO: 根据实际时间判断已过课程
+            val startTime = lessonTimePeriodInfo.getLessonByIndex(course.time.start).start
+            val endTime = lessonTimePeriodInfo.getLessonByIndex(course.time.end).end
+            val isPast = currentTime >= endTime
+            val isCurrent = if (!currentLessonFlag && !isPast && currentTime <= endTime) {
+                currentLessonFlag = true
+                true
+            } else false
             val previousColor = if (index > 0) {
-                if (isCurrent) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                if (isCurrent || isPast) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 else Color(courses[index - 1].color).harmonize(
                     MaterialTheme.colorScheme.primary,
                     true
                 )
             } else null
             TimelineCourseItem(
-                schedule = schedule,
                 course = course,
+                startTime = startTime,
+                endTime = endTime,
                 isCurrent = isCurrent,
                 isPast = isPast,
                 isFirst = index == 0,
@@ -186,16 +201,15 @@ fun TimelineCourseList(
 
 @Composable
 fun TimelineCourseItem(
-    schedule: Schedule,
     course: Course,
+    startTime: Time,
+    endTime: Time,
     isCurrent: Boolean,
     isPast: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
     previousColor: Color? = null
 ) {
-    val startTime = schedule.lessonTimePeriodInfo.getLessonByIndex(course.time.start).start
-    val endTime = schedule.lessonTimePeriodInfo.getLessonByIndex(course.time.end).end
     val containerColor = if (isPast) MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
     else if (isCurrent) MaterialTheme.colorScheme.primaryContainer
     else Color.Unspecified
