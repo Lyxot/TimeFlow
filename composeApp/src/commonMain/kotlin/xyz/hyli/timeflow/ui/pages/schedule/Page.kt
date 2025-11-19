@@ -162,7 +162,7 @@ fun ScheduleScreen(
                 .verticalScroll(rememberScrollState())
                 .then(
                     if (currentPlatform().isDesktop())
-                        Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp)
+                        Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
                     else Modifier
                 )
         ) {
@@ -267,7 +267,7 @@ fun ScheduleScreen(
             }
             HorizontalPager(
                 state = pagerState,
-                pageSpacing = 12.dp
+                pageSpacing = 16.dp
             ) { page ->
                 // 课程表表格
                 ScheduleTable(
@@ -344,7 +344,7 @@ fun ScheduleTable(
             )
     ) {
         val state = remember { mutableStateOf(TableState()) }
-        val cellWidth = (maxWidth - headerWidth.value - 6.dp) / columns
+        val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
         val noGridCells = remember { mutableStateOf(setOf<Pair<Int, Int>>()) }
         // 自动重置状态的逻辑 - 修复无限循环问题
         LaunchedEffect(state.value) {
@@ -470,7 +470,7 @@ fun CourseColumn(
             .padding(end = 1.dp)
             .width(layoutParams.cellWidth - 1.dp)
             .offset(
-                x = layoutParams.headerWidth.value + 6.dp + layoutParams.cellWidth * dayIndex,
+                x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
                 y = layoutParams.headerHeight.value + 1.dp
             )
     ) {

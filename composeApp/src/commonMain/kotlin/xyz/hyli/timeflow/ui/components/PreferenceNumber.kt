@@ -100,7 +100,7 @@ fun PreferenceNumber(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .padding(horizontal = 16.dp, vertical = 1.dp)
                         .animateContentSize(
                             animationSpec = spring(
                                 dampingRatio = 0.8f,

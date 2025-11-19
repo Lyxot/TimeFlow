@@ -53,7 +53,7 @@ fun ScheduleListScreen(
             .windowInsetsPadding(WindowInsets.statusBars)
             .then(
                 if (currentPlatform().isDesktop())
-                    Modifier.padding(start = 4.dp, top = 4.dp)
+                    Modifier.padding(start = 16.dp, top = 16.dp)
                 else Modifier
             )
     ) {
@@ -62,7 +62,7 @@ fun ScheduleListScreen(
                 .fillMaxWidth()
                 .then(
                     if (currentPlatform().isDesktop())
-                        Modifier.padding(end = 4.dp)
+                        Modifier.padding(end = 16.dp)
                     else Modifier
                 ),
             verticalAlignment = Alignment.CenterVertically,

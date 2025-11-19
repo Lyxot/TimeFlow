@@ -100,7 +100,7 @@ fun TableGrid(
             thickness = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier.offset(
-                x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
+                x = layoutParams.headerWidth.value + 4.dp + layoutParams.cellWidth * dayIndex,
                 y = 0.dp
             )
                 .height(layoutParams.headerHeight.value + 64.dp * layoutParams.rows)
@@ -120,7 +120,7 @@ fun TableGrid(
                             .width(layoutParams.cellWidth - 1.dp)
                             .height(IntrinsicSize.Max)
                             .offset(
-                                x = layoutParams.headerWidth.value + 6.dp + layoutParams.cellWidth * dayIndex,
+                                x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
                                 y = 0.dp
                             ),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -176,7 +176,7 @@ fun TableGrid(
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
                 modifier = Modifier
-                    .width(layoutParams.headerWidth.value + 5.dp)
+                    .width(layoutParams.headerWidth.value + 4.dp)
             )
             SubcomposeLayout { constraints ->
                 val column = subcompose("lesson$lessonIndex") {
@@ -232,7 +232,7 @@ fun TableGrid(
         Box(
             modifier = Modifier.width(layoutParams.cellWidth)
                 .offset(
-                    x = layoutParams.headerWidth.value + 5.dp + layoutParams.cellWidth * dayIndex,
+                    x = layoutParams.headerWidth.value + 4.dp + layoutParams.cellWidth * dayIndex,
                 )
         ) {
             for (lessonIndex in 0 until layoutParams.rows) {
@@ -384,22 +384,36 @@ fun CourseCell(
                     .background(containerColor)
             ) {
                 if (coursesForThisTime.size > 1) {
-                    Box(
-                        modifier = Modifier
-                            .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
-                            .size(minOf(20.dp, width / 4))
-                            .clip(RightBottomTriangleShape)
-                            .clip(RoundedCornerShape(0.dp, 0.dp, 8.dp, 0.dp))
-                            .background(contentColor)
-                            .align(Alignment.BottomEnd)
-                    )
+                    val indicatorSize = minOf(20.dp, width / 4)
+                    if (width / 4 < 20.dp) {
+                        // 显示小圆点
+                        Box(
+                            modifier = Modifier
+                                .padding(maxOf(minOf(width * 0.04f, height * 0.04f), 4.dp))
+                                .size(minOf(8.dp, width / 8))
+                                .clip(RoundedCornerShape(50))
+                                .background(contentColor)
+                                .align(Alignment.BottomEnd)
+                        )
+                    } else {
+                        // 显示三角形
+                        Box(
+                            modifier = Modifier
+                                .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
+                                .size(indicatorSize)
+                                .clip(RightBottomTriangleShape)
+                                .clip(RoundedCornerShape(0.dp, 0.dp, 12.dp, 0.dp))
+                                .background(contentColor)
+                                .align(Alignment.BottomEnd)
+                        )
+                    }
                 }
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(displayHeight)
                         .padding(
-                            minOf(width * 0.06f, height * 0.06f, 6.dp)
+                            minOf(width * 0.06f, height * 0.06f, 4.dp)
                         )
                         .offset(
                             y = displayOffSet

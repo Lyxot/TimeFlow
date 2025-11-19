@@ -1,8 +1,12 @@
 package xyz.hyli.timeflow.ui.pages.settings
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material3.Icon
@@ -74,16 +78,22 @@ fun SettingsScreen(
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
     PreferenceScreen(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        if (currentPlatform().isDesktop()) {
-            Spacer(
-                modifier = Modifier.height(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (currentPlatform().isDesktop())
+                    Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
+                else Modifier
             )
-        }
+    ) {
         Text(
             text = stringResource(Res.string.page_settings),
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(
+                bottom = 16.dp,
+                start = if (currentPlatform().isDesktop()) 0.dp else 16.dp,
+                top = if (currentPlatform().isDesktop()) 0.dp else 16.dp
+            )
         )
         // General Settings
         PreferenceSection(
@@ -286,9 +296,14 @@ fun SettingsScreen(
                 enabled = scheduleDependency
             )
         }
-        Spacer(modifier = Modifier.height(
-            if (currentPlatform().isDesktop()) 12.dp
-            else 24.dp
-        ))
+        Spacer(
+            modifier = Modifier.height(
+                maxOf(
+                    WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding(),
+                    24.dp
+                )
+            )
+        )
     }
 }

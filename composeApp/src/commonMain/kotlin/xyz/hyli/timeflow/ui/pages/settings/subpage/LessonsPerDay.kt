@@ -71,7 +71,7 @@ fun LessonsPerDayScreen(
     val lessonTimePeriodInfo = remember {
         mutableStateOf(
             settings.schedule[settings.selectedSchedule]?.lessonTimePeriodInfo
-                ?: LessonTimePeriodInfo.Companion.fromPeriodCounts()
+                ?: LessonTimePeriodInfo.fromPeriodCounts()
         )
     }
     val morningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.morning.size) }
@@ -81,13 +81,23 @@ fun LessonsPerDayScreen(
     val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
 
     Column(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.Companion.statusBars)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .then(
+                if (currentPlatform().isDesktop())
+                    Modifier.padding(start = 16.dp, top = 16.dp)
+                else Modifier
+            )
     ) {
         Row(
-            modifier = Modifier.Companion.fillMaxWidth(),
-            verticalAlignment = Alignment.Companion.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .then(
+                    if (currentPlatform().isDesktop())
+                        Modifier.padding(end = 16.dp)
+                    else Modifier
+                ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
                 onClick = {
@@ -99,31 +109,31 @@ fun LessonsPerDayScreen(
                     contentDescription = stringResource(Res.string.back)
                 )
             }
-            Spacer(modifier = Modifier.Companion.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
             if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_per_day_empty),
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .background(
                             MaterialTheme.colorScheme.errorContainer,
                             RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             } else if (conflictSet.size > 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_time_conflict),
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .background(
                             MaterialTheme.colorScheme.errorContainer,
-                            androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                            RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 12.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
-            Spacer(modifier = Modifier.Companion.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
             if (isModified.value) {
                 IconButton(
                     onClick = {
@@ -146,7 +156,12 @@ fun LessonsPerDayScreen(
             }
         }
         PreferenceScreen(
-            modifier = Modifier.Companion.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
+                .then(
+                    if (currentPlatform().isDesktop())
+                        Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
+                    else Modifier
+                )
         ) {
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_lessons_per_day)
@@ -158,7 +173,7 @@ fun LessonsPerDayScreen(
                     onValueChange = { newCount ->
                         morningCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            morning = LessonTimePeriodInfo.Companion.generateLessons(
+                            morning = LessonTimePeriodInfo.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.morning.getOrNull(0)?.start ?: Time(
                                     8,
@@ -185,7 +200,7 @@ fun LessonsPerDayScreen(
                     onValueChange = { newCount ->
                         afternoonCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            afternoon = LessonTimePeriodInfo.Companion.generateLessons(
+                            afternoon = LessonTimePeriodInfo.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.afternoon.getOrNull(0)?.start ?: Time(
                                     13,
@@ -212,7 +227,7 @@ fun LessonsPerDayScreen(
                     onValueChange = { newCount ->
                         eveningCount.value = newCount.coerceIn(0, 10)
                         lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(
-                            evening = LessonTimePeriodInfo.Companion.generateLessons(
+                            evening = LessonTimePeriodInfo.generateLessons(
                                 newCount,
                                 lessonTimePeriodInfo.value.evening.getOrNull(0)?.start ?: Time(
                                     18,
@@ -289,7 +304,7 @@ fun LessonsPerDayScreen(
                                             }
                                         }
                                         val updatedLessons =
-                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                            LessonTimePeriodInfo.generateLessons(
                                                 morningCount.value - i,
                                                 startTime,
                                                 endTime.minutesSince(startTime),
@@ -366,7 +381,7 @@ fun LessonsPerDayScreen(
                                             }
                                         }
                                         val updatedLessons =
-                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                            LessonTimePeriodInfo.generateLessons(
                                                 afternoonCount.value - i,
                                                 startTime,
                                                 endTime.minutesSince(startTime),
@@ -443,7 +458,7 @@ fun LessonsPerDayScreen(
                                             }
                                         }
                                         val updatedLessons =
-                                            LessonTimePeriodInfo.Companion.generateLessons(
+                                            LessonTimePeriodInfo.generateLessons(
                                                 eveningCount.value - i,
                                                 startTime,
                                                 endTime.minutesSince(startTime),
@@ -465,10 +480,9 @@ fun LessonsPerDayScreen(
                 }
             }
             Spacer(
-                modifier = if (currentPlatform().isDesktop()) Modifier.Companion.height(12.dp)
-                else Modifier.Companion.height(
+                modifier = Modifier.height(
                     maxOf(
-                        WindowInsets.Companion.navigationBars.asPaddingValues()
+                        WindowInsets.navigationBars.asPaddingValues()
                             .calculateBottomPadding(),
                         24.dp
                     )

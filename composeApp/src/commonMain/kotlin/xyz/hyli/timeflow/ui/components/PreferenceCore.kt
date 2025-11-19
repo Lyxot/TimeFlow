@@ -176,7 +176,7 @@ val LocalPreferenceItemPosition = compositionLocalOf { PreferenceItemPosition.Si
 
 @Composable
 fun getPreferenceItemShape(position: PreferenceItemPosition = LocalPreferenceItemPosition.current): androidx.compose.ui.graphics.Shape {
-    val cornerSize = 8.dp
+    val cornerSize = 12.dp
     return when (position) {
         PreferenceItemPosition.Single -> RoundedCornerShape(cornerSize)
         PreferenceItemPosition.First -> RoundedCornerShape(
@@ -213,7 +213,6 @@ fun PreferenceScreen(
                     Modifier.verticalScroll(rememberScrollState())
                 } else Modifier
             )
-            .padding(horizontal = 8.dp)
             .then(modifier)
     ) {
         preferenceScope.content()
@@ -277,7 +276,7 @@ fun PreferenceSection(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
 
             subtitle?.let {
@@ -285,7 +284,7 @@ fun PreferenceSection(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
                 )
             }
 
@@ -397,7 +396,7 @@ fun BasePreference(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .padding(horizontal = 16.dp, vertical = 1.dp)
                 .animateContentSize(
                     animationSpec = spring(
                         dampingRatio = 0.8f,

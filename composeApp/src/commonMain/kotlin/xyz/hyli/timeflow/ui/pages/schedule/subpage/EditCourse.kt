@@ -693,7 +693,7 @@ fun DeleteCourseButton(
     )
     Button(
         modifier = Modifier
-            .padding(top = 4.dp)
+            .padding(top = 8.dp)
             .fillMaxWidth(),
         onClick = {
             if (deleteButtonState) {

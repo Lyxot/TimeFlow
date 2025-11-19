@@ -119,11 +119,11 @@ fun TodayScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 16.dp)
     ) {
         if (currentPlatform().isDesktop()) {
             Spacer(
-                modifier = Modifier.height(8.dp)
+                modifier = Modifier.height(16.dp)
             )
         }
 
@@ -135,6 +135,7 @@ fun TodayScreen(
                 stringResource(weekdays[today.dayOfWeek.ordinal])
             ),
             style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(top = 16.dp)
         )
         Text(
             text = stringResource(Res.string.schedule_value_course_week, currentWeek),
@@ -222,13 +223,13 @@ fun TimelineCourseItem(
     val strokeWidthPx = with(density) { 2.dp.toPx() }
     val outerRadiusPx = with(density) { 6.dp.toPx() }
     val innerRadiusPx = with(density) { 3.dp.toPx() }
-    val cardPaddingPx = with(density) { 8.dp.toPx() }
+    val cardPaddingPx = with(density) { 16.dp.toPx() }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(
             modifier = Modifier
@@ -350,7 +351,7 @@ fun TimelineCourseItem(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(16.dp)
                 ) {
                     Text(
                         text = course.name,
