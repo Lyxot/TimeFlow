@@ -55,6 +55,7 @@ import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import timeflow.composeapp.generated.resources.sunday_long
 import timeflow.composeapp.generated.resources.thursday_long
+import timeflow.composeapp.generated.resources.today_title_no_courses
 import timeflow.composeapp.generated.resources.today_value_date
 import timeflow.composeapp.generated.resources.tuesday_long
 import timeflow.composeapp.generated.resources.wednesday_long
@@ -98,7 +99,7 @@ fun TodayScreen(
     val currentWeek = remember { schedule.termStartDate.weeksTill(today) }
     val todayCourses = schedule.courses.filter {
         it.week.week.contains(currentWeek) && it.weekday.ordinal == today.dayOfWeek.ordinal
-    }
+    }.sortedBy { it.time.start }
 
     val weekdays = listOf(
         Res.string.monday_long,
@@ -137,10 +138,18 @@ fun TodayScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        TimelineCourseList(
-            schedule = schedule,
-            courses = todayCourses
-        )
+        if (todayCourses.isEmpty()) {
+            Text(
+                text = stringResource(Res.string.today_title_no_courses),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+            )
+        } else {
+            TimelineCourseList(
+                schedule = schedule,
+                courses = todayCourses
+            )
+        }
     }
 }
 
