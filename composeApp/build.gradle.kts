@@ -1,4 +1,8 @@
-@file:OptIn(ExperimentalWasmDsl::class, ExperimentalKotlinGradlePluginApi::class)
+@file:OptIn(
+    ExperimentalWasmDsl::class,
+    ExperimentalKotlinGradlePluginApi::class,
+    org.jetbrains.compose.ExperimentalComposeLibrary::class
+)
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.gradle.ComposeHotRun
@@ -119,6 +123,19 @@ kotlin {
 //        wasmJsMain.dependencies {
 //
 //        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+        }
+
+        jvmTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(compose.ui)
+            implementation(compose.uiTest)
+            implementation(compose.desktop.uiTestJUnit4)
+        }
     }
 
     sourceSets.all {

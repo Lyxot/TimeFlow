@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -108,6 +109,7 @@ fun AdaptiveNavigation(
         modifier = Modifier.fillMaxSize(),
         navigationSuiteItems = {
             item(
+                modifier = Modifier.testTag("ScheduleNavItem"),
                 icon = { Icon(
                     if (currentPage == Destination.Schedule.name
                         || currentPage?.contains("EditCourseDestination") == true

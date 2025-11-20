@@ -14,12 +14,12 @@ import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Settings
 import xyz.hyli.timeflow.di.AppContainer
-import xyz.hyli.timeflow.di.DataRepository
+import xyz.hyli.timeflow.di.IDataRepository
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 class TimeFlowViewModel(
-    private val repository: DataRepository
+    private val repository: IDataRepository
 ): ViewModel() {
     val settings: StateFlow<Settings> =
         repository.settings
