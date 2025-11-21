@@ -18,7 +18,7 @@ jobs:
   debug:
     runs-on: ${{ inputs.debug-runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: 'recursive'
