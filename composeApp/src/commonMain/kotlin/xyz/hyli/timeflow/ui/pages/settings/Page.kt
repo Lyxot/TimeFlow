@@ -149,7 +149,7 @@ fun SettingsScreen(
                 onValueChange = {
                     viewModel.updateSelectedSchedule(it)
                 },
-                items = settings.schedule.keys.toList(),
+                items = settings.schedule.filter { !it.value.deleted }.keys.toList(),
                 itemTextProvider = { settings.schedule[it]?.name ?: "" },
                 title = stringResource(Res.string.settings_title_selected_schedule),
                 subtitle =

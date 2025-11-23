@@ -1,5 +1,11 @@
 package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,12 +21,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,11 +46,13 @@ import timeflow.composeapp.generated.resources.schedule_title_all_schedules
 import timeflow.composeapp.generated.resources.schedule_title_other_schedules
 import timeflow.composeapp.generated.resources.schedule_title_selected_schedule
 import xyz.hyli.timeflow.ui.components.BasePreference
+import xyz.hyli.timeflow.ui.components.DialogStateNoData
 import xyz.hyli.timeflow.ui.components.PreferenceDivider
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmSelectScheduleDialog
+import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -47,6 +63,8 @@ fun ScheduleListScreen(
     navHostController: NavHostController
 ) {
     val settings by viewModel.settings.collectAsState()
+    var multipleSelectionMode by remember { mutableStateOf(false) }
+    val selectedSchedules = remember { mutableStateSetOf<String>() }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -60,6 +78,7 @@ fun ScheduleListScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .animateContentSize()
                 .then(
                     if (currentPlatform().isDesktop())
                         Modifier.padding(end = 16.dp)
@@ -67,30 +86,86 @@ fun ScheduleListScreen(
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(
-                onClick = {
-                    navHostController.popBackStack()
-                },
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.Start,
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = stringResource(Res.string.back)
-                )
+                IconButton(
+                    onClick = {
+                        navHostController.popBackStack()
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(Res.string.back)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(Res.string.schedule_title_all_schedules)
             )
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(
-                onClick = {
-                    // TODO: Multiple selection
-                }
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .animateContentSize(),
+                horizontalArrangement = Arrangement.End,
             ) {
-                Icon(
-                    imageVector = Icons.Default.Checklist,
-                    contentDescription = null
-                )
+                AnimatedVisibility(
+                    visible = multipleSelectionMode,
+                    enter = expandHorizontally(),
+                    exit = shrinkHorizontally(),
+                ) {
+                    val showConfirmDeleteSelectedSchedulesDialog = rememberDialogState()
+                    IconButton(
+                        onClick = {
+                            showConfirmDeleteSelectedSchedulesDialog.show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    if (showConfirmDeleteSelectedSchedulesDialog.visible) {
+                        DeleteSelectedSchedulesDialog(
+                            selectedScheduleName = selectedSchedules.map {
+                                settings.schedule[it]?.name ?: ""
+                            },
+                            onConfirm = {
+                                selectedSchedules.forEach { uuid ->
+                                    val schedule = settings.schedule[uuid]
+                                    if (schedule != null) {
+                                        viewModel.updateSchedule(
+                                            uuid,
+                                            schedule.copy(deleted = true)
+                                        )
+                                    }
+                                }
+                                selectedSchedules.clear()
+                                multipleSelectionMode = false
+                            },
+                            showConfirmDeleteSelectedSchedulesDialog = showConfirmDeleteSelectedSchedulesDialog
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = {
+                        multipleSelectionMode = !multipleSelectionMode
+                        if (!multipleSelectionMode) {
+                            selectedSchedules.clear()
+                        }
+                    }
+                ) {
+                    AnimatedContent(
+                        targetState = multipleSelectionMode
+                    ) { state ->
+                        Icon(
+                            imageVector = if (state) Icons.Default.Done else Icons.Default.Checklist,
+                            contentDescription = null
+                        )
+                    }
+                }
             }
         }
         PreferenceScreen(
@@ -124,20 +199,49 @@ fun ScheduleListScreen(
                 PreferenceSection(
                     title = stringResource(Res.string.schedule_title_other_schedules)
                 ) {
+                    fun onClick(
+                        uuid: String,
+                        showConfirmSelectScheduleDialog: DialogStateNoData
+                    ) {
+                        if (multipleSelectionMode) {
+                            if (uuid in selectedSchedules) {
+                                selectedSchedules.remove(uuid)
+                            } else {
+                                selectedSchedules.add(uuid)
+                            }
+                        } else {
+                            showConfirmSelectScheduleDialog.show()
+                        }
+                    }
                     settings.schedule.filter {
                         !it.value.deleted && it.key != settings.selectedSchedule
                     }.forEach { (uuid, schedule) ->
                         val showConfirmSelectScheduleDialog = rememberDialogState()
-                        BasePreference(
-                            title = schedule.name,
-                            onClick = {
-                                showConfirmSelectScheduleDialog.show()
-                            }
+                        Row(
+                            modifier = Modifier.animateContentSize(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                                contentDescription = null
-                            )
+                            AnimatedVisibility(
+                                visible = multipleSelectionMode,
+                                enter = expandHorizontally(),
+                                exit = shrinkHorizontally(),
+                            ) {
+                                Checkbox(
+                                    checked = uuid in selectedSchedules,
+                                    onCheckedChange = {
+                                        onClick(uuid, showConfirmSelectScheduleDialog)
+                                    }
+                                )
+                            }
+                            BasePreference(
+                                title = schedule.name,
+                                onClick = { onClick(uuid, showConfirmSelectScheduleDialog) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                    contentDescription = null
+                                )
+                            }
                         }
                         if (showConfirmSelectScheduleDialog.visible) {
                             ConfirmSelectScheduleDialog(

@@ -44,6 +44,8 @@
     <string name="schedule_title_other_schedules">其他课程表</string>
     <string name="schedule_title_update_selected_schedule">设置为当前课程表</string>
     <string name="schedule_value_update_selected_schedule">是否将“%1$s”设置为当前课程表？</string>
+    <string name="schedule_title_confirm_delete_schedule">删除课程表</string>
+    <string name="schedule_value_confirm_delete_schedule">是否将以下课程表移入回收站？</string>
 
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>

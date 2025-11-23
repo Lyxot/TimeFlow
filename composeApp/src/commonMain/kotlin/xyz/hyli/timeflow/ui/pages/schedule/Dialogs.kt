@@ -48,11 +48,13 @@ import timeflow.composeapp.generated.resources.save
 import timeflow.composeapp.generated.resources.schedule_button_edit
 import timeflow.composeapp.generated.resources.schedule_course_not_this_week
 import timeflow.composeapp.generated.resources.schedule_title_add_course
+import timeflow.composeapp.generated.resources.schedule_title_confirm_delete_schedule
 import timeflow.composeapp.generated.resources.schedule_title_course_detail
 import timeflow.composeapp.generated.resources.schedule_title_course_time_start
 import timeflow.composeapp.generated.resources.schedule_title_create_schedule
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
 import timeflow.composeapp.generated.resources.schedule_title_update_selected_schedule
+import timeflow.composeapp.generated.resources.schedule_value_confirm_delete_schedule
 import timeflow.composeapp.generated.resources.schedule_value_course_time_period
 import timeflow.composeapp.generated.resources.schedule_value_course_week
 import timeflow.composeapp.generated.resources.schedule_value_schedule_name_empty
@@ -479,6 +481,48 @@ fun CourseTimeDialog(
                     style = MaterialTheme.typography.labelSmall
                 )
                 Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteSelectedSchedulesDialog(
+    selectedScheduleName: List<String>,
+    onConfirm: () -> Unit,
+    showConfirmDeleteSelectedSchedulesDialog: DialogState
+) {
+    MyDialog(
+        state = showConfirmDeleteSelectedSchedulesDialog,
+        title = {
+            Text(
+                text = stringResource(Res.string.schedule_title_confirm_delete_schedule)
+            )
+        },
+        buttons = DialogDefaults.buttons(
+            positive = DialogButton(stringResource(Res.string.confirm)),
+            negative = DialogButton(stringResource(Res.string.cancel)),
+        ),
+        onEvent = { event ->
+            if (event.isPositiveButton) {
+                // Confirm delete selected schedules
+                onConfirm.invoke()
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(Res.string.schedule_value_confirm_delete_schedule)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            selectedScheduleName.forEach {
+                Text(
+                    text = " • $it",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
