@@ -250,8 +250,8 @@ fun TimelineCourseItem(
                 }
 
                 isCurrent -> {
-                    startColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                    startStyle = MaterialTheme.typography.labelMedium
+                    startColor = MaterialTheme.colorScheme.onBackground
+                    startStyle = MaterialTheme.typography.labelLarge
                     endColor = MaterialTheme.colorScheme.onBackground
                     endStyle = MaterialTheme.typography.labelLarge
                 }
