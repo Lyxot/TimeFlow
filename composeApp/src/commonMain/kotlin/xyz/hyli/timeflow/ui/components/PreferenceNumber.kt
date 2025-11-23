@@ -421,7 +421,11 @@ fun NumberWheelPickerDialog(
                     selectedValue = item
                 }
             ) { item ->
-                Text(text = item.toString())
+                Text(
+                    text = item.toString(),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }

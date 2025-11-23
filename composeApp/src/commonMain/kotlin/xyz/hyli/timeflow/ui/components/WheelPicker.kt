@@ -2,6 +2,7 @@
 
 package xyz.hyli.timeflow.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,10 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -44,6 +47,7 @@ fun <T> WheelPicker(
             initialFirstVisibleItemIndex = startIndex - startIndex.floorMod(size) + selectIndex,
             initialFirstVisibleItemScrollOffset = ((itemHeightPx - pickerHeightPx) / 2).roundToInt(),
         )
+        val coroutineScope = rememberCoroutineScope()
         val layoutInfo by remember { derivedStateOf { listState.layoutInfo } }
         LazyColumn(
             modifier = Modifier,
@@ -78,7 +82,17 @@ fun <T> WheelPicker(
                             rotationX = (1 + (0.75f + 0.25f * percent)) * 180
                         }
 //                        .fillMaxWidth()
-                        .height(itemHeight),
+                        .height(itemHeight)
+                        .clickable(
+                            onClick = {
+                                onSelect(currIndex, data[currIndex])
+                                // 计算目标滚动位置
+                                val targetIndex =
+                                    listState.firstVisibleItemIndex + (index - listState.firstVisibleItemIndex - 1)
+                                // 平滑滚动到目标位置
+                                coroutineScope.launch { listState.animateScrollToItem(targetIndex) }
+                            }
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     content(data[currIndex])
