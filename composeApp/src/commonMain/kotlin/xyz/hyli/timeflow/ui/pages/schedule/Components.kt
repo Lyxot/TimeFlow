@@ -385,27 +385,30 @@ fun CourseCell(
             ) {
                 if (coursesForThisTime.size > 1) {
                     val indicatorSize = minOf(20.dp, width / 4)
-                    if (width / 4 < 20.dp) {
-                        // 显示小圆点
-                        Box(
-                            modifier = Modifier
-                                .padding(maxOf(minOf(width * 0.04f, height * 0.04f), 4.dp))
-                                .size(minOf(8.dp, width / 8))
-                                .clip(RoundedCornerShape(50))
-                                .background(contentColor)
-                                .align(Alignment.BottomEnd)
-                        )
-                    } else {
-                        // 显示三角形
-                        Box(
-                            modifier = Modifier
-                                .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
-                                .size(indicatorSize)
-                                .clip(RightBottomTriangleShape)
-                                .clip(RoundedCornerShape(0.dp, 0.dp, 12.dp, 0.dp))
-                                .background(contentColor)
-                                .align(Alignment.BottomEnd)
-                        )
+                    AnimatedContent(
+                        modifier = Modifier.align(Alignment.BottomEnd),
+                        targetState = width / 4 < 20.dp,
+                    ) { state ->
+                        if (state) {
+                            // 显示小圆点
+                            Box(
+                                modifier = Modifier
+                                    .padding(maxOf(minOf(width * 0.04f, height * 0.04f), 4.dp))
+                                    .size(minOf(8.dp, width / 8))
+                                    .clip(RoundedCornerShape(50))
+                                    .background(contentColor)
+                            )
+                        } else {
+                            // 显示三角形
+                            Box(
+                                modifier = Modifier
+                                    .padding(maxOf(minOf(width * 0.02f, height * 0.02f), 2.dp))
+                                    .size(indicatorSize)
+                                    .clip(RightBottomTriangleShape)
+                                    .clip(RoundedCornerShape(0.dp, 0.dp, 12.dp, 0.dp))
+                                    .background(contentColor)
+                            )
+                        }
                     }
                 }
                 Column(
