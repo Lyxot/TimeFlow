@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -34,22 +34,22 @@ jobs:
       matrix:
         include:
           - name: android
-            runner: macos-15
+            runner: macos-latest
             task: ./gradlew assembleRelease
             path: composeApp/build/outputs/apk/release/*.apk
 
           - name: macos-arm64
-            runner: macos-15
+            runner: macos-latest
             task: ./gradlew packageReleaseDmg
             path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
 
           - name: macos-x86_64
-            runner: macos-13
+            runner: macos-15-intel
             task: ./gradlew packageReleaseDmg
             path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
 
           - name: linux-x86_64
-            runner: ubuntu-24.04
+            runner: ubuntu-latest
             task: ./gradlew packageReleaseDeb
             path: composeApp/build/compose/binaries/main-release/deb/*.deb
 
@@ -68,10 +68,15 @@ jobs:
             task: ./gradlew.bat packageReleaseMsi
             path: composeApp/build/compose/binaries/main-release/msi/*.msi
 
+          - name: ios
+            runner: macos-latest
+            task: cd iosApp && xcodebuild archive -scheme iosApp -archivePath ./build/iosApp.xcarchive -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            path: iosApp/build
+
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
