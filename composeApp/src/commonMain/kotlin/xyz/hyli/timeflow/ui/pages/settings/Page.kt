@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Lyxot and contributors.
+ *
+ * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
+ * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
+ *
+ * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
+ */
+
 package xyz.hyli.timeflow.ui.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +43,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import timeflow.composeapp.generated.resources.Res
@@ -96,7 +107,10 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 import xyz.hyli.timeflow.utils.supportDynamicColor
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @Composable
 fun SettingsScreen(
     viewModel: TimeFlowViewModel,
@@ -394,7 +408,13 @@ fun SettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}(${BuildConfig.APP_VERSION_CODE})")
-                Text(BuildConfig.AUTHOR)
+                Text(
+                    text = "©️ ${
+                        Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
+                            TimeZone.currentSystemDefault()
+                        ).year
+                    } ${BuildConfig.AUTHOR}"
+                )
             }
             val urlChangelog = stringResource(Res.string.url_changelog)
             ElevatedButton(
