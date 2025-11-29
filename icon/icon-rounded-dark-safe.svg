@@ -1,0 +1,49 @@
+<!--
+  - Copyright (c) 2025 Lyxot and contributors.
+  -
+  - 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
+  - Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
+  -
+  - https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <g transform="translate(51.2, 51.2) scale(0.8)">
+        <!-- 背景：深色冷色调渐变（圆角矩形） -->
+        <rect x="0" y="0" width="512" height="512" rx="120" fill="url(#bgGradientDark)" />
+
+        <!-- 上方波浪 -->
+        <path d="M100 320 Q180 240 260 320 T420 320" fill="none" stroke="url(#waveGradientLight)"
+            stroke-width="34" stroke-linecap="round" />
+
+        <!-- 下方波浪 -->
+        <path d="M100 400 Q180 320 260 400 T420 400" fill="none" stroke="url(#waveGradientStrong)"
+            stroke-width="29.5" stroke-linecap="round" />
+
+        <!-- 时间指针 -->
+        <circle cx="256" cy="226" r="28" fill="white" opacity="0.95" />
+        <line x1="256" y1="226" x2="256" y2="104" stroke="white" stroke-width="22"
+            stroke-linecap="round" opacity="0.95" />
+    </g>
+
+    <!-- 渐变定义 -->
+    <defs>
+        <!-- 背景深色渐变 -->
+        <linearGradient id="bgGradientDark" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1E3A8A" /> <!-- 深蓝 -->
+            <stop offset="100%" stop-color="#312E81" /> <!-- 靛紫 -->
+        </linearGradient>
+
+        <!-- 上方波浪：明亮青蓝 -->
+        <linearGradient id="waveGradientLight" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#38BDF8" />
+            <stop offset="100%" stop-color="#93C5FD" />
+        </linearGradient>
+
+        <!-- 下方波浪：更强对比的蓝紫 -->
+        <linearGradient id="waveGradientStrong" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#6366F1" />
+            <stop offset="100%" stop-color="#3B82F6" />
+        </linearGradient>
+    </defs>
+</svg>

@@ -202,6 +202,14 @@ android {
             }
         }
     }
+    android.applicationVariants.all {
+        outputs.all {
+            if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                this.outputFileName = "TimeFlow-$versionName.apk"
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -215,11 +223,26 @@ android {
 compose.desktop {
     application {
         mainClass = "MainKt"
+        jvmArgs += listOf(
+            "-XX:+UseZGC",
+//            "-XX:+ZGenerational",
+            "-XX:SoftMaxHeapSize=512m",
+            "--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED",
+            "--add-opens=java.desktop/sun.awt=ALL-UNNAMED"
+        )
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(
+                TargetFormat.Dmg,
+                TargetFormat.Msi,
+                TargetFormat.Exe,
+                TargetFormat.Deb,
+                TargetFormat.Rpm
+            )
             packageName = "TimeFlow"
             packageVersion = app.versions.name.get()
+            vendor = "Lyxot"
+            licenseFile.set(rootProject.rootDir.resolve("LICENSE"))
             modules(
                 "jdk.unsupported",
                 "java.instrument"
@@ -237,7 +260,13 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("desktopAppIcons/MacosIcon.icns"))
                 bundleID = "xyz.hyli.timeflow"
-                jvmArgs += listOf("-Dapple.awt.application.name=TimeFlow")
+                appCategory = "public.app-category.productivity"
+                jvmArgs += listOf(
+                    "-Dapple.awt.application.name=TimeFlow",
+                    "-Dsun.java2d.metal=true",
+                    "--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED",
+                    "--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+                )
             }
         }
 

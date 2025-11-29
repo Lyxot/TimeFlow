@@ -27,53 +27,79 @@ jobs:
       - name: Run tests
         run: ./gradlew jvmTest
 
-  build:
+  build-desktop:
     needs: test
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: android
-            runner: macos-latest
-            task: ./gradlew assembleRelease
-            path: composeApp/build/outputs/apk/release/*.apk
-
-          - name: macos-arm64
+          - name: macos-aarch64
             runner: macos-latest
             task: ./gradlew packageReleaseDmg
-            path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
 
           - name: macos-x86_64
             runner: macos-15-intel
             task: ./gradlew packageReleaseDmg
-            path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
 
           - name: linux-x86_64
             runner: ubuntu-latest
-            task: ./gradlew packageReleaseDeb
-            path: composeApp/build/compose/binaries/main-release/deb/*.deb
+            task: ./gradlew createReleaseDistributable packageReleaseDeb packageReleaseRpm
 
-          - name: linux-arm64
+          - name: linux-aarch64
             runner: ubuntu-24.04-arm
-            task: ./gradlew packageReleaseDeb
-            path: composeApp/build/compose/binaries/main-release/deb/*.deb
+            task: ./gradlew createReleaseDistributable packageReleaseDeb packageReleaseRpm
 
           - name: windows-x86_64
             runner: windows-latest
-            task: ./gradlew.bat packageReleaseMsi
-            path: composeApp/build/compose/binaries/main-release/msi/*.msi
+            task: ./gradlew.bat createReleaseDistributable packageReleaseMsi packageReleaseExe
 
           - name: windows-arm64
             runner: windows-11-arm
-            task: ./gradlew.bat packageReleaseMsi
-            path: composeApp/build/compose/binaries/main-release/msi/*.msi
-
-          - name: ios
-            runner: macos-latest
-            task: cd iosApp && xcodebuild archive -scheme iosApp -archivePath ./build/iosApp.xcarchive -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-            path: iosApp/build
+            task: ./gradlew.bat createReleaseDistributable packageReleaseMsi packageReleaseExe
 
     runs-on: ${{ matrix.runner }}
+    name: Build ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ${{ matrix.task }}
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.name }}
+          path: composeApp/build/compose/binaries/main-release
+
+  build-mobile:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ios
+            task: cd iosApp && xcodebuild archive -scheme iosApp -archivePath ./build/iosApp.xcarchive -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            path: iosApp/build
+          - name: android
+            task: ./gradlew assembleRelease
+            path: composeApp/build/outputs/apk/release/*.apk
+
+    runs-on: macos-latest
     name: Build ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v6
@@ -112,4 +138,290 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: ${{ matrix.path }}
+
+  package:
+    needs: build-desktop
+    runs-on: ubuntu-latest
+    name: Package artifacts
+    steps:
+      # 下载所有需要的 artifacts
+      - name: Download macOS aarch64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: macos-aarch64
+          path: macos-aarch64
+
+      - name: Download macOS x86_64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: macos-x86_64
+          path: macos-x86_64
+
+      - name: Download Linux x86_64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: linux-x86_64
+          path: linux-x86_64
+
+      - name: Download Linux aarch64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: linux-aarch64
+          path: linux-aarch64
+
+      - name: Download Windows x86_64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-x86_64
+          path: windows-x86_64
+
+      - name: Download Windows arm64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-arm64
+          path: windows-arm64
+
+      # 重命名文件
+      - name: Rename artifacts
+        run: |
+          # Get base filename from macOS DMG
+          DMG_FILE=$(find macos-aarch64/dmg -name "*.dmg" -type f | head -n 1)
+          BASE_NAME=$(basename "$DMG_FILE" .dmg)
+          echo "Base filename: $BASE_NAME"
+          
+          # macOS
+          for arch in aarch64 x86_64; do
+            if [ -d "macos-${arch}/dmg" ]; then
+              for file in macos-${arch}/dmg/*.dmg; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .dmg)
+                  mv "$file" "macos-${arch}/dmg/${filename}-macos-${arch}.dmg"
+                fi
+              done
+            fi
+          done
+
+          # Linux
+          for arch in x86_64 aarch64; do
+            if [ -d "linux-${arch}/deb" ]; then
+              for file in linux-${arch}/deb/*.deb; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .deb)
+                  mv "$file" "linux-${arch}/deb/${filename}-linux-${arch}.deb"
+                fi
+              done
+            fi
+            if [ -d "linux-${arch}/rpm" ]; then
+              for file in linux-${arch}/rpm/*.rpm; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .rpm)
+                  mv "$file" "linux-${arch}/rpm/${filename}-linux-${arch}.rpm"
+                fi
+              done
+            fi
+          done
+
+          # Windows
+          for arch in x86_64 arm64; do
+            if [ -d "windows-${arch}/msi" ]; then
+              for file in windows-${arch}/msi/*.msi; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .msi)
+                  mv "$file" "windows-${arch}/msi/${filename}-windows-${arch}.msi"
+                fi
+              done
+            fi
+            if [ -d "windows-${arch}/exe" ]; then
+              for file in windows-${arch}/exe/*.exe; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .exe)
+                  mv "$file" "windows-${arch}/exe/${filename}-windows-${arch}.exe"
+                fi
+              done
+            fi
+            # Package portable as zip
+            if [ -d "windows-${arch}/app/TimeFlow" ]; then
+              cd windows-${arch}/app
+              zip -r "../../${BASE_NAME}-windows-${arch}.zip" TimeFlow
+              cd ../..
+            fi
+          done
+
+      # 上传新的 artifacts
+      - name: Upload macOS aarch64 DMG
+        uses: actions/upload-artifact@v5
+        with:
+          name: macos-aarch64-dmg
+          path: macos-aarch64/dmg/*.dmg
+
+      - name: Upload macOS x86_64 DMG
+        uses: actions/upload-artifact@v5
+        with:
+          name: macos-x86_64-dmg
+          path: macos-x86_64/dmg/*.dmg
+
+      - name: Upload Linux x86_64 DEB
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-x86_64-deb
+          path: linux-x86_64/deb/*.deb
+
+      - name: Upload Linux x86_64 RPM
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-x86_64-rpm
+          path: linux-x86_64/rpm/*.rpm
+
+      - name: Upload Linux aarch64 DEB
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-aarch64-deb
+          path: linux-aarch64/deb/*.deb
+
+      - name: Upload Linux aarch64 RPM
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-aarch64-rpm
+          path: linux-aarch64/rpm/*.rpm
+
+      - name: Upload Windows x86_64 MSI
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-x86_64-msi
+          path: windows-x86_64/msi/*.msi
+
+      - name: Upload Windows x86_64 EXE
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-x86_64-exe
+          path: windows-x86_64/exe/*.exe
+
+      - name: Upload Windows x86_64 Portable
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-x86_64-portable
+          path: '*-windows-x86_64.zip'
+
+      - name: Upload Windows arm64 MSI
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-arm64-msi
+          path: windows-arm64/msi/*.msi
+
+      - name: Upload Windows arm64 EXE
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-arm64-exe
+          path: windows-arm64/exe/*.exe
+
+      - name: Upload Windows arm64 Portable
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-arm64-portable
+          path: '*-windows-arm64.zip'
+
+  package-appimage:
+    needs: build-desktop
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            appimagetool: appimagetool-x86_64.AppImage
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            appimagetool: appimagetool-aarch64.AppImage
+
+    runs-on: ${{ matrix.runner }}
+    name: Build Linux ${{ matrix.arch }} AppImage
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Download macOS aarch64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: macos-aarch64
+          path: macos-aarch64
+
+      - name: Download Linux ${{ matrix.arch }} artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: linux-${{ matrix.arch }}
+          path: linux-${{ matrix.arch }}
+
+      - name: Build AppImage
+        run: |
+          # Get base filename from macOS DMG
+          DMG_FILE=$(find macos-aarch64/dmg -name "*.dmg" -type f | head -n 1)
+          BASE_NAME=$(basename "$DMG_FILE" .dmg)
+          echo "Base filename: $BASE_NAME"
+          
+          # Download appimagetool
+          wget https://github.com/AppImage/appimagetool/releases/download/continuous/${{ matrix.appimagetool }}
+          chmod +x ${{ matrix.appimagetool }}
+
+          # Prepare AppDir
+          mkdir -p AppDir/usr
+          cp -r linux-${{ matrix.arch }}/app/TimeFlow/* AppDir/usr
+
+          # Create desktop file
+          cat > AppDir/TimeFlow.desktop << 'EOF'
+          [Desktop Entry]
+          Name=TimeFlow
+          Exec=TimeFlow
+          Icon=TimeFlow
+          Terminal=false
+          Type=Application
+          Categories=Utility;
+          EOF
+
+          # Create AppRun script
+          cat > AppDir/AppRun << 'EOF'
+          #!/bin/bash
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+          export PATH="${HERE}/usr/bin/:${PATH}"
+          export LD_LIBRARY_PATH="${HERE}/usr/lib/:${LD_LIBRARY_PATH}"
+          exec "${HERE}/usr/bin/TimeFlow" "$@"
+          EOF
+
+          # Copy icon if exists
+          if [ -f "composeApp/desktopAppIcons/LinuxIcon.png" ]; then
+            cp composeApp/desktopAppIcons/LinuxIcon.png AppDir/TimeFlow.png
+          fi
+
+          # Fix permissions
+          chmod a+x AppDir/AppRun
+          chmod a+x AppDir/usr/bin/TimeFlow
+
+          # Build AppImage
+          ARCH=${{ matrix.arch }} ./${{ matrix.appimagetool }} AppDir
+          
+          # Rename AppImage with base name from DMG
+          mv TimeFlow-${{ matrix.arch }}.AppImage ${BASE_NAME}-linux-${{ matrix.arch }}.AppImage
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-${{ matrix.arch }}-appimage
+          path: '*-linux-${{ matrix.arch }}.AppImage'
+
+  cleanup:
+    needs: [ package-appimage, package ]
+    runs-on: ubuntu-latest
+    name: Cleanup original artifacts
+    steps:
+      - name: Delete original artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            macos-aarch64
+            macos-x86_64
+            linux-x86_64
+            linux-aarch64
+            windows-x86_64
+            windows-arm64
     
