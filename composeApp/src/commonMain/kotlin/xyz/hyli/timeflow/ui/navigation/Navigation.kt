@@ -51,7 +51,9 @@ import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.ScheduleListScreen
 import xyz.hyli.timeflow.ui.pages.settings.SettingsScreen
+import xyz.hyli.timeflow.ui.pages.settings.subpage.AboutScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayScreen
+import xyz.hyli.timeflow.ui.pages.settings.subpage.LicenseScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
@@ -66,7 +68,9 @@ enum class ScheduleDestination {
 }
 
 enum class SettingsDestination {
-    LessonsPerDay
+    LessonsPerDay,
+    About,
+    License
 }
 
 val NavigationBarType = listOf(
@@ -100,7 +104,7 @@ fun AdaptiveNavigation(
             if (currentPage in Destination.entries.map { it.name })
                 state.show()
             else
-                state.toggle()
+                state.hide()
         }
     }
     NavigationSuiteScaffold(
@@ -187,6 +191,12 @@ fun TimeFlowNavHost(
         }
         subScreenComposable(SettingsDestination.LessonsPerDay.name) {
             LessonsPerDayScreen(viewModel, navHostController)
+        }
+        subScreenComposable(SettingsDestination.About.name) {
+            AboutScreen(navHostController)
+        }
+        subScreenComposable(SettingsDestination.License.name) {
+            LicenseScreen(navHostController)
         }
         composable<EditCourseDestination>(
             enterTransition = NavigationAnimation.enterSlideIn,

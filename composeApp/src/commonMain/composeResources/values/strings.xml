@@ -84,6 +84,13 @@
     <string name="settings_warning_lessons_per_day_empty">课程节数不能为零</string>
     <string name="settings_warning_lessons_time_conflict">标红课程时间冲突，请重新设置</string>
     <string name="settings_title_display_weekends">显示周末</string>
+    <string name="settings_title_other">其他</string>
+    <string name="settings_title_about">关于 TimeFlow</string>
+    <string name="settings_title_donate">捐赠</string>
+    <string name="settings_title_feedback">反馈</string>
+    <string name="settings_value_version">版本</string>
+    <string name="settings_title_changelog">更新日志</string>
+
 
     <string name="monday">周一</string>
     <string name="tuesday">周二</string>
@@ -115,4 +122,21 @@
     <string name="preference_number_validation_step">数值必须是 %1$s 的倍数</string>
     <string name="preference_number_dialog_label">数值 (%1$s - %2$s)</string>
     <string name="preference_text_validation_minimum_length">至少输入%1$d个字符</string>
+
+    <string name="about_title_author">作者</string>
+    <string name="about_title_homepage">官方主页</string>
+    <string name="about_title_source_code">开源地址 (GitHub)</string>
+    <string name="about_title_license">GNU Affero General Public License 3.0</string>
+    <string name="about_title_license_notice">许可证信息</string>
+    <string name="about_value_description">TimeFlow 是一款简洁美观且功能强大的课程表应用，旨在帮助学生高效管理和查看课程安排。通过直观的界面设计和丰富的自定义选项，TimeFlow 提供了轻松便捷的课程管理体验。</string>
+    <string name="about_value_download">本程序可在 Android、iOS、macOS、Windows 和 Linux 上使用。您可以在官方主页找到所有下载选项。</string>
+
+    <string name="url_github_profile">https://github.com/Lyxot</string>
+    <string name="url_github_repository">https://github.com/Lyxot/TimeFlow</string>
+    <string name="url_feedback">https://github.com/Lyxot/TimeFlow/issues</string>
+    <string name="url_donate">https://hyli.xyz/sponsor/</string>
+    <string name="url_homepage">https://timeflow.hyli.xyz</string>
+    <string name="url_changelog">https://github.com/Lyxot/TimeFlow/blob/master/Changelog.md</string>
+    <string name="url_license">https://www.gnu.org/licenses/agpl-3.0.html</string>
+
 </resources>

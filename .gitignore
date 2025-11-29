@@ -16,3 +16,4 @@ Pods/
 *.gpg
 *yarn.lock
 !/kotlin-js-store/
+libraries.json

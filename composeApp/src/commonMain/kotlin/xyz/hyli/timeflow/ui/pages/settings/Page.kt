@@ -1,5 +1,8 @@
 package xyz.hyli.timeflow.ui.pages.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -7,8 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,13 +25,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 import timeflow.composeapp.generated.resources.Res
+import timeflow.composeapp.generated.resources.ic_launcher
+import timeflow.composeapp.generated.resources.ic_launcher_night
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.settings_subtitle_create_schedule
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
@@ -32,9 +48,14 @@ import timeflow.composeapp.generated.resources.settings_subtitle_theme_dynamic_c
 import timeflow.composeapp.generated.resources.settings_theme_dark
 import timeflow.composeapp.generated.resources.settings_theme_light
 import timeflow.composeapp.generated.resources.settings_theme_system
+import timeflow.composeapp.generated.resources.settings_title_about
+import timeflow.composeapp.generated.resources.settings_title_changelog
 import timeflow.composeapp.generated.resources.settings_title_create_schedule
 import timeflow.composeapp.generated.resources.settings_title_display_weekends
+import timeflow.composeapp.generated.resources.settings_title_donate
+import timeflow.composeapp.generated.resources.settings_title_feedback
 import timeflow.composeapp.generated.resources.settings_title_general
+import timeflow.composeapp.generated.resources.settings_title_other
 import timeflow.composeapp.generated.resources.settings_title_schedule
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_schedule_name
@@ -45,7 +66,12 @@ import timeflow.composeapp.generated.resources.settings_title_selected_schedule
 import timeflow.composeapp.generated.resources.settings_title_theme
 import timeflow.composeapp.generated.resources.settings_title_theme_color
 import timeflow.composeapp.generated.resources.settings_title_theme_dynamic_color
+import timeflow.composeapp.generated.resources.settings_value_version
 import timeflow.composeapp.generated.resources.settings_warning_schedule_name_empty
+import timeflow.composeapp.generated.resources.url_changelog
+import timeflow.composeapp.generated.resources.url_donate
+import timeflow.composeapp.generated.resources.url_feedback
+import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.ui.components.BasePreference
@@ -65,6 +91,7 @@ import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
+import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -77,6 +104,7 @@ fun SettingsScreen(
 ) {
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val uriHandler = LocalUriHandler.current
     PreferenceScreen(
         modifier = Modifier
             .fillMaxWidth()
@@ -295,6 +323,96 @@ fun SettingsScreen(
                 title = stringResource(Res.string.settings_title_display_weekends),
                 enabled = scheduleDependency
             )
+        }
+        PreferenceDivider()
+        // Other
+        PreferenceSection(
+            title = stringResource(Res.string.settings_title_other)
+        ) {
+            BasePreference(
+                title = stringResource(Res.string.settings_title_about),
+                onClick = {
+                    navHostController.navigate(SettingsDestination.About.name)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                    contentDescription = null
+                )
+            }
+            val urlDonate = stringResource(Res.string.url_donate)
+            BasePreference(
+                title = stringResource(Res.string.settings_title_donate),
+                onClick = {
+                    uriHandler.openUri(urlDonate)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Launch,
+                    contentDescription = null
+                )
+            }
+            val urlFeedback = stringResource(Res.string.url_feedback)
+            BasePreference(
+                title = stringResource(Res.string.settings_title_feedback),
+                onClick = {
+                    uriHandler.openUri(urlFeedback)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Launch,
+                    contentDescription = null
+                )
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val isDark by LocalThemeIsDark.current
+            Icon(
+                modifier = Modifier
+                    .size(192.dp)
+                    .clip(
+                        RoundedCornerShape(45.dp)
+                    ),
+                imageVector = vectorResource(
+                    if (isDark) Res.drawable.ic_launcher_night
+                    else Res.drawable.ic_launcher
+                ),
+                contentDescription = null,
+                tint = Color.Unspecified,
+            )
+            Text(
+                text = BuildConfig.APP_NAME,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}(${BuildConfig.APP_VERSION_CODE})")
+                Text(BuildConfig.AUTHOR)
+            }
+            val urlChangelog = stringResource(Res.string.url_changelog)
+            ElevatedButton(
+                onClick = {
+                    uriHandler.openUri(urlChangelog)
+                }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(Res.string.settings_title_changelog))
+                }
+            }
         }
         Spacer(
             modifier = Modifier.height(

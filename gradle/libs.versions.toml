@@ -1,5 +1,6 @@
 [versions]
 agp = "8.12.3"
+aboutLibraries = "13.1.0"
 adaptive = "1.2.0-alpha07"
 androidx-activity-compose = "1.11.0"
 androidx-lifecycle = "2.9.4"
@@ -25,6 +26,9 @@ material-kolor = "2.1.1"
 
 [libraries]
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity-compose" }
 androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
@@ -53,6 +57,7 @@ material-kolor = { group = "com.materialkolor", name = "material-kolor", version
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 build-config = { id = "com.github.gmazzo.buildconfig", version.ref = "build-config" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

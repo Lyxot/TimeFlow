@@ -18,6 +18,7 @@ import java.net.URL
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.application)
+    alias(libs.plugins.aboutLibraries)
     alias(libs.plugins.build.config)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
@@ -85,6 +86,9 @@ kotlin {
             implementation(libs.material3.adaptive.navigation.suite)
             implementation(compose.materialIconsExtended)
             implementation(compose.runtime)
+            implementation(libs.aboutlibraries.core)
+            implementation(libs.aboutlibraries.compose.core)
+            implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.adaptive)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
@@ -242,6 +246,61 @@ composeCompiler {
 tasks.withType<ComposeHotRun>().configureEach {
     mainClass.set("MainKt")
 }
+
+aboutLibraries {
+    export {
+        prettyPrint = true
+        outputFile = file("src/androidMain/res/raw/libraries.json")
+    }
+    exports {
+        create("jvm") {
+            prettyPrint = true
+            outputFile = file("src/jvmMain/composeResources/files/libraries.json")
+        }
+
+        create("ios") {
+            prettyPrint = true
+            outputFile = file("src/iosMain/composeResources/files/libraries.json")
+        }
+    }
+}
+
+// 自动导出库定义
+// Android
+tasks.named("preBuild") {
+    dependsOn("exportLibraryDefinitions")
+}
+
+// Desktop
+tasks.matching {
+    it.name == "copyNonXmlValueResourcesForJvmMain" ||
+            it.name.matches(Regex(".*processJvm.*Resources"))
+}.configureEach {
+    dependsOn("exportLibraryDefinitionsJvm")
+}
+
+// iOS: Run the following command
+// ./gradlew :composeApp:exportLibraryDefinitions -PaboutLibraries.outputFile=src/iosMain/composeResources/files/libraries.json -PaboutLibraries.exportVariant=metadataIosMain
+val exportLibraryDefinitionsIos by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Export library definitions for iOS"
+
+    workingDir(rootProject.projectDir)
+    commandLine(
+        "./gradlew",
+        ":composeApp:exportLibraryDefinitions",
+        "-PaboutLibraries.outputFile=src/iosMain/composeResources/files/libraries.json",
+        "-PaboutLibraries.exportVariant=metadataIosMain"
+    )
+}
+
+tasks.matching {
+    it.name == "copyNonXmlValueResourcesForIosMain" ||
+            it.name.matches(Regex(".*processIos.*Resources"))
+}.configureEach {
+    dependsOn(exportLibraryDefinitionsIos)
+}
+
 
 buildConfig {
     // BuildConfig configuration here.
