@@ -1,47 +1,48 @@
 [versions]
-agp = "8.12.3"
+agp = "8.13.1"
 aboutLibraries = "13.1.0"
-adaptive = "1.2.0-alpha07"
-androidx-activity-compose = "1.11.0"
-androidx-lifecycle = "2.9.4"
-androidx-navigation = "2.9.0"
+androidx-activity-compose = "1.12.0"
+androidx-datastore = "1.2.0"
+androidx-lifecycle = "2.9.6"
+androidx-navigation = "2.9.1"
 androidx-startup-runtime = "1.2.0"
 appdirs = "1.5.0"
-build-config = "5.7.0"
-coil = "3.3.0"
-compose = "1.10.0-alpha02"
-composables = "1.45.0"
-datastore = "1.1.7"
-desugar_jdk_libs = "2.1.5"
-dnd = "0.4.0"
-hot-reload = "1.0.0-rc02"
-kermit = "2.0.8"
-kotlin = "2.2.20"
+build-config = "6.0.6"
+compose = "1.10.0-beta02"
+composables = "1.49.3"
+hot-reload = "1.0.0"
+kotlin = "2.2.21"
 kotlin-inject = "0.8.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1-0.6.x-compat"
 kotlinx-serialization = "1.9.0"
-ksp = "2.2.20-2.0.4"
+ksp = "2.2.21-2.0.4"
+material3 = "1.10.0-alpha05"
+material3-adaptive = "1.2.0"
+material-icons-extended = "1.7.3"
 material-kolor = "2.1.1"
 
 [libraries]
-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
-aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
-aboutlibraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose-core", version.ref = "aboutLibraries" }
-aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
+aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-core = { group = "com.mikepenz", name = "aboutlibraries-compose-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity-compose" }
+androidx-datastore = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "androidx-datastore" }
 androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup-runtime" }
 appdirs = { group = "net.harawata", name = "appdirs", version.ref = "appdirs" }
-coil = { group = "io.coil-kt.coil3", name = "coil-compose-core", version.ref = "coil" }
 composables-core = { module = "com.composables:core", version.ref = "composables" }
-datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
-desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
-dnd = { group = "com.mohamedrejeb.dnd", name = "compose-dnd", version.ref = "dnd" }
-kermit = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
+compose-animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "compose" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
+compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "material-icons-extended" }
+compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "material3" }
+compose-material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "material3-adaptive" }
+compose-material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
+compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "compose" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }
 kotlin-inject-ksp = { group = "me.tatarka.inject", name = "kotlin-inject-compiler-ksp", version.ref = "kotlin-inject" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
@@ -49,10 +50,7 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "compose" }
-material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "compose" }
 material-kolor = { group = "com.materialkolor", name = "material-kolor", version.ref = "material-kolor" }
 
 [plugins]

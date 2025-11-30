@@ -21,8 +21,9 @@ import okio.BufferedSink
 import okio.BufferedSource
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import okio.SYSTEM
 import okio.use
+
+expect val platformFileSystem: FileSystem
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
@@ -49,8 +50,8 @@ class SettingsDataStore(
     private val produceFilePath: () -> String,
 ) {
     private val db = DataStoreFactory.create(
-        storage = OkioStorage<Settings>(
-            fileSystem = FileSystem.SYSTEM,
+        storage = OkioStorage(
+            fileSystem = platformFileSystem,
             serializer = SettingsProtobufSerializer,
             producePath = {
                 produceFilePath().toPath()

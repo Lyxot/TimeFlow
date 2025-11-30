@@ -10,7 +10,6 @@
 @file:OptIn(
     ExperimentalWasmDsl::class,
     ExperimentalKotlinGradlePluginApi::class,
-    org.jetbrains.compose.ExperimentalComposeLibrary::class
 )
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -85,39 +84,29 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.animation)
-            implementation(compose.animationGraphics)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(compose.foundation)
-            // https://github.com/JetBrains/compose-multiplatform/commit/2dfb657dec3eb5e00cf64a0c8cd283bc4ba78ab7
-            implementation(libs.material3)
-            implementation(libs.material3.adaptive.navigation.suite)
-            implementation(compose.materialIconsExtended)
-            implementation(compose.runtime)
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.core)
             implementation(libs.aboutlibraries.compose.m3)
-            implementation(libs.adaptive)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
-            implementation(libs.coil)
             implementation(libs.composables.core)
-            implementation(libs.datastore)
-            implementation(libs.datastore.preferences)
-            implementation(libs.dnd)
-            implementation(libs.kermit)
+            implementation(libs.compose.animation)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.material.icons.extended)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.material3.adaptive)
+            implementation(libs.compose.material3.adaptive.navigation.suite)
+            implementation(libs.compose.ui.tooling.preview)
+            implementation(libs.androidx.datastore)
             implementation(libs.kotlin.inject)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.material.kolor)
         }
 
         androidMain.dependencies {
-            implementation(compose.uiTooling)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
@@ -144,10 +133,9 @@ kotlin {
 
         jvmTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.compose.ui.test)
+            implementation(libs.compose.ui.test.junit4)
             implementation(libs.kotlinx.coroutines.test)
-            implementation(compose.ui)
-            implementation(compose.uiTest)
-            implementation(compose.desktop.uiTestJUnit4)
         }
     }
 
@@ -213,10 +201,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        isCoreLibraryDesugaringEnabled = true
-    }
-    dependencies {
-        coreLibraryDesugaring(libs.desugar.jdk.libs)
     }
 }
 
