@@ -2,6 +2,7 @@ name: Build
 
 on:
   push:
+  workflow_call:
 
 jobs:
   test:
@@ -28,7 +29,6 @@ jobs:
         run: ./gradlew jvmTest
 
   build-desktop:
-    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +87,6 @@ jobs:
           path: composeApp/build/compose/binaries/main-release
 
   build-mobile:
-    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -402,6 +401,7 @@ jobs:
           
           # Rename AppImage with base name from DMG
           mv TimeFlow-${{ matrix.arch }}.AppImage ${BASE_NAME}-linux-${{ matrix.arch }}.AppImage
+          chmod a+x ${BASE_NAME}-linux-${{ matrix.arch }}.AppImage
 
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v5

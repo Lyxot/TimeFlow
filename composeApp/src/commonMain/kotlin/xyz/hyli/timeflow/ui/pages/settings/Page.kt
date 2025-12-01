@@ -411,7 +411,8 @@ fun SettingsScreen(
                     } ${BuildConfig.AUTHOR}"
                 )
             }
-            val urlChangelog = stringResource(Res.string.url_changelog)
+            val urlChangelog =
+                stringResource(Res.string.url_changelog, BuildConfig.APP_VERSION_NAME)
             ElevatedButton(
                 onClick = {
                     uriHandler.openUri(urlChangelog)

@@ -145,7 +145,7 @@
     <string name="url_feedback">https://github.com/Lyxot/TimeFlow/issues</string>
     <string name="url_donate">https://hyli.xyz/sponsor/</string>
     <string name="url_homepage">https://timeflow.hyli.xyz</string>
-    <string name="url_changelog">https://github.com/Lyxot/TimeFlow/blob/master/Changelog.md</string>
+    <string name="url_changelog">https://github.com/Lyxot/TimeFlow/blob/v%1$s/CHANGELOG.md</string>
     <string name="url_license">https://www.gnu.org/licenses/agpl-3.0.html</string>
 
 </resources>
