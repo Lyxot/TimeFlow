@@ -171,7 +171,7 @@ fun ScheduleScreen(
                 .verticalScroll(rememberScrollState())
                 .then(
                     if (currentPlatform().isDesktop())
-                        Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                        Modifier.padding(vertical = 16.dp)
                     else Modifier
                 )
         ) {

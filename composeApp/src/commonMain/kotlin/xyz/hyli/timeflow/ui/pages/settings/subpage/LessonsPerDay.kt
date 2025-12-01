@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -92,20 +90,14 @@ fun LessonsPerDayScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
             .then(
                 if (currentPlatform().isDesktop())
-                    Modifier.padding(start = 16.dp, top = 16.dp)
+                    Modifier.padding(vertical = 16.dp)
                 else Modifier
             )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth()
-                .then(
-                    if (currentPlatform().isDesktop())
-                        Modifier.padding(end = 16.dp)
-                    else Modifier
-                ),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -166,11 +158,6 @@ fun LessonsPerDayScreen(
         }
         PreferenceScreen(
             modifier = Modifier.fillMaxWidth()
-                .then(
-                    if (currentPlatform().isDesktop())
-                        Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
-                    else Modifier
-                )
         ) {
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_lessons_per_day)

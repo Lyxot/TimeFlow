@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
@@ -128,14 +131,12 @@ fun TodayScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-    ) {
-        if (currentPlatform().isDesktop()) {
-            Spacer(
-                modifier = Modifier.height(16.dp)
+            .then(
+                if (currentPlatform().isDesktop())
+                    Modifier.padding(vertical = 16.dp)
+                else Modifier
             )
-        }
-
+    ) {
         Text(
             text = stringResource(
                 Res.string.today_value_date,
@@ -144,7 +145,6 @@ fun TodayScreen(
                 stringResource(weekdays[today.dayOfWeek.ordinal])
             ),
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(top = 16.dp)
         )
         Text(
             text = stringResource(Res.string.schedule_value_course_week, currentWeek),
@@ -164,6 +164,16 @@ fun TodayScreen(
                 courses = todayCourses
             )
         }
+
+        Spacer(
+            modifier = Modifier.height(
+                maxOf(
+                    WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding(),
+                    24.dp
+                )
+            )
+        )
     }
 }
 
@@ -178,7 +188,9 @@ fun TimelineCourseList(
     }
     var currentLessonFlag by remember { mutableStateOf(false) }
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
-    Column {
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
         courses.forEachIndexed { index, course ->
             val startTime = lessonTimePeriodInfo.getLessonByIndex(course.time.start).start
             val endTime = lessonTimePeriodInfo.getLessonByIndex(course.time.end).end

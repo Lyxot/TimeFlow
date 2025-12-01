@@ -124,18 +124,13 @@ fun SettingsScreen(
             .fillMaxWidth()
             .then(
                 if (currentPlatform().isDesktop())
-                    Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
+                    Modifier.padding(vertical = 16.dp)
                 else Modifier
             )
     ) {
         Text(
             text = stringResource(Res.string.page_settings),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(
-                bottom = 16.dp,
-                start = if (currentPlatform().isDesktop()) 0.dp else 16.dp,
-                top = if (currentPlatform().isDesktop()) 0.dp else 16.dp
-            )
+            style = MaterialTheme.typography.titleLarge
         )
         // General Settings
         PreferenceSection(

@@ -34,9 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -114,6 +112,8 @@ import xyz.hyli.timeflow.ui.components.ColorPickerStyle
 import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isDesktop
 
 enum class EditCourseStyle {
     Screen,
@@ -153,8 +153,11 @@ fun EditCourseScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .then(
+                if (currentPlatform().isDesktop())
+                    Modifier.padding(vertical = 16.dp)
+                else Modifier
+            )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
