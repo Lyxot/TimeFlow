@@ -200,26 +200,6 @@ jobs:
             fi
           done
 
-          # Linux
-          for arch in x86_64 aarch64; do
-            if [ -d "linux-${arch}/deb" ]; then
-              for file in linux-${arch}/deb/*.deb; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file" .deb)
-                  mv "$file" "linux-${arch}/deb/${filename}-linux-${arch}.deb"
-                fi
-              done
-            fi
-            if [ -d "linux-${arch}/rpm" ]; then
-              for file in linux-${arch}/rpm/*.rpm; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file" .rpm)
-                  mv "$file" "linux-${arch}/rpm/${filename}-linux-${arch}.rpm"
-                fi
-              done
-            fi
-          done
-
           # Windows
           for arch in x86_64 arm64; do
             if [ -d "windows-${arch}/msi" ]; then
