@@ -93,8 +93,8 @@ jobs:
       matrix:
         include:
           - name: ios
-            task: cd iosApp && xcodebuild archive -scheme iosApp -archivePath ./build/iosApp.xcarchive -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-            path: iosApp/build
+            task: ./gradlew buildReleaseIpa
+            path: composeApp/build/archives/release/*.ipa
           - name: android
             task: ./gradlew assembleRelease
             path: composeApp/build/outputs/apk/release/*.apk
