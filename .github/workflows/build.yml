@@ -2,6 +2,10 @@ name: Build
 
 on:
   push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
   workflow_call:
 
 jobs:
@@ -11,7 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           submodules: 'recursive'
+
+      - name: Get version code
+        id: version
+        run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
       - name: Validate Gradle Wrapper
         uses: gradle/actions/wrapper-validation@v5
@@ -62,7 +71,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           submodules: 'recursive'
+
+      - name: Get version code
+        id: version
+        shell: bash
+        run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
       - name: Validate Gradle Wrapper
         uses: gradle/actions/wrapper-validation@v5
@@ -103,7 +118,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           submodules: 'recursive'
+
+      - name: Get version code
+        id: version
+        run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
       - name: Validate Gradle Wrapper
         uses: gradle/actions/wrapper-validation@v5

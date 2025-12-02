@@ -36,7 +36,7 @@ plugins {
 }
 
 val appVersionCode = app.versions.major.get().toInt() * 10000 +
-        try {
+        (getenv("VERSION_CODE")?.toIntOrNull() ?: try {
             val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
@@ -48,7 +48,7 @@ val appVersionCode = app.versions.major.get().toInt() * 10000 +
         } catch (e: Exception) {
             println("Error getting commit count from GitHub API: ${e.message}")
             0
-        }
+        })
 
 kotlin {
     androidTarget {
