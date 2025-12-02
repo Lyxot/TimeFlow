@@ -17,7 +17,6 @@ jobs:
           submodules: 'recursive'
 
       - name: Get version code
-        id: version
         run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
       - name: Validate Gradle Wrapper
@@ -73,7 +72,6 @@ jobs:
           submodules: 'recursive'
 
       - name: Get version code
-        id: version
         shell: bash
         run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
@@ -120,7 +118,6 @@ jobs:
           submodules: 'recursive'
 
       - name: Get version code
-        id: version
         run: echo "VERSION_CODE=$(git rev-list --count HEAD)" >> $GITHUB_ENV
 
       - name: Validate Gradle Wrapper
