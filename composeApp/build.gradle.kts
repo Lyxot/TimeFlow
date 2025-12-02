@@ -46,8 +46,12 @@ abstract class GitCommitCountValueSource : ValueSource<Int, GitCommitCountValueS
                 .redirectErrorStream(true)
                 .start()
             val result = process.inputStream.bufferedReader().readText().trim()
-            process.waitFor()
-            result.toIntOrNull() ?: 0
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                result.toIntOrNull() ?: 0
+            } else {
+                throw RuntimeException("git command failed with exit code $exitCode")
+            }
         } catch (e: Exception) {
             // Fallback to GitHub API
             try {
