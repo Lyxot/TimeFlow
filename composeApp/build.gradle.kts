@@ -20,8 +20,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import java.lang.System.getenv
-import java.net.HttpURLConnection
-import java.net.URL
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -35,20 +33,46 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-val appVersionCode = app.versions.major.get().toInt() * 10000 +
-        (getenv("VERSION_CODE")?.toIntOrNull() ?: try {
-            val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            val linkHeader = connection.getHeaderField("Link") ?: ""
-            val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
-            val match = lastPagePattern.find(linkHeader)
-            match?.groupValues?.get(1)?.toInt() ?: 0
+// Value source to get commit count from git (cacheable by Gradle configuration cache)
+abstract class GitCommitCountValueSource : ValueSource<Int, GitCommitCountValueSource.Params> {
+    interface Params : ValueSourceParameters {
+        val workingDir: Property<String>
+    }
+
+    override fun obtain(): Int {
+        return try {
+            val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
+                .directory(File(parameters.workingDir.get()))
+                .redirectErrorStream(true)
+                .start()
+            val result = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            result.toIntOrNull() ?: 0
         } catch (e: Exception) {
-            println("Error getting commit count from GitHub API: ${e.message}")
-            0
-        })
+            // Fallback to GitHub API
+            try {
+                val url = java.net.URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                val linkHeader = connection.getHeaderField("Link") ?: ""
+                val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
+                val match = lastPagePattern.find(linkHeader)
+                match?.groupValues?.get(1)?.toInt() ?: 0
+            } catch (apiError: Exception) {
+                0
+            }
+        }
+    }
+}
+
+val commitCount: Provider<Int> = providers.of(GitCommitCountValueSource::class) {
+    parameters {
+        workingDir.set(rootProject.projectDir.absolutePath)
+    }
+}
+
+val appVersionCode = app.versions.major.get().toInt() * 10000 + commitCount.get()
 
 kotlin {
     androidTarget {
