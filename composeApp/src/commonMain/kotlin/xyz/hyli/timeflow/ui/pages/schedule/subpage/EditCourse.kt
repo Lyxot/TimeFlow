@@ -145,7 +145,7 @@ fun EditCourseScreen(
     val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
         it - schedule.courses.filter {
             it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMap { it.week.week }
+        }.flatMapTo(mutableSetOf()) { it.week.week }
     }
     val isWeekValid =
         remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
@@ -372,7 +372,7 @@ fun EditCourseContent(
                         it in (1..schedule.totalWeeks()).toMutableList().let {
                             it - schedule.courses.filter {
                                 it != initValue && it.time.start <= range.end && it.time.end >= range.start && it.weekday == course.weekday
-                            }.flatMap { it.week.week }
+                            }.flatMapTo(mutableSetOf()) { it.week.week }
                         }
                     }
                 )

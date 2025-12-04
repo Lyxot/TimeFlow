@@ -165,8 +165,8 @@ fun CourseListDialog(
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        val validWeeks = (1..totalWeeks).toMutableList().let {
-                            it - courses.flatMap { it.week.week }
+                        val validWeeks = (1..totalWeeks).toMutableList().let { it ->
+                            it - courses.flatMapTo(mutableSetOf()) { it.week.week }
                         }
                         onClick(
                             Course(
@@ -322,7 +322,7 @@ fun EditCourseDialog(
     val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
         it - schedule.courses.filter {
             it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMap { it.week.week }
+        }.flatMapTo(mutableSetOf()) { it.week.week }
     }
     val isWeekValid =
         remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
