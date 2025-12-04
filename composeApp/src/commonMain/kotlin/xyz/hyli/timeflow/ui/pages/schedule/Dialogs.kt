@@ -165,6 +165,9 @@ fun CourseListDialog(
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
+                        val validWeeks = (1..totalWeeks).toMutableList().let {
+                            it - courses.flatMap { it.week.week }
+                        }
                         onClick(
                             Course(
                                 name = "",
@@ -172,7 +175,8 @@ fun CourseListDialog(
                                 weekday = courses.first().weekday,
                                 week = WeekList(
                                     weekDescription = WeekDescriptionEnum.ALL,
-                                    totalWeeks = totalWeeks
+                                    totalWeeks = totalWeeks,
+                                    validWeeks = validWeeks
                                 ),
                                 color = -1
                             )
