@@ -7,12 +7,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  prepare:
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+
+  release:
+    needs: build
     runs-on: ubuntu-latest
-    name: Prepare release
-    outputs:
-      new_tag: ${{ steps.tags.outputs.new_tag }}
-      latest_tag: ${{ steps.tags.outputs.latest_tag }}
+    name: Create release
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,21 +43,6 @@ jobs:
           echo "latest_tag=$LATEST_TAG_CLEAN" >> $GITHUB_OUTPUT
           echo "Latest release tag: $LATEST_TAG_CLEAN"
 
-  build:
-    needs: prepare
-    uses: ./.github/workflows/build.yml
-
-  release:
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    name: Create release
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: 'recursive'
-
       - name: Download all artifacts
         uses: actions/download-artifact@v5
         with:
@@ -61,8 +50,8 @@ jobs:
 
       - name: Prepare release notes
         env:
-          NEW_TAG: ${{ needs.prepare.outputs.new_tag }}
-          LATEST_TAG: ${{ needs.prepare.outputs.latest_tag }}
+          NEW_TAG: ${{ steps.tags.outputs.new_tag }}
+          LATEST_TAG: ${{ steps.tags.outputs.latest_tag }}
         run: |
           # Extract changelog section for new tag
           CHANGELOG_SECTION=""
@@ -111,8 +100,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ needs.prepare.outputs.new_tag }}
-          tag_name: v${{ needs.prepare.outputs.new_tag }}
+          name: ${{ steps.tags.outputs.new_tag }}
+          tag_name: v${{ steps.tags.outputs.new_tag }}
           body_path: release_notes.md
           files: release_files/*
           draft: false
