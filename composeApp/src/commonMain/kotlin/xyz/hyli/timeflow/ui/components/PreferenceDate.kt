@@ -12,7 +12,9 @@ package xyz.hyli.timeflow.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredSizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +37,7 @@ import timeflow.composeapp.generated.resources.preference_date_dialog_title
 
 // ==================== Preference Date ====================
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreferenceDate(
     value: LocalDate,
@@ -119,19 +122,21 @@ fun DatePickerDialog(
             }
         ) {
             BoxWithConstraints {
-                // 360 is minimum because DatePicker uses 12.dp horizontal padding and 48.dp for each week day
-                val scaleX =
-                    remember(this.maxWidth) { if (this.maxWidth > 360.dp) 1f else (this.maxWidth / 360.dp) }
+                // 456dp is minimum height of picker mode, 180dp is minimum height of input mode
+                val requiredHeight =
+                    if (datePickerState.displayMode == DisplayMode.Picker) 456.dp else 180.dp
                 val scaleY =
-                    remember(this.maxHeight) { if (this.maxHeight > 568.dp) 1f else (this.maxHeight / 568.dp) }
-                // Make sure there is always enough room, so use requiredWidthIn
+                    if (this.maxHeight > requiredHeight) 1f else (this.maxHeight / requiredHeight)
+                // Make sure there is always enough room
+                val width = this.maxWidth / scaleY
                 Box(
                     modifier = Modifier
-                        .requiredSizeIn(minWidth = 360.dp, minHeight = 568.dp)
+                        .requiredSizeIn(minWidth = width, minHeight = requiredHeight)
                 ) {
                     DatePicker(
                         modifier = Modifier
-                            .scale(minOf(scaleX, scaleY)),
+                            .scale(scaleY)
+                            .width(width),
                         title = null,
                         state = datePickerState
                     )
