@@ -309,6 +309,7 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = xyz.hyli.timeflow.iosApp;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.hyli.timeflow.iosApp.debug;
 				PRODUCT_NAME = TimeFlow;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
