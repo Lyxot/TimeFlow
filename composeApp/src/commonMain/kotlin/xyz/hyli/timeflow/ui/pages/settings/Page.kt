@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,6 +44,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
@@ -88,6 +90,7 @@ import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.Dependency
 import xyz.hyli.timeflow.ui.components.DialogInputValidator
+import xyz.hyli.timeflow.ui.components.MILLIS_PER_DAY
 import xyz.hyli.timeflow.ui.components.PreferenceBool
 import xyz.hyli.timeflow.ui.components.PreferenceBoolStyle
 import xyz.hyli.timeflow.ui.components.PreferenceColor
@@ -259,11 +262,21 @@ fun SettingsScreen(
                 onValueChange = { newDate ->
                     val currentSchedule = settings.schedule[settings.selectedSchedule]
                     if (currentSchedule != null) {
+                        val newTermStartDate = Date.fromLocalDate(newDate)
+                        val currentTermEndDate = currentSchedule.termEndDate
+                        val newTermEndDate =
+                            if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
+                                currentTermEndDate
+                            } else newTermStartDate.addWeeks(currentSchedule.totalWeeks())
                         viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(termStartDate = Date.fromLocalDate(newDate))
+                            schedule = currentSchedule.copy(
+                                termStartDate = newTermStartDate,
+                                termEndDate = newTermEndDate
+                            )
                         )
                     }
                 },
+
                 title = stringResource(Res.string.settings_title_schedule_term_start_date),
                 enabled = scheduleDependency
             )
@@ -276,6 +289,16 @@ fun SettingsScreen(
                         viewModel.updateSchedule(
                             schedule = currentSchedule.copy(termEndDate = Date.fromLocalDate(newDate))
                         )
+                    }
+                },
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        val currentSchedule = settings.schedule[settings.selectedSchedule]
+                        val termStartDate = currentSchedule?.termStartDate
+                            ?: Schedule.defaultTermStartDate()
+                        val epochDays = (utcTimeMillis / (MILLIS_PER_DAY)).toInt()
+                        val date = LocalDate.fromEpochDays(epochDays)
+                        return termStartDate.weeksTill(date) in 1..60
                     }
                 },
                 title = stringResource(Res.string.settings_title_schedule_term_end_date),

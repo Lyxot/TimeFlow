@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -37,11 +39,13 @@ import timeflow.composeapp.generated.resources.preference_date_dialog_title
 
 // ==================== Preference Date ====================
 
-@OptIn(ExperimentalMaterial3Api::class)
+const val MILLIS_PER_DAY = 24 * 60 * 60 * 1000L
+
 @Composable
 fun PreferenceDate(
     value: LocalDate,
     onValueChange: (LocalDate) -> Unit,
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
     title: String,
     subtitle: String? = null,
     enabled: Dependency = Dependency.Enabled,
@@ -71,6 +75,7 @@ fun PreferenceDate(
     if (showDialog) {
         DatePickerDialog(
             initialDate = value,
+            selectableDates = selectableDates,
             onDateSelected = { selectedDate ->
                 onValueChange(selectedDate)
                 showDialog = false
@@ -84,11 +89,13 @@ fun PreferenceDate(
 @Composable
 fun DatePickerDialog(
     initialDate: LocalDate,
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.toEpochDays() * 24 * 60 * 60 * 1000L
+        initialSelectedDateMillis = initialDate.toEpochDays() * MILLIS_PER_DAY,
+        selectableDates = selectableDates
     )
     val dialogState = rememberDialogState()
 
@@ -109,7 +116,7 @@ fun DatePickerDialog(
                     is DialogEvent.Button -> {
                         if (event.isPositiveButton) {
                             datePickerState.selectedDateMillis?.let { millis ->
-                                val epochDays = (millis / (24 * 60 * 60 * 1000L)).toInt()
+                                val epochDays = (millis / (MILLIS_PER_DAY)).toInt()
                                 onDateSelected(LocalDate.fromEpochDays(epochDays))
                             }
                         } else {
