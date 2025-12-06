@@ -8,11 +8,61 @@ on:
 
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
+  wait-build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Wait for build workflow
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      run_id: ${{ steps.wait.outputs.run_id }}
+    steps:
+      - name: Wait for build.yml run on this commit
+        id: wait
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow_id = "build.yml";
+            const sha = context.sha;
+            const { owner, repo } = context.repo;
+            const waitMs = 15000;
+            const timeoutMs = 60 * 60 * 1000; // 60 minutes
+            const start = Date.now();
+            core.info(`Waiting for workflow '${workflow_id}' on sha ${sha}`);
+            while (true) {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id,
+                event: "push",
+                per_page: 20,
+              });
+              const run = runs.data.workflow_runs.find(r => r.head_sha === sha);
+              if (run && run.status === "completed") {
+                if (run.conclusion !== "success") {
+                  core.setFailed(`build.yml run ${run.id} finished with conclusion ${run.conclusion}`);
+                }
+                core.info(`Found completed run id: ${run.id}`);
+                core.setOutput("run_id", run.id.toString());
+                return;
+              }
+              if (Date.now() - start > timeoutMs) {
+                core.setFailed("Timed out waiting for build.yml run to complete");
+              }
+              core.info("Not completed yet, sleep...");
+              await new Promise(r => setTimeout(r, waitMs));
+            }
+
   release:
-    needs: build
+    needs: [build, wait-build]
+    if: |
+      (github.event_name == 'workflow_dispatch' && needs.build.result == 'success') ||
+      (github.event_name == 'push' && needs.wait-build.result == 'success')
     runs-on: ubuntu-latest
     name: Create release
     permissions:
@@ -47,6 +97,8 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: artifacts
+          merge-multiple: true
+          run-id: ${{ github.event_name == 'push' && needs.wait-build.outputs.run_id || github.run_id }}
 
       - name: Prepare release notes
         env:
@@ -90,20 +142,13 @@ jobs:
           echo "=== Generated Release Notes ==="
           cat release_notes.md
 
-      - name: Flatten artifacts
-        run: |
-          # Move all files from artifact subdirectories to a flat structure
-          mkdir -p release_files
-          find artifacts -type f -exec mv {} release_files/ \;
-          ls -lah release_files/
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.tags.outputs.new_tag }}
           tag_name: v${{ steps.tags.outputs.new_tag }}
           body_path: release_notes.md
-          files: release_files/*
+          files: artifacts/*
           draft: false
           prerelease: false
 

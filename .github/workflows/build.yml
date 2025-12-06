@@ -94,13 +94,15 @@ jobs:
       matrix:
         include:
           - name: ios
+            runner: macos-latest
             task: ./gradlew buildReleaseIpa
             path: composeApp/build/archives/release/*.ipa
           - name: android
+            runner: ubuntu-latest
             task: ./gradlew assembleRelease
             path: composeApp/build/outputs/apk/release/*.apk
 
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
