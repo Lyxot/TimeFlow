@@ -37,10 +37,14 @@ plugins {
 
 val appVersionCode = app.versions.major.get().toInt() * 10000 +
         try {
+            val githubToken = getenv("GITHUB_TOKEN")
             val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            if (githubToken != null) {
+                connection.setRequestProperty("Authorization", "Bearer $githubToken")
+            }
             val linkHeader = connection.getHeaderField("Link") ?: ""
             val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
             val match = lastPagePattern.find(linkHeader)
