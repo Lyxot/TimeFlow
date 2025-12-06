@@ -2,5 +2,5 @@
 -overloadaggressively
 -repackageclasses
 
+-keep class com.sun.jna.** { *; }
 -keep class okio.** { *; }
--dontwarn kotlin.Deprecated$Container
