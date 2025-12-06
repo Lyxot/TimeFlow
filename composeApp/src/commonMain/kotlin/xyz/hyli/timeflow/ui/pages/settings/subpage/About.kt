@@ -93,12 +93,7 @@ fun AboutScreen(navHostController: NavHostController) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth()
-                    .then(
-                        if (currentPlatform().isDesktop())
-                            Modifier.padding(end = 16.dp)
-                        else Modifier
-                    ),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
@@ -157,10 +152,17 @@ fun AboutScreen(navHostController: NavHostController) {
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(stringResource(Res.string.about_value_description))
-            Text(stringResource(Res.string.about_value_download))
+            Text(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                text = stringResource(Res.string.about_value_description)
+            )
+            Text(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                text = stringResource(Res.string.about_value_download)
+            )
         }
         Row(
+            modifier = Modifier.padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(stringResource(Res.string.about_title_author))

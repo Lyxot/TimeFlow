@@ -138,6 +138,7 @@ fun TodayScreen(
             )
     ) {
         Text(
+            modifier = Modifier.padding(vertical = 8.dp),
             text = stringResource(
                 Res.string.today_value_date,
                 today.month.number,

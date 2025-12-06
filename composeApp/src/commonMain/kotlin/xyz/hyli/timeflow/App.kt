@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
+import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -60,10 +61,15 @@ internal fun App(
         navSuiteType = customNavSuiteType
     ) {
         Box(
-            modifier = if (currentPlatform().isDesktop()) Modifier
-                else Modifier
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 8.dp)
+            modifier = Modifier
+                .then(
+                    if (currentPlatform().isDesktop()) Modifier
+                    else Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                )
+                .then(
+                    if (customNavSuiteType in NavigationBarType) Modifier.padding(horizontal = 8.dp)
+                    else Modifier
+                )
         ) {
             TimeFlowNavHost(
                 viewModel = viewModel,

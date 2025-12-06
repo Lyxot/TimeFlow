@@ -132,6 +132,7 @@ fun SettingsScreen(
             )
     ) {
         Text(
+            modifier = Modifier.padding(vertical = 8.dp),
             text = stringResource(Res.string.page_settings),
             style = MaterialTheme.typography.titleLarge
         )

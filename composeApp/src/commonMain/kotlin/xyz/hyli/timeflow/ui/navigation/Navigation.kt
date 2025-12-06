@@ -19,6 +19,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.outlined.EventNote
@@ -38,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -122,7 +124,12 @@ fun AdaptiveNavigation(
         modifier = Modifier.fillMaxSize(),
         navigationSuiteItems = {
             item(
-                modifier = Modifier.testTag("ScheduleNavItem"),
+                modifier = Modifier
+                    .testTag("ScheduleNavItem")
+                    .then(
+                    if (navSuiteType !in NavigationBarType) Modifier.padding(top = 28.dp)
+                    else Modifier
+                    ),
                 icon = { Icon(
                     if (currentPage == Destination.Schedule.name
                         || currentPage?.contains("EditCourseDestination") == true
