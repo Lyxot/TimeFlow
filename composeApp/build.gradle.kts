@@ -20,6 +20,8 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import java.lang.System.getenv
+import java.net.HttpURLConnection
+import java.net.URL
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -33,47 +35,20 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Value source to get commit count from remote master branch (cacheable by Gradle configuration cache)
-abstract class GitCommitCountValueSource : ValueSource<Int, GitCommitCountValueSource.Params> {
-    interface Params : ValueSourceParameters {
-        val workingDir: Property<String>
-    }
-
-    override fun obtain(): Int {
-        val workDir = File(parameters.workingDir.get())
-        
-        // Fetch the latest master branch from remote
-        val fetchProcess = ProcessBuilder(
-            "git", "fetch", "origin", "master:refs/remotes/origin/master"
-        )
-            .directory(workDir)
-            .redirectErrorStream(true)
-            .start()
-        fetchProcess.waitFor()
-        
-        // Count commits on origin/master
-        val countProcess = ProcessBuilder("git", "rev-list", "--count", "origin/master")
-            .directory(workDir)
-            .redirectErrorStream(true)
-            .start()
-        val result = countProcess.inputStream.bufferedReader().readText().trim()
-        val exitCode = countProcess.waitFor()
-        
-        return if (exitCode == 0) {
-            result.toIntOrNull() ?: 0
-        } else {
+val appVersionCode = app.versions.major.get().toInt() * 10000 +
+        try {
+            val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            val linkHeader = connection.getHeaderField("Link") ?: ""
+            val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
+            val match = lastPagePattern.find(linkHeader)
+            match?.groupValues?.get(1)?.toInt() ?: 0
+        } catch (e: Exception) {
+            println("Error getting commit count from GitHub API: ${e.message}")
             0
         }
-    }
-}
-
-val commitCount: Provider<Int> = providers.of(GitCommitCountValueSource::class) {
-    parameters {
-        workingDir.set(rootProject.projectDir.absolutePath)
-    }
-}
-
-val appVersionCode = app.versions.major.get().toInt() * 10000 + commitCount.get()
 
 kotlin {
     androidTarget {
