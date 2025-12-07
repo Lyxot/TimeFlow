@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -62,7 +61,7 @@ import java.awt.event.MouseEvent
 // a window frame which is rendered fully with Compose, including title bar
 @Composable
 private fun FrameWindowScope.CustomWindowFrame(
-    title: String,
+    title: String?,
     titlePosition: TitlePosition,
     windowIcon: Painter?,
     onRequestMinimize: (() -> Unit)?,
@@ -106,7 +105,7 @@ fun isWindowFloating(): Boolean = LocalWindowState.current.placement == WindowPl
 
 @Composable
 fun FrameWindowScope.SnapDraggableToolbar(
-    title: String,
+    title: String?,
     windowIcon: Painter?,
     titlePosition: TitlePosition,
     start: (@Composable () -> Unit)?,
@@ -115,11 +114,10 @@ fun FrameWindowScope.SnapDraggableToolbar(
     onRequestToggleMaximize: (() -> Unit)?,
     onRequestClose: () -> Unit,
 ) {
-    val titleBar = TitleBar.getPlatformTitleBar()
     if (JBR.isWindowDecorationsSupported()) {
         val density = LocalDensity.current
         var headerHeight by remember {
-            mutableFloatStateOf(titleBar.titleBarHeight.value)
+            mutableFloatStateOf(TitleBarHeight.value)
         }
         val customTitleBar = remember {
             JBR.getWindowDecorations().createCustomTitleBar()
@@ -145,9 +143,8 @@ fun FrameWindowScope.SnapDraggableToolbar(
                     .matchParentSize()
                     .customTitleBarMouseEventHandler(customTitleBar)
             )
-            FrameContent(
-                titleBar = titleBar,
-                modifier = Modifier,
+            WindowTitleBar(
+                modifier = Modifier.fillMaxWidth(),
                 title = title,
                 windowIcon = windowIcon,
                 titlePosition = titlePosition,
@@ -155,16 +152,15 @@ fun FrameWindowScope.SnapDraggableToolbar(
                 end = end,
                 onRequestMinimize = onRequestMinimize,
                 onRequestToggleMaximize = onRequestToggleMaximize,
-                onRequestClose = onRequestClose
+                onRequestClose = onRequestClose,
             )
         }
     } else {
         SystemDraggableSection(
             onRequestToggleMaximize = onRequestToggleMaximize,
         ) { modifier ->
-            FrameContent(
-                titleBar = titleBar,
-                modifier = modifier,
+            WindowTitleBar(
+                modifier = modifier.fillMaxWidth(),
                 title = title,
                 windowIcon = windowIcon,
                 titlePosition = titlePosition,
@@ -172,7 +168,7 @@ fun FrameWindowScope.SnapDraggableToolbar(
                 end = end,
                 onRequestMinimize = onRequestMinimize,
                 onRequestToggleMaximize = onRequestToggleMaximize,
-                onRequestClose = onRequestClose
+                onRequestClose = onRequestClose,
             )
         }
     }
@@ -239,33 +235,6 @@ internal fun Modifier.customTitleBarMouseEventHandler(
     }
 
 @Composable
-private fun FrameContent(
-    titleBar: TitleBar,
-    modifier: Modifier,
-    title: String,
-    windowIcon: Painter?,
-    titlePosition: TitlePosition,
-    start: (@Composable () -> Unit)?,
-    end: (@Composable () -> Unit)?,
-    onRequestMinimize: (() -> Unit)?,
-    onRequestToggleMaximize: (() -> Unit)?,
-    onRequestClose: () -> Unit,
-) {
-    titleBar.RenderTitleBar(
-        titleBar = titleBar,
-        modifier = modifier.fillMaxWidth(),
-        title = title,
-        windowIcon = windowIcon,
-        titlePosition = titlePosition,
-        start = start,
-        end = end,
-        onRequestMinimize = onRequestMinimize,
-        onRequestToggleMaximize = onRequestToggleMaximize,
-        onRequestClose = onRequestClose,
-    )
-}
-
-@Composable
 fun CustomWindow(
     state: WindowState,
     viewModel: TimeFlowViewModel,
@@ -317,7 +286,7 @@ fun CustomWindow(
         ) {
             AppTheme(viewModel) {
                 CustomWindowFrame(
-                    title = title,
+                    title = null,
                     titlePosition = titlePosition,
                     windowIcon = null,
                     onRequestMinimize = onRequestMinimize,
@@ -329,7 +298,6 @@ fun CustomWindow(
                     Box(
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
-                            .padding(horizontal = 8.dp)
                             .then(focusClearModifier)
                     ) {
                         content()

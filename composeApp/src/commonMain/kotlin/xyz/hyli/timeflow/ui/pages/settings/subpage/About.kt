@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -35,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -43,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.about_title_author
 import timeflow.composeapp.generated.resources.about_title_homepage
@@ -54,8 +52,8 @@ import timeflow.composeapp.generated.resources.about_title_source_code
 import timeflow.composeapp.generated.resources.about_value_description
 import timeflow.composeapp.generated.resources.about_value_download
 import timeflow.composeapp.generated.resources.back
-import timeflow.composeapp.generated.resources.ic_launcher
-import timeflow.composeapp.generated.resources.ic_launcher_night
+import timeflow.composeapp.generated.resources.icon_rounded_dark
+import timeflow.composeapp.generated.resources.icon_rounded_light
 import timeflow.composeapp.generated.resources.settings_title_about
 import timeflow.composeapp.generated.resources.url_github_profile
 import timeflow.composeapp.generated.resources.url_github_repository
@@ -117,11 +115,10 @@ fun AboutScreen(navHostController: NavHostController) {
             Icon(
                 modifier = Modifier
                     .size(192.dp)
-                    .clip(RoundedCornerShape(45.dp))
                     .align(Alignment.CenterHorizontally),
-                imageVector = vectorResource(
-                    if (isDark) Res.drawable.ic_launcher_night
-                    else Res.drawable.ic_launcher
+                painter = painterResource(
+                    if (isDark) Res.drawable.icon_rounded_dark
+                    else Res.drawable.icon_rounded_light
                 ),
                 contentDescription = null,
                 tint = Color.Unspecified,

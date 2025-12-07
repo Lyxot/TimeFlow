@@ -40,67 +40,72 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-interface TitleBar {
-    val titleBarHeight: Dp
-    val systemButtonsPosition: SystemButtonsPosition
-
-    @Composable
-    fun RenderSystemButtons(
-        onRequestClose: () -> Unit,
-        onRequestMinimize: (() -> Unit)?,
-        onToggleMaximize: (() -> Unit)?,
-    )
-
-    @Composable
-    fun RenderTitleBarContent(
-        title: String,
-        titlePosition: TitlePosition,
-        modifier: Modifier,
-        windowIcon: Painter?,
-        start: (@Composable () -> Unit)?,
-        end: (@Composable () -> Unit)?,
-    )
-
-    @Composable
-    fun RenderTitleBar(
-        modifier: Modifier,
-        titleBar: TitleBar,
-        title: String,
-        windowIcon: Painter?,
-        titlePosition: TitlePosition,
-        start: (@Composable () -> Unit)?,
-        end: (@Composable () -> Unit)?,
-        onRequestClose: () -> Unit,
-        onRequestMinimize: (() -> Unit)?,
-        onRequestToggleMaximize: (() -> Unit)?,
-    )
-
-    companion object {
-        val DefaultTitleBarHeight: Dp = 32.dp
-
-        // 保留旧名称，避免后续迁移遗漏
-        val DefaultTitleBarHeigh: Dp = DefaultTitleBarHeight
-        fun getPlatformTitleBar(): TitleBar {
-            return WindowsTitleBar
-        }
-    }
-}
-
-enum class SystemButtonType {
-    Close,
-    Minimize,
-    Maximize,
-}
+enum class SystemButtonType { Close, Minimize, Maximize }
 
 data class SystemButtonsPosition(
     val buttons: List<SystemButtonType>,
     val isLeft: Boolean,
 )
 
+val TitleBarHeight: Dp = 32.dp
+val TitleBarButtons: SystemButtonsPosition = SystemButtonsPosition(
+    buttons = listOf(
+        SystemButtonType.Minimize,
+        SystemButtonType.Maximize,
+        SystemButtonType.Close,
+    ),
+    isLeft = false,
+)
+
 @Composable
-internal fun CommonTitleBarContent(
+fun WindowTitleBar(
+    modifier: Modifier = Modifier,
+    title: String?,
+    windowIcon: Painter?,
+    titlePosition: TitlePosition,
+    start: (@Composable () -> Unit)?,
+    end: (@Composable () -> Unit)?,
+    onRequestClose: () -> Unit,
+    onRequestMinimize: (() -> Unit)?,
+    onRequestToggleMaximize: (() -> Unit)?,
+) {
+    Row(
+        modifier.height(TitleBarHeight),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val systemButtonsAtFirst = TitleBarButtons.isLeft
+
+        if (systemButtonsAtFirst) {
+            WindowsSystemButtons(
+                onRequestClose = onRequestClose,
+                onRequestMinimize = onRequestMinimize,
+                onToggleMaximize = onRequestToggleMaximize,
+                buttons = TitleBarButtons.buttons,
+            )
+        }
+        TitleBarContent(
+            title = title,
+            windowIcon = windowIcon,
+            titlePosition = titlePosition,
+            start = start,
+            end = end,
+            modifier = Modifier.weight(1f),
+        )
+        if (!systemButtonsAtFirst) {
+            WindowsSystemButtons(
+                onRequestClose = onRequestClose,
+                onRequestMinimize = onRequestMinimize,
+                onToggleMaximize = onRequestToggleMaximize,
+                buttons = TitleBarButtons.buttons,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TitleBarContent(
     modifier: Modifier,
-    title: String,
+    title: String?,
     windowIcon: Painter?,
     titlePosition: TitlePosition,
     start: @Composable (() -> Unit)?,
@@ -120,7 +125,7 @@ internal fun CommonTitleBarContent(
                 Image(it, null, Modifier.size(16.dp).padding(end = 8.dp))
             }
         }
-        if (!titlePosition.afterStart) {
+        if (!titlePosition.afterStart && !title.isNullOrEmpty()) {
             Title(
                 modifier = Modifier
                     .let { base ->
@@ -140,7 +145,7 @@ internal fun CommonTitleBarContent(
                 Spacer(Modifier.width(8.dp))
             }
         }
-        if (titlePosition.afterStart) {
+        if (titlePosition.afterStart && !title.isNullOrEmpty()) {
             Title(
                 modifier = Modifier
                     .weight(1f)
@@ -181,50 +186,6 @@ fun Title(
 }
 
 @Composable
-internal fun CommonRenderTitleBar(
-    modifier: Modifier,
-    titleBar: TitleBar,
-    title: String,
-    windowIcon: Painter? = null,
-    titlePosition: TitlePosition,
-    start: (@Composable () -> Unit)?,
-    end: (@Composable () -> Unit)?,
-    onRequestClose: () -> Unit,
-    onRequestMinimize: (() -> Unit)?,
-    onRequestToggleMaximize: (() -> Unit)?,
-) {
-    Row(
-        modifier.height(titleBar.titleBarHeight),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val systemButtonsAtFirst = titleBar.systemButtonsPosition.isLeft
-
-        if (systemButtonsAtFirst) {
-            titleBar.RenderSystemButtons(
-                onRequestClose = onRequestClose,
-                onRequestMinimize = onRequestMinimize,
-                onToggleMaximize = onRequestToggleMaximize,
-            )
-        }
-        titleBar.RenderTitleBarContent(
-            title = title,
-            titlePosition = titlePosition,
-            modifier = Modifier.weight(1f),
-            windowIcon = windowIcon,
-            start = start,
-            end = end
-        )
-        if (!systemButtonsAtFirst) {
-            titleBar.RenderSystemButtons(
-                onRequestClose = onRequestClose,
-                onRequestMinimize = onRequestMinimize,
-                onToggleMaximize = onRequestToggleMaximize,
-            )
-        }
-    }
-}
-
-@Composable
 internal fun TitleBarIconButton(
     painter: Painter,
     contentDescription: String?,
@@ -242,7 +203,6 @@ internal fun TitleBarIconButton(
     val tint by animateColorAsState(
         if (enabled && isHovered) hoverContentColor else MaterialTheme.colorScheme.onSurface
     )
-    // TODO: 需要的话可在此添加 tooltip 或快捷键提示
     Box(
         modifier = modifier
             .fillMaxHeight()
