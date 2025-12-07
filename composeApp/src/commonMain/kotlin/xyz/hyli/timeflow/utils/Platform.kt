@@ -157,7 +157,11 @@ inline fun Platform.isAndroid(): Boolean {
 }
 
 inline fun Platform.supportDynamicColor(): Boolean {
-    return if (this is Platform.Android) this.supportDynamicColor else false
+    return when (this) {
+        is Platform.Android -> this.supportDynamicColor
+        is Platform.Windows -> true
+        else -> false
+    }
 }
 
 @OptIn(ExperimentalContracts::class)
