@@ -36,7 +36,7 @@ import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.back
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.getLibrariesState
-import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.isMacOS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +45,7 @@ fun LicenseScreen(navHostController: NavHostController) {
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (currentPlatform().isDesktop())
+                if (currentPlatform().isMacOS())
                     Modifier.padding(vertical = 16.dp)
                 else Modifier
             )

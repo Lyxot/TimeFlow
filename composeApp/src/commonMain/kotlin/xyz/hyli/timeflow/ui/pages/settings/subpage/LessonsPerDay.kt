@@ -68,6 +68,7 @@ import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.isMacOS
 
 @Composable
 fun LessonsPerDayScreen(
@@ -91,7 +92,7 @@ fun LessonsPerDayScreen(
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (currentPlatform().isDesktop())
+                if (currentPlatform().isMacOS())
                     Modifier.padding(vertical = 16.dp)
                 else Modifier
             )

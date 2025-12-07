@@ -119,6 +119,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
+            implementation(libs.jbr.api)
             implementation(libs.kotlinx.coroutines.swing)
         }
 

@@ -67,6 +67,8 @@ import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LicenseScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isMacOS
 
 enum class Destination {
     Schedule,
@@ -127,7 +129,9 @@ fun AdaptiveNavigation(
                 modifier = Modifier
                     .testTag("ScheduleNavItem")
                     .then(
-                    if (navSuiteType !in NavigationBarType) Modifier.padding(top = 28.dp)
+                        if (navSuiteType !in NavigationBarType && currentPlatform().isMacOS()) Modifier.padding(
+                            top = 28.dp
+                        )
                     else Modifier
                     ),
                 icon = { Icon(

@@ -11,6 +11,7 @@ build-config = "6.0.6"
 compose = "1.10.0-beta02"
 composables = "1.49.3"
 hot-reload = "1.0.0"
+jbr-api = "1.9.0"
 kotlin = "2.2.21"
 kotlin-inject = "0.8.0"
 kotlinx-coroutines = "1.10.2"
@@ -43,6 +44,7 @@ compose-material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.m
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
+jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jbr-api" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }
 kotlin-inject-ksp = { group = "me.tatarka.inject", name = "kotlin-inject-compiler-ksp", version.ref = "kotlin-inject" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }

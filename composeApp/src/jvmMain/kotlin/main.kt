@@ -8,6 +8,8 @@
  */
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -15,28 +17,35 @@ import androidx.compose.ui.window.rememberWindowState
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.win32.W32APIOptions
+import org.jetbrains.compose.resources.painterResource
+import timeflow.composeapp.generated.resources.Res
+import timeflow.composeapp.generated.resources.icon_rounded_light
 import xyz.hyli.timeflow.App
+import xyz.hyli.timeflow.AppContent
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.viewmodel.ViewModelOwner
 import xyz.hyli.timeflow.utils.BasicWindowProc
 import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
 import xyz.hyli.timeflow.utils.windowProc
+import xyz.hyli.timeflow.window.CustomWindow
 import java.awt.Dimension
 
 fun main() = application {
     val appContainer = AppContainer(Factory())
-    Window(
-        title = "TimeFlow",
-        state = rememberWindowState(width = 800.dp, height = 600.dp),
-        onCloseRequest = ::exitApplication,
-    ) {
-        window.minimumSize = Dimension(480, 540)
-        App(
-            viewModel = ViewModelOwner(appContainer).timeFlowViewModel
-        )
-        if (currentPlatform().isWindows()) {
+    val viewModelOwner = remember { ViewModelOwner(appContainer) }
+    val windowState = rememberWindowState(width = 800.dp, height = 600.dp)
+
+    if (currentPlatform().isWindows()) {
+        CustomWindow(
+            state = windowState,
+            viewModel = viewModelOwner.timeFlowViewModel,
+            defaultIcon = painterResource(Res.drawable.icon_rounded_light),
+            onCloseRequest = ::exitApplication
+        ) {
+            window.minimumSize = Dimension(480, 540)
             DisposableEffect(window) {
                 val user32: User32 =
                     Native.load("user32", User32::class.java, W32APIOptions.DEFAULT_OPTIONS)
@@ -51,6 +60,27 @@ fun main() = application {
                     windowProc.tryEmit(null)
                 }
             }
+            AppContent(viewModel = viewModelOwner.timeFlowViewModel).invoke()
+        }
+    } else {
+        Window(
+            title = "TimeFlow",
+            state = windowState,
+            icon = painterResource(Res.drawable.icon_rounded_light),
+            onCloseRequest = ::exitApplication,
+        ) {
+            window.minimumSize = Dimension(480, 540)
+            if (currentPlatform().isMacOS()) {
+                SideEffect {
+                    // https://www.formdev.com/flatlaf/macos/
+                    window.rootPane.putClientProperty("apple.awt.application.appearance", "system")
+                    window.rootPane.putClientProperty("apple.awt.fullscreenable", true)
+                    window.rootPane.putClientProperty("apple.awt.windowTitleVisible", false)
+                    window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
+                    window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
+                }
+            }
+            App(viewModel = viewModelOwner.timeFlowViewModel)
         }
     }
 }

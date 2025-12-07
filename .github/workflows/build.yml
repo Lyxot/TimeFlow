@@ -72,7 +72,7 @@ jobs:
       - name: Setup JDK
         uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: ${{ startsWith(matrix.name, 'windows') && 'jetbrains' || 'zulu' }}
           java-version: 17
 
       - name: Setup Gradle

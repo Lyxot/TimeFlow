@@ -109,6 +109,7 @@ import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -126,7 +127,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (currentPlatform().isDesktop())
+                if (currentPlatform().isMacOS())
                     Modifier.padding(vertical = 16.dp)
                 else Modifier
             )

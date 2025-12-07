@@ -83,7 +83,7 @@ import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.isMacOS
 
 data class ScheduleLayoutParams(
     val headerWidth: MutableState<Dp>,
@@ -170,7 +170,7 @@ fun ScheduleScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .then(
-                    if (currentPlatform().isDesktop())
+                    if (currentPlatform().isMacOS())
                         Modifier.padding(vertical = 16.dp)
                     else Modifier
                 )

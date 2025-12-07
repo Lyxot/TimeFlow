@@ -36,7 +36,13 @@ import xyz.hyli.timeflow.utils.isDesktop
 @Composable
 internal fun App(
     viewModel: TimeFlowViewModel
-) = AppTheme(viewModel) {
+) = AppTheme(
+    viewModel = viewModel,
+    content = AppContent(viewModel)
+)
+
+@Composable
+internal fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) = {
     LaunchedEffect(viewModel.settings.value.initialized) {
         if (viewModel.settings.value.initialized && viewModel.settings.value.firstLaunch < BuildConfig.APP_VERSION_CODE) {
             viewModel.updateFirstLaunch(BuildConfig.APP_VERSION_CODE)

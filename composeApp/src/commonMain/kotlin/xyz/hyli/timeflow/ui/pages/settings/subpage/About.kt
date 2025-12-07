@@ -65,7 +65,7 @@ import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.isMacOS
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -83,7 +83,7 @@ fun AboutScreen(navHostController: NavHostController) {
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .then(
-                if (currentPlatform().isDesktop())
+                if (currentPlatform().isMacOS())
                     Modifier.padding(vertical = 16.dp)
                 else Modifier
             ),
