@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +66,7 @@ import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.preference_color_dialog_title
 import timeflow.composeapp.generated.resources.preference_color_tab_custom
 import timeflow.composeapp.generated.resources.preference_color_tab_presets
+import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -240,20 +241,31 @@ private fun ColorContent(
                 }
 
                 ColorPage.Presets -> {
-                    FlowRow {
-                        ColorDefinitions.COLORS.forEach { it ->
-                            ThemeColorButton(
-                                onClick = {
-                                    color.value = it
-                                    onColorChange(it)
-                                },
-                                baseColor = it,
-                                selected = color.value == it,
-                                modifier = Modifier.padding(4.dp),
-                                cardColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                            )
+                    WeightedGrid(
+                        modifier = Modifier.fillMaxWidth(),
+                        itemSize = 64.dp,
+                        horizontalSpacing = 8.dp,
+                        verticalSpacing = 8.dp,
+                        buttons = buildList<@Composable RowScope.() -> Unit> {
+                            ColorDefinitions.COLORS.forEach { preset ->
+                                add(
+                                    @Composable {
+                                        ThemeColorButton(
+                                            onClick = {
+                                                color.value = preset
+                                                onColorChange(preset)
+                                            },
+                                            baseColor = preset,
+                                            selected = color.value == preset,
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            cardColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        )
+                                    }
+                                )
+                            }
                         }
-                    }
+                    )
                 }
             }
         }

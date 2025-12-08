@@ -25,10 +25,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -68,8 +70,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
@@ -110,6 +110,8 @@ import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.ColorPicker
 import xyz.hyli.timeflow.ui.components.ColorPickerStyle
 import xyz.hyli.timeflow.ui.components.IntTextField
+import xyz.hyli.timeflow.ui.components.CustomColorButton
+import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -459,62 +461,74 @@ fun EditCourseContent(
                         }
                     }
                 }
-                FlowRow {
-                    for (i in 1..schedule.totalWeeks()) {
-                        val isSelected = course.week.week.contains(i)
-                        val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
-                            animateColorAsState(
-                                if (isSelected) it.checkedContainerColor
-                                else it.containerColor,
-                            )
-                        }
-                        val contentColor by ToggleButtonDefaults.toggleButtonColors().let {
-                            animateColorAsState(
-                                if (isSelected) it.checkedContentColor
-                                else it.contentColor,
-                            )
-                        }
-                        val colors = ToggleButtonDefaults.toggleButtonColors(
-                            containerColor = containerColor,
-                            contentColor = contentColor
-                        ).let {
-                            if (i in validWeeks) {
-                                it
-                            } else {
-                                it.copy(
-                                    checkedContainerColor = MaterialTheme.colorScheme.errorContainer,
-                                    checkedContentColor = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            }
-                        }
-                        ToggleButton(
-                            modifier = Modifier
-                                .padding(horizontal = 2.dp)
-                                .semantics { role = Role.RadioButton },
-                            checked = isSelected,
-                            enabled = i in validWeeks || isSelected,
-                            onCheckedChange = {
-                                course = if (isSelected) {
-                                    course.copy(week = course.week.copy(week = course.week.week - i))
-                                } else {
-                                    course.copy(week = course.week.copy(week = course.week.week + i))
+                val weekItemSize = 56.dp
+                val weekButtons = buildList<@Composable RowScope.() -> Unit> {
+                    (1..schedule.totalWeeks()).map { i ->
+                        add(
+                            @Composable {
+                                val isSelected = course.week.week.contains(i)
+                                val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
+                                    animateColorAsState(
+                                        if (isSelected) it.checkedContainerColor
+                                        else it.containerColor,
+                                    )
                                 }
-                            },
-                            shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
-                            colors = colors,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(20.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = i.toString()
-                                )
+                                val contentColor by ToggleButtonDefaults.toggleButtonColors().let {
+                                    animateColorAsState(
+                                        if (isSelected) it.checkedContentColor
+                                        else it.contentColor,
+                                    )
+                                }
+                                val colors = ToggleButtonDefaults.toggleButtonColors(
+                                    containerColor = containerColor,
+                                    contentColor = contentColor
+                                ).let {
+                                    if (i in validWeeks) {
+                                        it
+                                    } else {
+                                        it.copy(
+                                            checkedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                            checkedContentColor = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                }
+                                ToggleButton(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .semantics { role = Role.RadioButton },
+                                    checked = isSelected,
+                                    enabled = i in validWeeks || isSelected,
+                                    onCheckedChange = {
+                                        course = if (isSelected) {
+                                            course.copy(week = course.week.copy(week = course.week.week - i))
+                                        } else {
+                                            course.copy(week = course.week.copy(week = course.week.week + i))
+                                        }
+                                    },
+                                    shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
+                                    colors = colors,
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(20.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = i.toString()
+                                        )
+                                    }
+                                }
                             }
-                        }
+                        )
                     }
                 }
+                WeightedGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    itemSize = weekItemSize,
+                    horizontalSpacing = 4.dp,
+                    verticalSpacing = 4.dp,
+                    buttons = weekButtons
+                )
             }
         }
         // Card color
@@ -529,84 +543,63 @@ fun EditCourseContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 var isColorCustom by remember { mutableStateOf(Color(course.color) !in COLORS && course.color != -1) }
                 Text(
                     text = stringResource(Res.string.schedule_title_course_color),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
-                FlowRow {
-                    COLORS.forEach {
-                        ColorButton(
-                            color = it.harmonize(
-                                MaterialTheme.colorScheme.secondaryContainer,
-                                true
-                            ),
-                            containerColor = it.harmonize(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                true
-                            ),
-                            onClick = {
-                                course = course.copy(color = it.toArgb())
-                                isColorChanged = true
-                                isColorCustom = false
-                            },
-                            selected = it.toArgb() == course.color && !isColorCustom,
-                            size = 48.dp,
-                            modifier = Modifier.padding(horizontal = 2.dp),
-                            cardColor = Color.Transparent
+                val itemSize = 48.dp
+                val buttons = buildList<@Composable RowScope.() -> Unit> {
+                    COLORS.forEach { color ->
+                        add(
+                            @Composable {
+                                ColorButton(
+                                    color = color.harmonize(
+                                        MaterialTheme.colorScheme.secondaryContainer,
+                                        true
+                                    ),
+                                    containerColor = color.harmonize(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        true
+                                    ),
+                                    onClick = {
+                                        course = course.copy(color = color.toArgb())
+                                        isColorChanged = true
+                                        isColorCustom = false
+                                    },
+                                    selected = color.toArgb() == course.color && !isColorCustom,
+                                    size = itemSize,
+                                    cardColor = Color.Transparent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                )
+                            }
                         )
                     }
-                    Surface(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .aspectRatio(1f)
-                            .padding(horizontal = 2.dp),
-                        shape = CardDefaults.shape,
-                        color = Color.Transparent,
-                        onClick = {
-                            isColorChanged = true
-                            isColorCustom = true
-                        },
-                        enabled = true,
-                    ) {
-                        val containerSize by animateDpAsState(targetValue = if (isColorCustom) 48.dp / 80 * 28 else 0.dp)
-                        val iconSize by animateDpAsState(targetValue = if (isColorCustom) 48.dp / 80 * 16 else 0.dp)
-                        val paletteColors = listOf(
-                            Color.Red,
-                            Color.Magenta,
-                            Color.Blue,
-                            Color.Cyan,
-                            Color.Green,
-                            Color.Yellow,
-                            Color.Red // 再次添加红色以形成无缝循环
-                        ).map { it.harmonize(MaterialTheme.colorScheme.secondaryContainer, true) }
-                        val sweepGradientBrush = Brush.sweepGradient(colors = paletteColors)
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(containerSize)
-                                .drawBehind {
-                                    drawCircle(brush = sweepGradientBrush)
-                                }
-                        ) {
-                            Box(
+                    add(
+                        @Composable {
+                            CustomColorButton(
                                 modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .clip(CircleShape)
-                                    .size(containerSize)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                            )
-                            Icon(
-                                imageVector = Icons.Outlined.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(iconSize).align(Alignment.Center),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    .weight(1f),
+                                size = itemSize,
+                                selected = isColorCustom,
+                                onClick = {
+                                    isColorChanged = true
+                                    isColorCustom = true
+                                }
                             )
                         }
-                    }
+                    )
                 }
+
+                WeightedGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    itemSize = itemSize,
+                    horizontalSpacing = 4.dp,
+                    verticalSpacing = 4.dp,
+                    buttons = buttons
+                )
                 AnimatedContent(
                     modifier = Modifier.padding(top = 8.dp),
                     targetState = isColorCustom,
