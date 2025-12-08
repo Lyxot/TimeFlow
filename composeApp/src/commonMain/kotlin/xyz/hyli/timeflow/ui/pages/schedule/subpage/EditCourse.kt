@@ -116,6 +116,7 @@ import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
+import kotlin.collections.get
 
 enum class EditCourseStyle {
     Screen,
@@ -427,28 +428,37 @@ fun EditCourseContent(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         val items = listOf(
-                            WeekDescriptionEnum.ODD to stringResource(Res.string.odd_week),
-                            WeekDescriptionEnum.EVEN to stringResource(Res.string.even_week),
-                            WeekDescriptionEnum.ALL to stringResource(Res.string.all_week)
-                        )
-                        items.forEachIndexed { index, item ->
-                            val weekList = WeekList(
-                                weekDescription = item.first,
+                            WeekList(
+                                weekDescription = WeekDescriptionEnum.ODD,
                                 totalWeeks = schedule.totalWeeks(),
                                 validWeeks = validWeeks
-                            )
+                            ) to stringResource(Res.string.odd_week),
+                            WeekList(
+                                weekDescription = WeekDescriptionEnum.EVEN,
+                                totalWeeks = schedule.totalWeeks(),
+                                validWeeks = validWeeks
+                            ) to stringResource(Res.string.even_week),
+                            WeekList(
+                                weekDescription = WeekDescriptionEnum.ALL,
+                                totalWeeks = schedule.totalWeeks(),
+                                validWeeks = validWeeks
+                            ) to stringResource(Res.string.all_week)
+                        )
+                        items.forEachIndexed { index, item ->
+                            val courseWeeks = course.week.week.toSet()
+                            val allWeeks = items[2].first.week.toSet()
+                            val checked = courseWeeks == item.first.week.toSet()
+                                    && !(index != 2 && courseWeeks == allWeeks)
+                                    && courseWeeks.isNotEmpty()
                             ToggleButton(
                                 modifier = Modifier
                                     .padding(horizontal = 1.dp)
                                     .semantics { role = Role.RadioButton },
-                                checked = course.week.week.toSet() == weekList.week.toSet() && !(
-                                        item.first != WeekDescriptionEnum.ALL && course.week.week.toSet() == WeekList(
-                                            weekDescription = WeekDescriptionEnum.ALL,
-                                            totalWeeks = schedule.totalWeeks(),
-                                            validWeeks = validWeeks
-                                        ).week.toSet()
-                                        ),
-                                onCheckedChange = { course = course.copy(week = weekList) },
+                                checked = checked,
+                                onCheckedChange = {
+                                    course = if (checked) course.copy(week = WeekList(week = emptyList()))
+                                    else course.copy(week = item.first)
+                                },
                                 shapes =
                                     when (index) {
                                         0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
