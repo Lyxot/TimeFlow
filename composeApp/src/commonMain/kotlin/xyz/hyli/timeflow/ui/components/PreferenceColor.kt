@@ -12,6 +12,7 @@ package xyz.hyli.timeflow.ui.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -50,10 +50,13 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.materialkolor.ktx.darken
+import com.materialkolor.ktx.harmonize
 import com.materialkolor.ktx.lighten
 import com.materialkolor.rememberDynamicColorScheme
 import org.jetbrains.compose.resources.stringResource
@@ -353,6 +356,68 @@ fun ColorButton(
     cardColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     content: @Composable @UiComposable (BoxWithConstraintsScope.() -> Unit) = { } // Placeholder for custom content
+) = ColorButtonContent(
+    selected = selected,
+    size = size,
+    modifier = modifier,
+    cardColor = cardColor,
+    containerColor = containerColor,
+    onClick = onClick,
+    enabled = enabled,
+    onDraw = {
+        drawCircle(color)
+    },
+    content = content
+)
+
+@Composable
+fun CustomColorButton(
+    onClick: () -> Unit = { },
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    size: Dp = 64.dp,
+    enabled: Boolean = true,
+    paletteColors: List<Color> = listOf(
+        Color.Red,
+        Color.Magenta,
+        Color.Blue,
+        Color.Cyan,
+        Color.Green,
+        Color.Yellow,
+        Color.Red // 再次添加红色以形成无缝循环
+    ),
+    content: @Composable @UiComposable (BoxWithConstraintsScope.() -> Unit) = { } // Placeholder for custom content
+) {
+    val harmonizedPalette = paletteColors.map {
+        it.harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
+    }
+    val sweepGradientBrush = Brush.sweepGradient(colors = harmonizedPalette)
+    ColorButtonContent(
+        selected = selected,
+        size = size,
+        modifier = modifier,
+        cardColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        onClick = onClick,
+        enabled = enabled,
+        onDraw = {
+            drawCircle(brush = sweepGradientBrush)
+        },
+        content = content
+    )
+}
+
+@Composable
+private fun ColorButtonContent(
+    onClick: () -> Unit,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    size: Dp,
+    enabled: Boolean = true,
+    cardColor: Color,
+    containerColor: Color,
+    onDraw: DrawScope.() -> Unit,
+    content: @Composable @UiComposable (BoxWithConstraintsScope.() -> Unit)
 ) {
     val containerSize by animateDpAsState(targetValue = if (selected) size / 80 * 28 else 0.dp)
     val iconSize by animateDpAsState(targetValue = if (selected) size / 80 * 16 else 0.dp)
@@ -361,7 +426,7 @@ fun ColorButton(
         modifier = modifier
             .size(size)
             .aspectRatio(1f),
-        shape = CardDefaults.shape,
+        shape = CircleShape,
         color = cardColor,
         onClick = onClick,
         enabled = enabled,
@@ -371,7 +436,7 @@ fun ColorButton(
                 modifier = modifier
                     .size(size)
                     .clip(CircleShape)
-                    .drawBehind { drawCircle(color) }
+                    .drawBehind { onDraw() }
                     .align(Alignment.Center),
             ) {
                 content()
@@ -380,7 +445,7 @@ fun ColorButton(
                         .align(Alignment.Center)
                         .clip(CircleShape)
                         .size(containerSize)
-                        .drawBehind { drawCircle(containerColor) },
+                        .background(containerColor),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Check,
@@ -393,3 +458,4 @@ fun ColorButton(
         }
     }
 }
+
