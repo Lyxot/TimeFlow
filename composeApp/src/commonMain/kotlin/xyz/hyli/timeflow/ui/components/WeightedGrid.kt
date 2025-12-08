@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.ui.components
 
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -19,8 +21,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.floor
 
 /**
  * 一个基于权重占满行宽的网格布局，用于替代 FlowRow。
@@ -34,27 +38,108 @@ fun WeightedGrid(
     itemSize: Dp,
     horizontalSpacing: Dp = 4.dp,
     verticalSpacing: Dp = 4.dp,
-    buttons: List<@Composable RowScope.() -> Unit>
-) {
-    BoxWithConstraints(modifier = modifier) {
+    buttons: List<@Composable RowScope.() -> Unit>,
+    columnModifier: Modifier = Modifier
+) = BoxWithConstraints(modifier = modifier) {
         val itemsPerRow = maxOf(1, (maxWidth / itemSize).toInt())
-        val rows = buttons.chunked(itemsPerRow)
+        WeightedGridContent(
+            itemsPerRow = itemsPerRow,
+            horizontalSpacing = horizontalSpacing,
+            verticalSpacing = verticalSpacing,
+            buttons = buttons,
+            columnModifier = columnModifier
+        )
+    }
 
-        Column(verticalArrangement = Arrangement.spacedBy(verticalSpacing)) {
-            rows.forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
-                ) {
-                    rowItems.forEach { content -> content() }
-                    if (rowItems.size < itemsPerRow) {
-                        repeat(itemsPerRow - rowItems.size) {
-                            Spacer(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f)
-                            )
+/**
+ * 带长按拖拽触发的版本，保留原有简单 WeightedGrid。
+ */
+@Composable
+fun WeightedGridWithDrag(
+    modifier: Modifier = Modifier,
+    itemSize: Dp,
+    horizontalSpacing: Dp = 4.dp,
+    verticalSpacing: Dp = 4.dp,
+    buttons: List<@Composable RowScope.() -> Unit>,
+    onItemDrag: ((index: Int) -> Unit),
+    triggerOnLongPress: Boolean = true
+) = BoxWithConstraints(modifier = modifier) {
+        val itemsPerRow = maxOf(1, (maxWidth / itemSize).toInt())
+
+        val maxWidthPx = maxWidth.value
+        val hSpacePx = horizontalSpacing.value
+        val vSpacePx = verticalSpacing.value
+
+        WeightedGridContent(
+            itemsPerRow = itemsPerRow,
+            horizontalSpacing = horizontalSpacing,
+            verticalSpacing = verticalSpacing,
+            buttons = buttons,
+            columnModifier = Modifier.pointerInput(buttons.size, itemsPerRow, maxWidthPx, hSpacePx, vSpacePx, triggerOnLongPress) {
+                val visited = mutableSetOf<Int>()
+                val trigger: (Float, Float) -> Unit = { x, y ->
+                    val effectiveItemWidth =
+                        (maxWidthPx - hSpacePx * (itemsPerRow - 1)) / itemsPerRow
+                    val col = floor(x / (effectiveItemWidth + hSpacePx)).toInt()
+                    val row = floor(y / (effectiveItemWidth + vSpacePx)).toInt()
+                    val index = row * itemsPerRow + col
+                    if (col in 0 until itemsPerRow && index in buttons.indices && visited.add(index)) {
+                        onItemDrag(index)
+                    }
+                }
+
+                if (triggerOnLongPress) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { offset ->
+                            visited.clear()
+                            trigger(offset.x, offset.y)
+                        },
+                        onDrag = { change, _ ->
+                            trigger(change.position.x, change.position.y)
+                            change.consume()
                         }
+                    )
+                } else {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            visited.clear()
+                            trigger(offset.x, offset.y)
+                        },
+                        onDrag = { change, _ ->
+                            trigger(change.position.x, change.position.y)
+                            change.consume()
+                        }
+                    )
+                }
+            }
+        )
+    }
+
+@Composable
+private fun WeightedGridContent(
+    itemsPerRow: Int,
+    horizontalSpacing: Dp,
+    verticalSpacing: Dp,
+    buttons: List<@Composable RowScope.() -> Unit>,
+    columnModifier: Modifier = Modifier
+) {
+    val rows = buttons.chunked(itemsPerRow)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+        modifier = columnModifier
+    ) {
+        rows.forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
+            ) {
+                rowItems.forEach { content -> content() }
+                if (rowItems.size < itemsPerRow) {
+                    repeat(itemsPerRow - rowItems.size) {
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                        )
                     }
                 }
             }

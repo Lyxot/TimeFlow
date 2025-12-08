@@ -11,7 +11,6 @@ package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
@@ -19,7 +18,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,21 +27,16 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
@@ -55,7 +48,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -69,7 +61,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
@@ -112,11 +103,11 @@ import xyz.hyli.timeflow.ui.components.ColorPickerStyle
 import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.components.CustomColorButton
 import xyz.hyli.timeflow.ui.components.WeightedGrid
+import xyz.hyli.timeflow.ui.components.WeightedGridWithDrag
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
-import kotlin.collections.get
 
 enum class EditCourseStyle {
     Screen,
@@ -532,12 +523,25 @@ fun EditCourseContent(
                         )
                     }
                 }
-                WeightedGrid(
+                WeightedGridWithDrag(
                     modifier = Modifier.fillMaxWidth(),
                     itemSize = weekItemSize,
                     horizontalSpacing = 4.dp,
                     verticalSpacing = 4.dp,
-                    buttons = weekButtons
+                    buttons = weekButtons,
+                    onItemDrag = { index ->
+                        val week = index + 1
+                        val isSelected = course.week.week.contains(week)
+                        val isEnabled = week in validWeeks || isSelected
+                        if (isEnabled) {
+                            course = if (isSelected) {
+                                course.copy(week = course.week.copy(week = course.week.week - week))
+                            } else {
+                                course.copy(week = course.week.copy(week = course.week.week + week))
+                            }
+                        }
+                    },
+                    triggerOnLongPress = false
                 )
             }
         }
