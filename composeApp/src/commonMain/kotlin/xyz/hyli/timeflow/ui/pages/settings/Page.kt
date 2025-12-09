@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalUriHandler
@@ -45,11 +47,11 @@ import androidx.navigation.NavHostController
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.icon_rounded_dark
-import timeflow.composeapp.generated.resources.icon_rounded_light
+import timeflow.composeapp.generated.resources.ic_launcher
+import timeflow.composeapp.generated.resources.ic_launcher_night
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.settings_subtitle_create_schedule
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
@@ -405,10 +407,12 @@ fun SettingsScreen(
         ) {
             val isDark by LocalThemeIsDark.current
             Icon(
-                modifier = Modifier.size(192.dp),
-                painter = painterResource(
-                    if (isDark) Res.drawable.icon_rounded_dark
-                    else Res.drawable.icon_rounded_light
+                modifier = Modifier
+                    .size(192.dp)
+                    .clip(RoundedCornerShape(45.dp)),
+                imageVector = vectorResource(
+                    if (isDark) Res.drawable.ic_launcher_night
+                    else Res.drawable.ic_launcher
                 ),
                 contentDescription = null,
                 tint = Color.Unspecified,

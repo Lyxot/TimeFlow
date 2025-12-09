@@ -19,7 +19,7 @@ import com.sun.jna.platform.win32.User32
 import com.sun.jna.win32.W32APIOptions
 import org.jetbrains.compose.resources.painterResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.icon_rounded_light
+import timeflow.composeapp.generated.resources.ic_launcher_night
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.AppContent
 import xyz.hyli.timeflow.di.AppContainer
@@ -42,7 +42,7 @@ fun main() = application {
         CustomWindow(
             state = windowState,
             viewModel = viewModelOwner.timeFlowViewModel,
-            defaultIcon = painterResource(Res.drawable.icon_rounded_light),
+            defaultIcon = painterResource(Res.drawable.ic_launcher_night),
             onCloseRequest = ::exitApplication
         ) {
             window.minimumSize = Dimension(480, 540)
@@ -66,7 +66,7 @@ fun main() = application {
         Window(
             title = "TimeFlow",
             state = windowState,
-            icon = painterResource(Res.drawable.icon_rounded_light),
+            icon = painterResource(Res.drawable.ic_launcher_night),
             onCloseRequest = ::exitApplication,
         ) {
             window.minimumSize = Dimension(480, 540)
