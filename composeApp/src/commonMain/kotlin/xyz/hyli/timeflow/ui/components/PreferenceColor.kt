@@ -66,7 +66,6 @@ import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.preference_color_dialog_title
 import timeflow.composeapp.generated.resources.preference_color_tab_custom
 import timeflow.composeapp.generated.resources.preference_color_tab_presets
-import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -243,7 +242,7 @@ private fun ColorContent(
                 ColorPage.Presets -> {
                     WeightedGrid(
                         modifier = Modifier.fillMaxWidth(),
-                        itemSize = 64.dp,
+                        itemWidth = 64.dp,
                         horizontalSpacing = 8.dp,
                         verticalSpacing = 8.dp,
                         buttons = buildList<@Composable RowScope.() -> Unit> {

@@ -19,7 +19,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -31,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -67,6 +67,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.materialkolor.ktx.harmonize
@@ -100,8 +101,8 @@ import xyz.hyli.timeflow.ui.components.ColorButton
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.ColorPicker
 import xyz.hyli.timeflow.ui.components.ColorPickerStyle
-import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.components.CustomColorButton
+import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.components.WeightedGridWithDrag
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
@@ -462,7 +463,7 @@ fun EditCourseContent(
                         }
                     }
                 }
-                val weekItemSize = 56.dp
+                val weekItemSize = DpSize(56.dp, 40.dp)
                 val weekButtons = buildList<@Composable RowScope.() -> Unit> {
                     (1..schedule.totalWeeks()).map { i ->
                         add(
@@ -496,6 +497,7 @@ fun EditCourseContent(
                                 ToggleButton(
                                     modifier = Modifier
                                         .weight(1f)
+                                        .size(weekItemSize)
                                         .semantics { role = Role.RadioButton },
                                     checked = isSelected,
                                     enabled = i in validWeeks || isSelected,
@@ -509,15 +511,11 @@ fun EditCourseContent(
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                     colors = colors,
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(20.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = i.toString()
-                                        )
-                                    }
+                                    Text(
+                                        text = i.toString(),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.align(Alignment.CenterVertically)
+                                    )
                                 }
                             }
                         )
@@ -609,7 +607,7 @@ fun EditCourseContent(
 
                 WeightedGrid(
                     modifier = Modifier.fillMaxWidth(),
-                    itemSize = itemSize,
+                    itemWidth = itemSize,
                     horizontalSpacing = 4.dp,
                     verticalSpacing = 4.dp,
                     buttons = buttons

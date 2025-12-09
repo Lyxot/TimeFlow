@@ -17,12 +17,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.floor
 
@@ -35,13 +36,13 @@ import kotlin.math.floor
 @Composable
 fun WeightedGrid(
     modifier: Modifier = Modifier,
-    itemSize: Dp,
+    itemWidth: Dp,
     horizontalSpacing: Dp = 4.dp,
     verticalSpacing: Dp = 4.dp,
     buttons: List<@Composable RowScope.() -> Unit>,
     columnModifier: Modifier = Modifier
 ) = BoxWithConstraints(modifier = modifier) {
-        val itemsPerRow = maxOf(1, (maxWidth / itemSize).toInt())
+    val itemsPerRow = maxOf(1, (maxWidth / itemWidth).toInt())
         WeightedGridContent(
             itemsPerRow = itemsPerRow,
             horizontalSpacing = horizontalSpacing,
@@ -57,18 +58,19 @@ fun WeightedGrid(
 @Composable
 fun WeightedGridWithDrag(
     modifier: Modifier = Modifier,
-    itemSize: Dp,
+    itemSize: DpSize,
     horizontalSpacing: Dp = 4.dp,
     verticalSpacing: Dp = 4.dp,
     buttons: List<@Composable RowScope.() -> Unit>,
     onItemDrag: ((index: Int) -> Unit),
     triggerOnLongPress: Boolean = true
 ) = BoxWithConstraints(modifier = modifier) {
-        val itemsPerRow = maxOf(1, (maxWidth / itemSize).toInt())
+    val itemsPerRow = maxOf(1, (maxWidth / itemSize.width).toInt())
 
-        val maxWidthPx = maxWidth.value
-        val hSpacePx = horizontalSpacing.value
-        val vSpacePx = verticalSpacing.value
+    val density = LocalDensity.current
+    val maxWidthPx = with(density) { maxWidth.toPx() }
+    val hSpacePx = with(density) { horizontalSpacing.toPx() }
+    val vSpacePx = with(density) { verticalSpacing.toPx() }
 
         WeightedGridContent(
             itemsPerRow = itemsPerRow,
@@ -80,10 +82,12 @@ fun WeightedGridWithDrag(
                 val trigger: (Float, Float) -> Unit = { x, y ->
                     val effectiveItemWidth =
                         (maxWidthPx - hSpacePx * (itemsPerRow - 1)) / itemsPerRow
+                    val effectiveItemHeight = itemSize.height.toPx()
                     val col = floor(x / (effectiveItemWidth + hSpacePx)).toInt()
-                    val row = floor(y / (effectiveItemWidth + vSpacePx)).toInt()
+                        .coerceIn(0, itemsPerRow - 1)
+                    val row = floor(y / (effectiveItemHeight + vSpacePx)).toInt().coerceAtLeast(0)
                     val index = row * itemsPerRow + col
-                    if (col in 0 until itemsPerRow && index in buttons.indices && visited.add(index)) {
+                    if (index in buttons.indices && visited.add(index)) {
                         onItemDrag(index)
                     }
                 }
