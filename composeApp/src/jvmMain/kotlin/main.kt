@@ -17,6 +17,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.win32.W32APIOptions
+import io.github.vinceglb.filekit.FileKit
 import org.jetbrains.compose.resources.painterResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.ic_launcher_night
@@ -37,6 +38,7 @@ fun main() = application {
     val appContainer = AppContainer(Factory())
     val viewModelOwner = remember { ViewModelOwner(appContainer) }
     val windowState = rememberWindowState(width = 800.dp, height = 600.dp)
+    FileKit.init(appId = "TimeFlow")
 
     if (currentPlatform().isWindows()) {
         CustomWindow(

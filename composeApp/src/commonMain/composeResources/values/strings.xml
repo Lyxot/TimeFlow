@@ -18,6 +18,8 @@
     <string name="odd_week">单周</string>
     <string name="even_week">双周</string>
     <string name="all_week">全选</string>
+    <string name="export">导出</string>
+    <string name="import">导入</string>
 
     <string name="page_today">今日</string>
     <string name="page_schedule">课程表</string>
