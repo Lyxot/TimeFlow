@@ -16,9 +16,11 @@ import io.github.vinceglb.filekit.resolve
 import xyz.hyli.timeflow.datastore.SettingsDataStore
 import xyz.hyli.timeflow.datastore.dataStoreFileName
 
-class Factory {
+class Factory(
+    val path: String = FileKit.filesDir.resolve(dataStoreFileName).path
+) {
     fun createDataStore(): SettingsDataStore =
         SettingsDataStore {
-            FileKit.filesDir.resolve(dataStoreFileName).path
+            path
         }
 }
