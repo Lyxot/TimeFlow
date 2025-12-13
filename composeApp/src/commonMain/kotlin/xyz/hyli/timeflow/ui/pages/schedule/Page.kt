@@ -134,173 +134,170 @@ fun ScheduleScreen(
     val rows = schedule?.lessonTimePeriodInfo?.getTotalLessons()
 
     @Composable
-    fun ScheduleScreenContent(
+    fun BoxScope.ScheduleScreenContent(
         scrollState: ScrollState
-    ): @Composable (BoxScope.() -> Unit) {
+    ) {
         if (schedule == null || rows == null || rows == 0) {
-            return {
-                // 显示空状态或错误信息
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    text =
-                        if (!settings.schedule.values.any { !it.deleted })
-                            stringResource(Res.string.settings_subtitle_schedule_empty)
-                        else
-                            stringResource(Res.string.settings_subtitle_schedule_not_selected),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+            // 显示空状态或错误信息
+            Text(
+                modifier = Modifier.align(Alignment.Center),
+                text =
+                    if (!settings.schedule.values.any { !it.deleted })
+                        stringResource(Res.string.settings_subtitle_schedule_empty)
+                    else
+                        stringResource(Res.string.settings_subtitle_schedule_not_selected),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            return
+        }
+        val pagerState = schedule.totalWeeks().let {
+            rememberPagerState(
+                initialPage = (schedule.termStartDate.weeksTill() - 1).coerceIn(
+                    0,
+                    it
+                ), // page 0 for week 1
+                pageCount = {
+                    it + 1 // +1 for vacation
+                }
+            )
+        }
+        val coroutineScope = rememberCoroutineScope()
+        val showAddScheduleDialog = remember { mutableStateOf(false) }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .then(
+                    if (currentPlatform().isMacOS())
+                        Modifier.padding(vertical = 16.dp)
+                    else Modifier
+                )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = {
+                        navHostController.navigate(ScheduleDestination.ScheduleList.name)
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SyncAlt,
+                        contentDescription = stringResource(Res.string.save)
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    },
+                    enabled = pagerState.currentPage > 0
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                        contentDescription = null
+                    )
+                }
+                SubcomposeLayout { constraints ->
+                    val list = listOf(
+                        "part1" to Res.string.schedule_title_week_x_part_1,
+                        "part2" to Res.string.schedule_title_week_x_part_2,
+                        "part3" to Res.string.schedule_title_week_x_part_3,
+                        "vacation" to Res.string.schedule_title_week_vacation
+                    ).map {
+                        subcompose(it.first) {
+                            Text(
+                                text =
+                                    if (it.first == "part2") "${pagerState.currentPage + 1}"
+                                    else stringResource(it.second)
+                            )
+                        }[0].measure(constraints)
+                    }
+                    val part2Max = subcompose("part2max") {
+                        Text(
+                            text = stringResource(
+                                Res.string.schedule_title_week_x_part_2,
+                                pagerState.pageCount + 1
+                            )
+                        )
+                    }[0].measure(constraints)
+                    val width =
+                        maxOf(list[0].width + part2Max.width + list[2].width, list[3].width)
+                    layout(width, constraints.minHeight) {
+                        if (pagerState.currentPage < pagerState.pageCount - 1) {
+                            list[0].placeRelative(
+                                0,
+                                -list[0].height / 2
+                            )
+                            list[1].placeRelative(
+                                (width - list[1].width) / 2,
+                                -list[1].height / 2
+                            )
+                            list[2].placeRelative(
+                                width - list[2].width,
+                                -list[2].height / 2
+                            )
+                        } else {
+                            list[3].placeRelative(
+                                (width - list[3].width) / 2,
+                                -list[3].height / 2
+                            )
+                        }
+                    }
+                }
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
+                    },
+                    enabled = pagerState.currentPage < pagerState.pageCount - 1
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = null
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        showAddScheduleDialog.value = true
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(Res.string.save)
+                    )
+                }
+            }
+            HorizontalPager(
+                state = pagerState,
+                pageSpacing = 16.dp
+            ) { page ->
+                // 课程表表格
+                ScheduleTable(
+                    scheduleParams = ScheduleParams(
+                        viewModel = viewModel,
+                        navHostController = navHostController,
+                        navSuiteType = navSuiteType,
+                        schedule = schedule,
+                        currentWeek = page + 1
+                    ),
+                    rows = rows,
+                    columns = columns,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
-        return {
-            val pagerState = schedule.totalWeeks().let {
-                rememberPagerState(
-                    initialPage = (schedule.termStartDate.weeksTill() - 1).coerceIn(
-                        0,
-                        it
-                    ), // page 0 for week 1
-                    pageCount = {
-                        it + 1 // +1 for vacation
-                    }
-                )
-            }
-            val coroutineScope = rememberCoroutineScope()
-            val showAddScheduleDialog = remember { mutableStateOf(false) }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .then(
-                        if (currentPlatform().isMacOS())
-                            Modifier.padding(vertical = 16.dp)
-                        else Modifier
-                    )
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            navHostController.navigate(ScheduleDestination.ScheduleList.name)
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SyncAlt,
-                            contentDescription = stringResource(Res.string.save)
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                            contentDescription = null
-                        )
-                    }
-                    SubcomposeLayout { constraints ->
-                        val list = listOf(
-                            "part1" to Res.string.schedule_title_week_x_part_1,
-                            "part2" to Res.string.schedule_title_week_x_part_2,
-                            "part3" to Res.string.schedule_title_week_x_part_3,
-                            "vacation" to Res.string.schedule_title_week_vacation
-                        ).map {
-                            subcompose(it.first) {
-                                Text(
-                                    text =
-                                        if (it.first == "part2") "${pagerState.currentPage + 1}"
-                                        else stringResource(it.second)
-                                )
-                            }[0].measure(constraints)
-                        }
-                        val part2Max = subcompose("part2max") {
-                            Text(
-                                text = stringResource(
-                                    Res.string.schedule_title_week_x_part_2,
-                                    pagerState.pageCount + 1
-                                )
-                            )
-                        }[0].measure(constraints)
-                        val width =
-                            maxOf(list[0].width + part2Max.width + list[2].width, list[3].width)
-                        layout(width, constraints.minHeight) {
-                            if (pagerState.currentPage < pagerState.pageCount - 1) {
-                                list[0].placeRelative(
-                                    0,
-                                    -list[0].height / 2
-                                )
-                                list[1].placeRelative(
-                                    (width - list[1].width) / 2,
-                                    -list[1].height / 2
-                                )
-                                list[2].placeRelative(
-                                    width - list[2].width,
-                                    -list[2].height / 2
-                                )
-                            } else {
-                                list[3].placeRelative(
-                                    (width - list[3].width) / 2,
-                                    -list[3].height / 2
-                                )
-                            }
-                        }
-                    }
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage < pagerState.pageCount - 1
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(
-                        onClick = {
-                            showAddScheduleDialog.value = true
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(Res.string.save)
-                        )
-                    }
-                }
-                HorizontalPager(
-                    state = pagerState,
-                    pageSpacing = 16.dp
-                ) { page ->
-                    // 课程表表格
-                    ScheduleTable(
-                        scheduleParams = ScheduleParams(
-                            viewModel = viewModel,
-                            navHostController = navHostController,
-                            navSuiteType = navSuiteType,
-                            schedule = schedule,
-                            currentWeek = page + 1
-                        ),
-                        rows = rows,
-                        columns = columns,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            if (showAddScheduleDialog.value) {
-                AddScheduleDialog(
-                    state = showAddScheduleDialog,
-                    viewModel = viewModel
-                )
-            }
+        if (showAddScheduleDialog.value) {
+            AddScheduleDialog(
+                state = showAddScheduleDialog,
+                viewModel = viewModel
+            )
         }
     }
 
@@ -334,7 +331,7 @@ fun ScheduleScreen(
                         else if (delta < 0) fabVisible = true
                         lastScroll = scrollState.value
                     }
-                    ScheduleScreenContent(scrollState).invoke(this)
+                    ScheduleScreenContent(scrollState)
                     ScheduleFAB(
                         modifier = Modifier.align(Alignment.BottomEnd),
                         viewModel = viewModel,
