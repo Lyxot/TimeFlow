@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -133,7 +134,9 @@ fun ScheduleScreen(
     val rows = schedule?.lessonTimePeriodInfo?.getTotalLessons()
 
     @Composable
-    fun ScheduleScreenContent(): @Composable (BoxScope.() -> Unit) {
+    fun ScheduleScreenContent(
+        scrollState: ScrollState
+    ): @Composable (BoxScope.() -> Unit) {
         if (schedule == null || rows == null || rows == 0) {
             return {
                 // 显示空状态或错误信息
@@ -162,15 +165,6 @@ fun ScheduleScreen(
                 )
             }
             val coroutineScope = rememberCoroutineScope()
-            val scrollState = rememberScrollState()
-            var fabVisible by remember { mutableStateOf(true) }
-            var lastScroll by remember { mutableStateOf(0) }
-            LaunchedEffect(scrollState.value) {
-                val delta = scrollState.value - lastScroll
-                if (delta > 0) fabVisible = false
-                else if (delta < 0) fabVisible = true
-                lastScroll = scrollState.value
-            }
             val showAddScheduleDialog = remember { mutableStateOf(false) }
             Column(
                 modifier = Modifier
@@ -307,11 +301,6 @@ fun ScheduleScreen(
                     viewModel = viewModel
                 )
             }
-            ScheduleFAB(
-                modifier = Modifier.align(Alignment.BottomEnd),
-                viewModel = viewModel,
-                visible = fabVisible
-            )
         }
     }
 
@@ -323,23 +312,35 @@ fun ScheduleScreen(
             ) togetherWith fadeOut(animationSpec = tween(300))
         }
     ) {
-        when (it) {
-            false -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (it) {
+                false -> {
                     LoadingIndicator(
-                        modifier = Modifier.size(96.dp)
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(96.dp)
                     )
                 }
-            }
 
-            true -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    content = ScheduleScreenContent()
-                )
+                true -> {
+                    val scrollState = rememberScrollState()
+                    var fabVisible by remember { mutableStateOf(true) }
+                    var lastScroll by remember { mutableStateOf(0) }
+                    LaunchedEffect(scrollState.value) {
+                        val delta = scrollState.value - lastScroll
+                        if (delta > 0) fabVisible = false
+                        else if (delta < 0) fabVisible = true
+                        lastScroll = scrollState.value
+                    }
+                    ScheduleScreenContent(scrollState).invoke(this)
+                    ScheduleFAB(
+                        modifier = Modifier.align(Alignment.BottomEnd),
+                        viewModel = viewModel,
+                        visible = fabVisible
+                    )
+                }
             }
         }
     }

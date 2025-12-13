@@ -77,7 +77,7 @@
     <string name="settings_subtitle_create_schedule">点击创建新课程表</string>
     <string name="settings_warning_schedule_name_empty">课程表名称不能为空</string>
     <string name="settings_title_schedule">课程表设置</string>
-    <string name="settings_subtitle_schedule_empty">当前无课程表，请创建课程表</string>
+    <string name="settings_subtitle_schedule_empty">当前无课程表，请创建或导入课程表</string>
     <string name="settings_subtitle_schedule_not_selected">当前未选择课程表</string>
     <string name="settings_title_schedule_name">课程表名称</string>
     <string name="settings_title_schedule_term_start_date">学期起始日期</string>
