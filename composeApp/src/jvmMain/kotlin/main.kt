@@ -23,6 +23,7 @@ import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.ic_launcher_night
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.AppContent
+import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.viewmodel.ViewModelOwner
@@ -35,10 +36,10 @@ import xyz.hyli.timeflow.window.CustomWindow
 import java.awt.Dimension
 
 fun main() = application {
+    FileKit.init(appId = "TimeFlow")
     val appContainer = AppContainer(Factory())
     val viewModelOwner = remember { ViewModelOwner(appContainer) }
     val windowState = rememberWindowState(width = 800.dp, height = 600.dp)
-    FileKit.init(appId = "TimeFlow")
 
     if (currentPlatform().isWindows()) {
         CustomWindow(
@@ -66,7 +67,7 @@ fun main() = application {
         }
     } else {
         Window(
-            title = "TimeFlow",
+            title = BuildConfig.APP_NAME,
             state = windowState,
             icon = painterResource(Res.drawable.ic_launcher_night),
             onCloseRequest = ::exitApplication,

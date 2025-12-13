@@ -6,13 +6,13 @@ androidx-datastore = "1.2.0"
 androidx-lifecycle = "2.9.6"
 androidx-navigation = "2.9.1"
 androidx-startup-runtime = "1.2.0"
-appdirs = "1.5.0"
 build-config = "6.0.6"
 compose = "1.10.0-beta02"
 composables = "1.49.3"
 filekitCore = "0.12.0"
 hot-reload = "1.0.0"
 jbr-api = "1.9.0"
+jna = "5.18.1"
 kotlin = "2.2.21"
 kotlin-inject = "0.8.0"
 kotlinx-coroutines = "1.10.2"
@@ -34,7 +34,6 @@ androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name 
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup-runtime" }
-appdirs = { group = "net.harawata", name = "appdirs", version.ref = "appdirs" }
 composables-core = { module = "com.composables:core", version.ref = "composables" }
 compose-animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "compose" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
@@ -49,6 +48,8 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekitCore" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekitCore" }
 jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jbr-api" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }
 kotlin-inject-ksp = { group = "me.tatarka.inject", name = "kotlin-inject-compiler-ksp", version.ref = "kotlin-inject" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }

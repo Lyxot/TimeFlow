@@ -9,8 +9,16 @@
 
 package xyz.hyli.timeflow.di
 
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.path
+import io.github.vinceglb.filekit.resolve
 import xyz.hyli.timeflow.datastore.SettingsDataStore
+import xyz.hyli.timeflow.datastore.dataStoreFileName
 
-expect class Factory {
-    fun createDataStore(): SettingsDataStore
+class Factory {
+    fun createDataStore(): SettingsDataStore =
+        SettingsDataStore {
+            FileKit.filesDir.resolve(dataStoreFileName).path
+        }
 }

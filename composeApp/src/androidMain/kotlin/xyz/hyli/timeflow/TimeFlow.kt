@@ -18,6 +18,6 @@ class TimeFlow: Application() {
 
     override fun onCreate() {
         super.onCreate()
-        container = AppContainer(Factory(this))
+        container = AppContainer(Factory())
     }
 }

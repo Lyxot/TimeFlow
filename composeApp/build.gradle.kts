@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import java.lang.System.getenv
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -38,7 +38,8 @@ plugins {
 val appVersionCode = app.versions.major.get().toInt() * 10000 +
         try {
             val githubToken = getenv("GITHUB_TOKEN")
-            val url = URL("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1")
+            val url =
+                URI("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1").toURL()
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
@@ -121,8 +122,9 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(libs.appdirs)
             implementation(libs.jbr.api)
+            implementation(libs.jna)
+            implementation(libs.jna.platform)
             implementation(libs.kotlinx.coroutines.swing)
         }
 
@@ -321,7 +323,7 @@ val exportLibraryDefinitionsIos by tasks.registering(Exec::class) {
 
     workingDir(rootProject.projectDir)
     commandLine(
-        "./gradlew",
+        if (System.getProperty("os.name").startsWith("Windows")) "./gradlew.bat" else "./gradlew",
         ":composeApp:exportLibraryDefinitions",
         "-PaboutLibraries.outputFile=src/iosMain/composeResources/files/libraries.json",
         "-PaboutLibraries.exportVariant=metadataIosMain"
