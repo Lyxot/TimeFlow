@@ -55,6 +55,8 @@ val appVersionCode = app.versions.major.get().toInt() * 10000 +
             0
         }
 
+val portable = providers.gradleProperty("portable").map { it.toBoolean() }.getOrElse(false)
+
 kotlin {
     androidTarget {
         //https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-test.html
@@ -254,6 +256,8 @@ compose.desktop {
                 dirChooser = true
                 perUserInstall = true
                 upgradeUuid = "ef188802-ed4a-5e96-9bce-e7987aa07e3b"
+                shortcut = true
+                menu = true
             }
             macOS {
                 iconFile.set(project.file("desktopAppIcons/MacosIcon.icns"))
@@ -348,6 +352,7 @@ buildConfig {
     buildConfigField("APP_VERSION_CODE", appVersionCode)
     buildConfigField("BUILD_TIME", System.currentTimeMillis())
     buildConfigField("AUTHOR", "Lyxot")
+    buildConfigField("PORTABLE", portable)
 }
 
 dependencies {

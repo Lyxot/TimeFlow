@@ -22,6 +22,8 @@ import com.sun.jna.Native
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.win32.W32APIOptions
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.utils.toPath
+import kotlinx.io.files.Path
 import org.jetbrains.compose.resources.painterResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.ic_launcher
@@ -31,6 +33,7 @@ import timeflow.composeapp.generated.resources.icon_rounded_light
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.AppContent
 import xyz.hyli.timeflow.BuildConfig
+import xyz.hyli.timeflow.datastore.dataStoreFileName
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
@@ -42,10 +45,18 @@ import xyz.hyli.timeflow.utils.isWindows
 import xyz.hyli.timeflow.utils.windowProc
 import xyz.hyli.timeflow.window.CustomWindow
 import java.awt.Dimension
+import kotlin.jvm.optionals.getOrNull
 
 fun main() = application {
     FileKit.init(appId = "TimeFlow")
-    val appContainer = AppContainer(Factory())
+    @Suppress("KotlinConstantConditions")
+    val factory = BuildConfig.PORTABLE.takeIf { it }?.let {
+        ProcessHandle.current().info().command().getOrNull()?.toPath()?.parent?.let { base ->
+            Factory(Path(base, dataStoreFileName).toString())
+        }
+    } ?: Factory()
+
+    val appContainer = AppContainer(factory)
     val viewModelOwner = remember { ViewModelOwner(appContainer) }
     val windowState = rememberWindowState(width = 800.dp, height = 600.dp)
 

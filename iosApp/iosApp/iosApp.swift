@@ -3,7 +3,7 @@ import ComposeApp
 
 @main
 struct ComposeApp: App {
-    let appContainer = AppContainer(factory: Factory())
+    let appContainer = AppContainer(factory: Factory(path: nil))
     var body: some Scene {
         WindowGroup {
             let viewModelOwner = ViewModelOwner(appContainer: appContainer)
