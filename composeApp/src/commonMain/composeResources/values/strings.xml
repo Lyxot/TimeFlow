@@ -101,6 +101,7 @@
     <string name="settings_title_feedback">反馈</string>
     <string name="settings_value_version">版本</string>
     <string name="settings_title_changelog">更新日志</string>
+    <string name="settings_title_config_path">配置文件路径</string>
 
 
     <string name="monday">周一</string>

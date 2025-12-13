@@ -45,10 +45,15 @@ internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
 }
 
 internal const val dataStoreFileName = "settings.pb"
+lateinit var settingsFilePath: String
 
 class SettingsDataStore(
     private val produceFilePath: () -> String,
 ) {
+    init {
+        settingsFilePath = produceFilePath()
+    }
+
     private val db = DataStoreFactory.create(
         storage = OkioStorage(
             fileSystem = platformFileSystem,
@@ -105,4 +110,3 @@ class SettingsDataStore(
         }
     }
 }
-

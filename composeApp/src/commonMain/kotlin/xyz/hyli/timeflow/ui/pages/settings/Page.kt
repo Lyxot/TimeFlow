@@ -63,6 +63,7 @@ import timeflow.composeapp.generated.resources.settings_theme_light
 import timeflow.composeapp.generated.resources.settings_theme_system
 import timeflow.composeapp.generated.resources.settings_title_about
 import timeflow.composeapp.generated.resources.settings_title_changelog
+import timeflow.composeapp.generated.resources.settings_title_config_path
 import timeflow.composeapp.generated.resources.settings_title_create_schedule
 import timeflow.composeapp.generated.resources.settings_title_display_weekends
 import timeflow.composeapp.generated.resources.settings_title_donate
@@ -87,6 +88,7 @@ import timeflow.composeapp.generated.resources.url_feedback
 import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Schedule
+import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.Dependency
 import xyz.hyli.timeflow.ui.components.DialogInputValidator
@@ -110,6 +112,7 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 import xyz.hyli.timeflow.utils.isMacOS
+import xyz.hyli.timeflow.utils.showFileInFileManager
 import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -160,7 +163,7 @@ fun SettingsScreen(
             // Dynamic Color Settings
             val themeDynamicColorDependency =
                 Dependency.State(mutableStateOf(currentPlatform())) {
-                    currentPlatform().supportDynamicColor()
+                    it.supportDynamicColor()
                 }
             PreferenceBool(
                 style = PreferenceBoolStyle.Style.Switch,
@@ -371,6 +374,23 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                    contentDescription = null
+                )
+            }
+            val configPathDependency =
+                Dependency.State(mutableStateOf(currentPlatform())) {
+                    it.isDesktop()
+                }
+            BasePreference(
+                title = stringResource(Res.string.settings_title_config_path),
+                subtitle = settingsFilePath,
+                onClick = {
+                    showFileInFileManager(settingsFilePath)
+                },
+                visible = configPathDependency
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Launch,
                     contentDescription = null
                 )
             }
