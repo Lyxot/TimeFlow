@@ -9,4 +9,25 @@
 
 package xyz.hyli.timeflow.utils
 
+import okio.Buffer
+import okio.GzipSink
+import okio.GzipSource
+import okio.buffer
+import okio.use
+
 expect fun showFileInFileManager(path: String)
+
+fun ByteArray.gzipCompress(): ByteArray {
+    val buffer = Buffer()
+    GzipSink(buffer).buffer().use { gzipSink ->
+        gzipSink.write(this)
+    }
+    return buffer.readByteArray()
+}
+
+fun ByteArray.gzipDecompress(): ByteArray {
+    val sourceBuffer = Buffer().write(this)
+    GzipSource(sourceBuffer).buffer().use { gzipSource ->
+        return gzipSource.readByteArray()
+    }
+}

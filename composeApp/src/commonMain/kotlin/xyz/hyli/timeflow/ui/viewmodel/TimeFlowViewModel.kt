@@ -26,9 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.jetbrains.compose.resources.getString
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.schedule_value_export_schedule_failed
@@ -37,6 +34,8 @@ import timeflow.composeapp.generated.resources.schedule_value_import_schedule_fa
 import timeflow.composeapp.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Settings
+import xyz.hyli.timeflow.datastore.toProtoBufByteArray
+import xyz.hyli.timeflow.datastore.toProtoBufData
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -121,7 +120,7 @@ class TimeFlowViewModel(
                 return@launch
             }
             try {
-                file.write(ProtoBuf.encodeToByteArray(schedule))
+                file.write(schedule.toProtoBufByteArray())
                 showMessage(
                     getString(
                         Res.string.schedule_value_export_schedule_success,
@@ -148,8 +147,8 @@ class TimeFlowViewModel(
         viewModelScope.launch {
             try {
                 val bytes = file.readBytes()
-                val importedSchedule = ProtoBuf.decodeFromByteArray<Schedule>(bytes)
-                createSchedule(importedSchedule)
+                val importedSchedule = bytes.toProtoBufData<Schedule>(null)
+                createSchedule(importedSchedule!!)
                 showMessage(
                     getString(
                         Res.string.schedule_value_import_schedule_success,
