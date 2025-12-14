@@ -4,6 +4,26 @@
 
 本项目遵循 [语义化版本](https://semver.org/spec/v2.0.0.html)。
 
+## v1.1.0
+
+### ⚠️ 破坏性变更
+- **Windows 配置文件路径变更**：
+    - 安装版（exe、msi）：从 `C:\Users\<账户>\AppData\Local\Lyxot\TimeFlow` 迁移到 `C:\Users\<账户>\AppData\Roaming\TimeFlow`
+    - 便携版（zip）：从 `C:\Users\<账户>\AppData\Local\Lyxot\TimeFlow` 迁移到可执行文件所在目录下
+
+### 新增功能
+- 支持从文件导入和导出课程表
+- 支持长按拖动快速选择或取消选择上课周数
+- 点击已选中的"单周/双周/全选"按钮可快速清空周数选择
+- 在设置页面显示当前配置文件保存路径 (仅桌面端)
+
+### 界面优化
+- 统一各页面间距，优化视觉一致性
+- 支持 Windows 系统强调色主题
+- Windows 和 macOS 支持沉浸式标题栏
+- 桌面端窗口图标随主题切换（浅色/深色）
+- 使用最新的 Material Design 色彩规范（2025）
+
 ## v1.0.2
 - 修复在 Windows 系统上无法加载配置文件的问题
 
