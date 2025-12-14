@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
@@ -39,7 +40,9 @@ internal actual fun getColorScheme(
         }
     } else {
         rememberDynamicColorScheme(
-            seedColor = Color(seedColor), isDark = isDark, isAmoled = true
+            seedColor = Color(seedColor),
+            isDark = isDark,
+            specVersion = ColorSpec.SpecVersion.SPEC_2025
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -37,11 +38,13 @@ internal actual fun getColorScheme(
     return if (currentPlatform().supportDynamicColor() && isDynamicColor) {
         val accentColor by accentColor.collectAsState(initial = Color.Unspecified)
         rememberDynamicColorScheme(
-            seedColor = accentColor, isDark = isDark, isAmoled = false
+            seedColor = accentColor, isDark = isDark, specVersion = ColorSpec.SpecVersion.SPEC_2025
         )
     } else {
         rememberDynamicColorScheme(
-            seedColor = Color(seedColor), isDark = isDark, isAmoled = false
+            seedColor = Color(seedColor),
+            isDark = isDark,
+            specVersion = ColorSpec.SpecVersion.SPEC_2025
         )
     }
 }
