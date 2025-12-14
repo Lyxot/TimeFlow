@@ -250,6 +250,7 @@ compose.desktop {
 
             linux {
                 iconFile.set(project.file("desktopAppIcons/LinuxIcon.png"))
+                rpmLicenseType = "AGPL-3.0-or-later"
             }
             windows {
                 iconFile.set(project.file("desktopAppIcons/WindowsIcon.ico"))
