@@ -18,10 +18,13 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
     - 浅色与深色模式切换。
 - **富有表现力的设计**: 基于 Material Design 3 Expressive 设计风格，提供流畅的动画和现代的视觉体验。
 
-<p align="center">
-<img src=".readme/images/screenshot_page_schedule.png" alt="课程表" width="300">
-<img src=".readme/images/screenshot_page_today.png" alt="今日" width="300">
-</p>
+| 课程表 | 今日 |
+| --- | --- |
+| ![](.readme/images/screenshot_mobile_page_schedule.png) | ![](.readme/images/screenshot_mobile_page_today.png) |
+
+| 深色模式 | 浅色模式 |
+| --- | --- |
+| ![](.readme/images/screenshot_desktop_page_schedule_light.png) | ![](.readme/images/screenshot_desktop_page_schedule_dark.png) |
 
 ## 🚀 如何构建
 
