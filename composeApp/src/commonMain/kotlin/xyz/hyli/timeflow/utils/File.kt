@@ -9,4 +9,27 @@
 
 package xyz.hyli.timeflow.utils
 
+import com.squareup.zstd.okio.zstdCompress
+import com.squareup.zstd.okio.zstdDecompress
+import okio.Buffer
+import okio.buffer
+import okio.use
+
 expect fun showFileInFileManager(path: String)
+
+fun ByteArray.zstdCompress(): ByteArray {
+    val buffer = Buffer()
+    // 使用 zstdCompress 包装目标 buffer
+    buffer.zstdCompress().buffer().use { sink ->
+        sink.write(this)
+    }
+    return buffer.readByteArray()
+}
+
+fun ByteArray.zstdDecompress(): ByteArray {
+    val buffer = Buffer().write(this)
+    // 使用 zstdDecompress 包装源 buffer
+    buffer.zstdDecompress().buffer().use { source ->
+        return source.readByteArray()
+    }
+}

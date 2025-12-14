@@ -14,9 +14,6 @@ import androidx.datastore.core.okio.OkioSerializer
 import androidx.datastore.core.okio.OkioStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.protobuf.ProtoBuf
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.FileSystem
@@ -30,15 +27,11 @@ internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
     override val defaultValue = Settings()
 
     override suspend fun readFrom(source: BufferedSource) =
-        try {
-            ProtoBuf.decodeFromByteArray<Settings>(source.readByteArray())
-        } catch (_: Exception) {
-            defaultValue
-        }
+        source.readByteArray().toProtoBufData(defaultValue)!!
 
     override suspend fun writeTo(t: Settings, sink: BufferedSink) {
         sink.use {
-            it.write(ProtoBuf.encodeToByteArray(t))
+            it.write(t.toProtoBufByteArray())
         }
     }
 

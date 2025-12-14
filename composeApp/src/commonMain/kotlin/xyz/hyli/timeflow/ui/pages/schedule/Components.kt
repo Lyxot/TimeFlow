@@ -86,9 +86,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.export
@@ -107,6 +104,8 @@ import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
+import xyz.hyli.timeflow.datastore.toProtoBufByteArray
+import xyz.hyli.timeflow.datastore.toProtoBufData
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -566,7 +565,7 @@ fun ScheduleFAB(
         val saver = rememberFileSaverLauncher { file ->
             if (file != null) {
                 scope.launch {
-                    file.write(ProtoBuf.encodeToByteArray(schedule))
+                    file.write(schedule.toProtoBufByteArray())
                 }
             }
         }
@@ -577,7 +576,7 @@ fun ScheduleFAB(
                 scope.launch {
                     val bytes = file.readBytes()
                     try {
-                        val importedSchedule = ProtoBuf.decodeFromByteArray<Schedule>(bytes)
+                        val importedSchedule = bytes.toProtoBufData<Schedule>()!!
                         viewModel.createSchedule(importedSchedule)
                     } catch (e: Exception) {
                         println("Failed to import schedule: ${e.message}")

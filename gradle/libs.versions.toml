@@ -23,6 +23,8 @@ material3 = "1.10.0-alpha05"
 material3-adaptive = "1.2.0"
 material-icons-extended = "1.7.3"
 material-kolor = "4.0.5"
+okio = "3.16.2"
+okio-zstd = "0.4.0"
 
 [libraries]
 aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -59,6 +61,8 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 material-kolor = { group = "com.materialkolor", name = "material-kolor", version.ref = "material-kolor" }
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
+okio-zstd = { group = "com.squareup.zstd", name = "zstd-kmp-okio", version.ref = "okio-zstd" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -114,6 +114,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.material.kolor)
+            implementation(libs.okio)
+            implementation(libs.okio.zstd)
         }
 
         androidMain.dependencies {
