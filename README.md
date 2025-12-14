@@ -22,7 +22,7 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
 | --- | --- |
 | ![](.readme/images/screenshot_mobile_page_schedule.png) | ![](.readme/images/screenshot_mobile_page_today.png) |
 
-| 深色模式 | 浅色模式 |
+| 浅色模式 | 深色模式 |
 | --- | --- |
 | ![](.readme/images/screenshot_desktop_page_schedule_light.png) | ![](.readme/images/screenshot_desktop_page_schedule_dark.png) |
 
