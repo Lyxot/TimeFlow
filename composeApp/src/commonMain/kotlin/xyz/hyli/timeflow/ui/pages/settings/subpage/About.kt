@@ -13,11 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -62,10 +58,9 @@ import timeflow.composeapp.generated.resources.url_github_repository
 import timeflow.composeapp.generated.resources.url_homepage
 import timeflow.composeapp.generated.resources.url_license
 import xyz.hyli.timeflow.BuildConfig
+import xyz.hyli.timeflow.ui.components.commonPadding
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMacOS
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -82,11 +77,7 @@ fun AboutScreen(navHostController: NavHostController) {
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .then(
-                if (currentPlatform().isMacOS())
-                    Modifier.padding(vertical = 16.dp)
-                else Modifier
-            ),
+            .commonPadding(),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -226,14 +217,5 @@ fun AboutScreen(navHostController: NavHostController) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Spacer(
-            modifier = Modifier.height(
-                maxOf(
-                    WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding(),
-                    24.dp
-                )
-            )
-        )
     }
 }

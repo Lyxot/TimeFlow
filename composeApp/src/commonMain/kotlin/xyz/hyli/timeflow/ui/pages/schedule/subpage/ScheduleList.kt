@@ -17,13 +17,7 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
@@ -44,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
@@ -57,13 +50,11 @@ import xyz.hyli.timeflow.ui.components.DialogStateNoData
 import xyz.hyli.timeflow.ui.components.PreferenceDivider
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
+import xyz.hyli.timeflow.ui.components.commonPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmSelectScheduleDialog
 import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isDesktop
-import xyz.hyli.timeflow.utils.isMacOS
 
 @Composable
 fun ScheduleListScreen(
@@ -76,21 +67,12 @@ fun ScheduleListScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (currentPlatform().isMacOS())
-                    Modifier.padding(vertical = 16.dp)
-                else Modifier
-            )
+            .commonPadding()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .animateContentSize()
-                .then(
-                    if (currentPlatform().isDesktop())
-                        Modifier.padding(end = 16.dp)
-                    else Modifier
-                ),
+                .animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
@@ -263,16 +245,6 @@ fun ScheduleListScreen(
                     }
                 }
             }
-
-            Spacer(
-                modifier = Modifier.height(
-                    maxOf(
-                        WindowInsets.navigationBars.asPaddingValues()
-                            .calculateBottomPadding(),
-                        24.dp
-                    )
-                )
-            )
         }
     }
 }

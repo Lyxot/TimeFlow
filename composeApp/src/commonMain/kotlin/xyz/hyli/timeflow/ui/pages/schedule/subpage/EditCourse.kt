@@ -24,11 +24,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -105,10 +101,9 @@ import xyz.hyli.timeflow.ui.components.CustomColorButton
 import xyz.hyli.timeflow.ui.components.IntTextField
 import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.components.WeightedGridWithDrag
+import xyz.hyli.timeflow.ui.components.commonPadding
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMacOS
 
 enum class EditCourseStyle {
     Screen,
@@ -148,11 +143,7 @@ fun EditCourseScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (currentPlatform().isMacOS())
-                    Modifier.padding(vertical = 16.dp)
-                else Modifier
-            )
+            .commonPadding()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -220,15 +211,6 @@ fun EditCourseScreen(
                     }
                 )
             }
-            Spacer(
-                modifier = Modifier.height(
-                    maxOf(
-                        WindowInsets.navigationBars.asPaddingValues()
-                            .calculateBottomPadding(),
-                        24.dp
-                    )
-                )
-            )
         }
     }
 }

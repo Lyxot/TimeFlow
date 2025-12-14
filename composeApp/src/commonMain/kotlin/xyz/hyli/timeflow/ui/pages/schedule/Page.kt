@@ -21,12 +21,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,7 +43,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -75,17 +71,18 @@ import timeflow.composeapp.generated.resources.schedule_title_week_x_part_2
 import timeflow.composeapp.generated.resources.schedule_title_week_x_part_3
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
+import xyz.hyli.timeflow.LocalNavSuiteType
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Range
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Weekday
+import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMacOS
 
 data class ScheduleLayoutParams(
     val headerWidth: MutableState<Dp>,
@@ -99,7 +96,6 @@ data class ScheduleLayoutParams(
 data class ScheduleParams(
     val viewModel: TimeFlowViewModel,
     val navHostController: NavHostController,
-    val navSuiteType: NavigationSuiteType,
     val schedule: Schedule,
     val currentWeek: Int,
     val totalWeeks: Int = schedule.totalWeeks()
@@ -126,8 +122,8 @@ val weekdays = listOf(
 fun ScheduleScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType,
 ) {
+    val navSuiteType by LocalNavSuiteType.current
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]
     val columns = if (schedule?.displayWeekends == true) 7 else 5
@@ -168,14 +164,14 @@ fun ScheduleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .then(
-                    if (currentPlatform().isMacOS())
-                        Modifier.padding(vertical = 16.dp)
-                    else Modifier
-                )
+                .commonPadding(addNavigationBarHorizontalPadding = false)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .ifThen(navSuiteType in NavigationBarType) {
+                        Modifier.padding(horizontal = 8.dp)
+                    },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(
@@ -275,15 +271,13 @@ fun ScheduleScreen(
                 }
             }
             HorizontalPager(
-                state = pagerState,
-                pageSpacing = 16.dp
+                state = pagerState
             ) { page ->
                 // 课程表表格
                 ScheduleTable(
                     scheduleParams = ScheduleParams(
                         viewModel = viewModel,
                         navHostController = navHostController,
-                        navSuiteType = navSuiteType,
                         schedule = schedule,
                         currentWeek = page + 1
                     ),
@@ -359,13 +353,7 @@ fun ScheduleTable(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(
-                headerHeight.value + 64.dp * rows + maxOf(
-                    WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding(),
-                    24.dp
-                )
-            )
+            .height(headerHeight.value + 64.dp * rows)
     ) {
         val state = remember { mutableStateOf(TableState()) }
         val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
@@ -429,6 +417,7 @@ fun CourseColumn(
     state: MutableState<TableState>,
     dayIndex: Int
 ) {
+    val navSuiteType by LocalNavSuiteType.current
     val showEditCourseDialog = rememberDialogState()
     val renderedTimeSlots = mutableSetOf<Int>()
     var noGridCells by layoutParams.noGridCells
@@ -468,7 +457,7 @@ fun CourseColumn(
     }
 
     fun editCourse(course: Course) {
-        if (scheduleParams.navSuiteType !in NavigationBarType) {
+        if (navSuiteType !in NavigationBarType) {
             selectCourse = course
             showEditCourseDialog.show()
         } else {

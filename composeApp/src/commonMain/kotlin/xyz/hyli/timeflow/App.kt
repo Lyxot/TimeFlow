@@ -9,28 +9,25 @@
 
 package xyz.hyli.timeflow
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
-import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isDesktop
+
+internal val LocalNavSuiteType = compositionLocalOf { mutableStateOf(NavigationSuiteType.None) }
 
 @Preview
 @Composable
@@ -50,37 +47,33 @@ internal fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) 
     }
     val navController = rememberNavController()
     val adaptiveInfo = currentWindowAdaptiveInfo()
-    val customNavSuiteType = with(adaptiveInfo) {
-        // use NavigationRail on landscape phone
-        NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo).let {
-            if (!windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
-                && windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
-            ) {
-                NavigationSuiteType.NavigationRail
-            } else {
-                it
+    val customNavSuiteType = remember(adaptiveInfo) {
+        mutableStateOf(
+            with(adaptiveInfo) {
+                // use NavigationRail on landscape phone
+                NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo).let {
+                    if (!windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+                        && windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+                    ) {
+                        NavigationSuiteType.NavigationRail
+                    } else {
+                        it
+                    }
+                }
             }
-        }
+        )
     }
-    AdaptiveNavigation(
-        navHostController = navController,
-        navSuiteType = customNavSuiteType
+    CompositionLocalProvider(
+        LocalNavSuiteType provides customNavSuiteType
     ) {
-        Box(
-            modifier = Modifier
-                .then(
-                    if (currentPlatform().isDesktop()) Modifier
-                    else Modifier.windowInsetsPadding(WindowInsets.statusBars)
-                )
-                .then(
-                    if (customNavSuiteType in NavigationBarType) Modifier.padding(horizontal = 8.dp)
-                    else Modifier
-                )
+        val navSuiteType by customNavSuiteType
+        AdaptiveNavigation(
+            navHostController = navController,
+            navSuiteType = navSuiteType
         ) {
             TimeFlowNavHost(
                 viewModel = viewModel,
                 navHostController = navController,
-                navSuiteType = customNavSuiteType,
             )
         }
     }

@@ -18,8 +18,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.outlined.EventNote
@@ -37,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -58,6 +65,7 @@ import timeflow.composeapp.generated.resources.page_schedule
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.page_today
 import xyz.hyli.timeflow.datastore.Course
+import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.ScheduleListScreen
@@ -68,6 +76,8 @@ import xyz.hyli.timeflow.ui.pages.settings.subpage.LicenseScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isAndroid
+import xyz.hyli.timeflow.utils.isIos
 import xyz.hyli.timeflow.utils.isMacOS
 
 enum class Destination {
@@ -123,17 +133,31 @@ fun AdaptiveNavigation(
     NavigationSuiteScaffold(
         state = state,
         layoutType = navSuiteType,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .ifThen(currentPlatform().isAndroid()) {
+                Modifier.displayCutoutPadding()
+            }
+            .ifThen(currentPlatform().isIos()) {
+                Modifier.windowInsetsPadding(
+                    WindowInsets.displayCutout.let {
+                        it.exclude(
+                            WindowInsets(
+                                left = it.asPaddingValues().calculateLeftPadding(
+                                    layoutDirection = LocalLayoutDirection.current
+                                )
+                            )
+                        )
+                    }
+                )
+            },
         navigationSuiteItems = {
             item(
                 modifier = Modifier
                     .testTag("ScheduleNavItem")
-                    .then(
-                        if (navSuiteType !in NavigationBarType && currentPlatform().isMacOS()) Modifier.padding(
-                            top = 28.dp
-                        )
-                    else Modifier
-                    ),
+                    .ifThen(navSuiteType !in NavigationBarType && currentPlatform().isMacOS()) {
+                        Modifier.padding(top = 28.dp)
+                    },
                 icon = { Icon(
                     if (currentPage == Destination.Schedule.name
                         || currentPage?.contains("EditCourseDestination") == true
@@ -186,7 +210,6 @@ fun AdaptiveNavigation(
 fun TimeFlowNavHost(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController,
-    navSuiteType: NavigationSuiteType
 ) {
     NavHost(
         modifier = Modifier.fillMaxSize(),
@@ -198,13 +221,7 @@ fun TimeFlowNavHost(
         popExitTransition = NavigationAnimation.exitFadeOut
     ) {
         composable(Destination.Today.name) { TodayScreen(viewModel) }
-        composable(Destination.Schedule.name) {
-            ScheduleScreen(
-                viewModel,
-                navHostController,
-                navSuiteType
-            )
-        }
+        composable(Destination.Schedule.name) { ScheduleScreen(viewModel, navHostController) }
         composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
         subScreenComposable(ScheduleDestination.ScheduleList.name) {
             ScheduleListScreen(viewModel, navHostController)

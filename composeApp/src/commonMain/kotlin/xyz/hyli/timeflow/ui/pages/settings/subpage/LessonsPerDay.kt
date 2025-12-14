@@ -15,11 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -63,12 +59,12 @@ import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
+import xyz.hyli.timeflow.ui.components.commonPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
-import xyz.hyli.timeflow.utils.isMacOS
 
 @Composable
 fun LessonsPerDayScreen(
@@ -91,11 +87,7 @@ fun LessonsPerDayScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (currentPlatform().isMacOS())
-                    Modifier.padding(vertical = 16.dp)
-                else Modifier
-            )
+            .commonPadding()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -476,15 +468,6 @@ fun LessonsPerDayScreen(
                     }
                 }
             }
-            Spacer(
-                modifier = Modifier.height(
-                    maxOf(
-                        WindowInsets.navigationBars.asPaddingValues()
-                            .calculateBottomPadding(),
-                        24.dp
-                    )
-                )
-            )
         }
     }
 }
