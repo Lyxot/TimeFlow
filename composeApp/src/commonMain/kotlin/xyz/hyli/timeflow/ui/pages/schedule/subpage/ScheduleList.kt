@@ -150,8 +150,12 @@ fun ScheduleListScreen(
                 PreferenceSection(
                     title = stringResource(Res.string.schedule_title_selected_schedule)
                 ) {
+                    val schedule =
+                        settings.schedule[settings.selectedSchedule]!!
                     BasePreference(
-                        title = settings.schedule[settings.selectedSchedule]?.name ?: "",
+                        title = schedule.name,
+                        subtitle = schedule.termStartDate.toString() + " ~ " +
+                                schedule.termEndDate.toString(),
                         onClick = {
                             navHostController.popBackStack()
                         }
@@ -208,6 +212,8 @@ fun ScheduleListScreen(
                             }
                             BasePreference(
                                 title = schedule.name,
+                                subtitle = schedule.termStartDate.toString() + " ~ " +
+                                        schedule.termEndDate.toString(),
                                 onClick = { onClick(uuid, showConfirmSelectScheduleDialog) }
                             ) {
                                 Icon(
