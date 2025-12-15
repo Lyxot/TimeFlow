@@ -81,7 +81,7 @@ fun ScheduleListScreen(
                 horizontalArrangement = Arrangement.End,
             ) {
                 AnimatedVisibility(
-                    visible = multipleSelectionMode,
+                    visible = multipleSelectionMode && selectedSchedules.isNotEmpty(),
                     enter = expandHorizontally(),
                     exit = shrinkHorizontally(),
                 ) {
