@@ -11,26 +11,28 @@ package xyz.hyli.timeflow.ui.pages.settings.subpage
 
 import androidx.collection.IntSet
 import androidx.collection.MutableIntSet
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.save
@@ -39,6 +41,7 @@ import timeflow.composeapp.generated.resources.settings_title_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_afternoon
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_evening
 import timeflow.composeapp.generated.resources.settings_title_lessons_time_morning
+import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_afternoon
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_evening
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
@@ -82,33 +85,27 @@ fun LessonsPerDayScreen(
     val eveningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.evening.size) }
     val isModified = remember { mutableStateOf(false) }
     val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(lessonTimePeriodInfo.value) {
+        if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
+            snackbarHostState.showSnackbar(
+                message = getString(Res.string.settings_warning_lessons_per_day_empty),
+                duration = SnackbarDuration.Indefinite
+            )
+        } else if (conflictSet.size > 0) {
+            snackbarHostState.showSnackbar(
+                message = getString(Res.string.settings_warning_lessons_time_conflict),
+                duration = SnackbarDuration.Indefinite
+            )
+        }
+    }
 
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
         title = {
-            if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
-                Text(
-                    text = stringResource(Res.string.settings_warning_lessons_per_day_empty),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            } else if (conflictSet.size > 0) {
-                Text(
-                    text = stringResource(Res.string.settings_warning_lessons_time_conflict),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
+            Text(
+                stringResource(Res.string.settings_title_schedule_lessons_per_day)
+            )
         },
         navigationIcon = {
             NavigationBackIcon(navHostController)
@@ -133,6 +130,18 @@ fun LessonsPerDayScreen(
                         contentDescription = stringResource(Res.string.save)
                     )
                 }
+            }
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.fillMaxWidth(0.75f)
+            ) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                )
             }
         },
     ) {

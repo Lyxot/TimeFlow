@@ -41,6 +41,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -127,6 +129,8 @@ fun ScheduleScreen(
     val schedule = settings.schedule[settings.selectedSchedule]
     val columns = if (schedule?.displayWeekends == true) 7 else 5
     val rows = schedule?.lessonTimePeriodInfo?.getTotalLessons()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     @Composable
     fun BoxScope.ScheduleScreenContent(
@@ -270,6 +274,12 @@ fun ScheduleScreen(
                 }
             },
             topAppBarType = TopAppBarType.CenterAligned,
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.fillMaxWidth(0.75f)
+                )
+            }
         ) {
             HorizontalPager(
                 state = pagerState,
@@ -333,7 +343,12 @@ fun ScheduleScreen(
                     ScheduleFAB(
                         modifier = Modifier.align(Alignment.BottomEnd),
                         viewModel = viewModel,
-                        visible = fabVisible
+                        visible = fabVisible,
+                        showMessage = { message ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        }
                     )
                 }
             }

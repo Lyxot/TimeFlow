@@ -57,6 +57,10 @@
     <string name="schedule_value_update_selected_schedule">是否将“%1$s”设置为当前课程表？</string>
     <string name="schedule_title_confirm_delete_schedule">删除课程表</string>
     <string name="schedule_value_confirm_delete_schedule">是否将以下课程表移入回收站？</string>
+    <string name="schedule_value_export_schedule_success">已成功导出课程表到：%1$s</string>
+    <string name="schedule_value_import_schedule_success">已成功导入课程表“%1$s”</string>
+    <string name="schedule_value_export_schedule_failed">导出课程表失败：%1$s</string>
+    <string name="schedule_value_import_schedule_failed">导入课程表失败：%1$s</string>
 
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>

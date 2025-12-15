@@ -78,6 +78,7 @@ import com.materialkolor.ktx.harmonize
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.path
 import io.github.vinceglb.filekit.readBytes
 import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.launch
@@ -89,6 +90,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.export
@@ -96,6 +98,10 @@ import timeflow.composeapp.generated.resources.friday
 import timeflow.composeapp.generated.resources.import
 import timeflow.composeapp.generated.resources.monday
 import timeflow.composeapp.generated.resources.saturday
+import timeflow.composeapp.generated.resources.schedule_value_export_schedule_failed
+import timeflow.composeapp.generated.resources.schedule_value_export_schedule_success
+import timeflow.composeapp.generated.resources.schedule_value_import_schedule_failed
+import timeflow.composeapp.generated.resources.schedule_value_import_schedule_success
 import timeflow.composeapp.generated.resources.schedule_warning_multiple_courses
 import timeflow.composeapp.generated.resources.sunday
 import timeflow.composeapp.generated.resources.thursday
@@ -532,7 +538,8 @@ private object RightBottomTriangleShape : Shape {
 fun ScheduleFAB(
     modifier: Modifier = Modifier,
     viewModel: TimeFlowViewModel,
-    visible: Boolean
+    visible: Boolean,
+    showMessage: (String) -> Unit,
 ) {
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]
@@ -566,7 +573,22 @@ fun ScheduleFAB(
         val saver = rememberFileSaverLauncher { file ->
             if (file != null) {
                 scope.launch {
-                    file.write(ProtoBuf.encodeToByteArray(schedule))
+                    try {
+                        file.write(ProtoBuf.encodeToByteArray(schedule))
+                        showMessage(
+                            getString(
+                                Res.string.schedule_value_export_schedule_success,
+                                file.path
+                            )
+                        )
+                    } catch (e: Exception) {
+                        showMessage(
+                            getString(
+                                Res.string.schedule_value_export_schedule_failed,
+                                e.message ?: ""
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -579,8 +601,19 @@ fun ScheduleFAB(
                     try {
                         val importedSchedule = ProtoBuf.decodeFromByteArray<Schedule>(bytes)
                         viewModel.createSchedule(importedSchedule)
+                        showMessage(
+                            getString(
+                                Res.string.schedule_value_import_schedule_success,
+                                importedSchedule.name
+                            )
+                        )
                     } catch (e: Exception) {
-                        println("Failed to import schedule: ${e.message}")
+                        showMessage(
+                            getString(
+                                Res.string.schedule_value_import_schedule_failed,
+                                e.message ?: ""
+                            )
+                        )
                     }
                 }
             }
