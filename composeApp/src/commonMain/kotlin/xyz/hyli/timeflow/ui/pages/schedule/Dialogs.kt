@@ -374,7 +374,7 @@ fun EditCourseDialog(
                     onClick = {
                         scheduleParams.viewModel.updateSchedule(
                             schedule = schedule.copy(
-                                courses = schedule.courses - course.value
+                                courses = schedule.courses - initValue
                             )
                         )
                         showEditCourseDialog.dismiss()

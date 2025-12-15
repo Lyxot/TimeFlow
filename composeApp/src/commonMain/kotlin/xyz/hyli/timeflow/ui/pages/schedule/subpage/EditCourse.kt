@@ -198,7 +198,7 @@ fun EditCourseScreen(
                     onClick = {
                         viewModel.updateSchedule(
                             schedule = schedule.copy(
-                                courses = schedule.courses - course.value
+                                courses = schedule.courses - initValue
                             )
                         )
                         navHostController.popBackStack()
