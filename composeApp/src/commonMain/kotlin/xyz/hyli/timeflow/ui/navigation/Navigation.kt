@@ -18,14 +18,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.outlined.EventNote
@@ -35,7 +29,9 @@ import androidx.compose.material.icons.outlined.CalendarViewDay
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
@@ -43,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -76,9 +71,8 @@ import xyz.hyli.timeflow.ui.pages.settings.subpage.LicenseScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isAndroid
-import xyz.hyli.timeflow.utils.isIos
 import xyz.hyli.timeflow.utils.isMacOS
+import xyz.hyli.timeflow.utils.isWindows
 
 enum class Destination {
     Schedule,
@@ -133,29 +127,18 @@ fun AdaptiveNavigation(
     NavigationSuiteScaffold(
         state = state,
         layoutType = navSuiteType,
-        modifier = Modifier
-            .fillMaxSize()
-            .ifThen(currentPlatform().isAndroid()) {
-                Modifier.displayCutoutPadding()
-            }
-            .ifThen(currentPlatform().isIos()) {
-                Modifier.windowInsetsPadding(
-                    WindowInsets.displayCutout.let {
-                        it.exclude(
-                            WindowInsets(
-                                left = it.asPaddingValues().calculateLeftPadding(
-                                    layoutDirection = LocalLayoutDirection.current
-                                )
-                            )
-                        )
-                    }
-                )
-            },
+        modifier = Modifier.fillMaxSize(),
+        navigationSuiteColors = NavigationSuiteDefaults.colors().let {
+            NavigationSuiteDefaults.colors(
+                navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                navigationDrawerContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            )
+        },
         navigationSuiteItems = {
             item(
                 modifier = Modifier
                     .testTag("ScheduleNavItem")
-                    .ifThen(navSuiteType !in NavigationBarType && currentPlatform().isMacOS()) {
+                    .ifThen(navSuiteType !in NavigationBarType && (currentPlatform().isMacOS() || currentPlatform().isWindows())) {
                         Modifier.padding(top = 28.dp)
                     },
                 icon = { Icon(
@@ -208,11 +191,12 @@ fun AdaptiveNavigation(
 @OptIn(ExperimentalSerializationApi::class)
 @Composable
 fun TimeFlowNavHost(
+    modifier: Modifier = Modifier,
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController,
 ) {
     NavHost(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         navController = navHostController,
         startDestination = Destination.Schedule.name,
         enterTransition = NavigationAnimation.enterFadeIn,

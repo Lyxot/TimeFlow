@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,13 +32,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,7 +72,6 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.all_week
-import timeflow.composeapp.generated.resources.back
 import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.even_week
 import timeflow.composeapp.generated.resources.odd_week
@@ -98,10 +98,13 @@ import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.ColorPicker
 import xyz.hyli.timeflow.ui.components.ColorPickerStyle
 import xyz.hyli.timeflow.ui.components.CustomColorButton
+import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.IntTextField
+import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.WeightedGrid
 import xyz.hyli.timeflow.ui.components.WeightedGridWithDrag
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.bottomPadding
+import xyz.hyli.timeflow.ui.components.navigationBarHorizontalPadding
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
@@ -110,6 +113,7 @@ enum class EditCourseStyle {
     Dialog
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditCourseScreen(
     viewModel: TimeFlowViewModel,
@@ -140,32 +144,19 @@ fun EditCourseScreen(
     val isWeekValid =
         remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .commonPadding()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = {
-                    navHostController.popBackStack()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = stringResource(Res.string.back)
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
             Text(
                 text =
                     if (initValue in schedule.courses) stringResource(Res.string.schedule_title_edit_course)
                     else stringResource(Res.string.schedule_title_add_course)
             )
-            Spacer(modifier = Modifier.weight(1f))
+        },
+        navigationIcon = {
+            NavigationBackIcon(navHostController)
+        },
+        actions = {
             IconButton(
                 onClick = {
                     confirmEditCourse(
@@ -184,10 +175,13 @@ fun EditCourseScreen(
                 )
             }
         }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .navigationBarHorizontalPadding()
+                .bottomPadding()
         ) {
             EditCourseContent(
                 style = EditCourseStyle.Screen,

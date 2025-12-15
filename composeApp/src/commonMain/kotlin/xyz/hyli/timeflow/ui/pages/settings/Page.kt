@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
@@ -87,6 +88,7 @@ import xyz.hyli.timeflow.datastore.Date
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.ui.components.BasePreference
+import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.Dependency
 import xyz.hyli.timeflow.ui.components.DialogInputValidator
 import xyz.hyli.timeflow.ui.components.MILLIS_PER_DAY
@@ -102,7 +104,7 @@ import xyz.hyli.timeflow.ui.components.PreferenceNumber
 import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
@@ -114,7 +116,7 @@ import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: TimeFlowViewModel,
@@ -123,346 +125,356 @@ fun SettingsScreen(
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val uriHandler = LocalUriHandler.current
-    PreferenceScreen(
-        modifier = Modifier
-            .fillMaxWidth()
-            .commonPadding()
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
+            Text(
+                text = stringResource(Res.string.page_settings),
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
     ) {
-        Text(
-            modifier = Modifier.padding(vertical = 8.dp),
-            text = stringResource(Res.string.page_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-        // General Settings
-        PreferenceSection(
-            title = stringResource(Res.string.settings_title_general)
+        PreferenceScreen(
+            modifier = Modifier
+                .fillMaxWidth()
+                .bottomPadding()
         ) {
-            // Theme Settings
-            val themeList = listOf(
-                stringResource(Res.string.settings_theme_system),
-                stringResource(Res.string.settings_theme_light),
-                stringResource(Res.string.settings_theme_dark)
-            )
-            PreferenceList(
-                style = PreferenceListStyle.Style.SegmentedButtons,
-                value = settings.theme,
-                onValueChange = {
-                    viewModel.updateTheme(it)
-                },
-                items = listOf(0, 1, 2),
-                itemTextProvider = { themeList[it] },
-                title = stringResource(Res.string.settings_title_theme)
-            )
-            // Dynamic Color Settings
-            val themeDynamicColorDependency =
-                Dependency.State(mutableStateOf(currentPlatform())) {
-                    it.supportDynamicColor()
-                }
-            PreferenceBool(
-                style = PreferenceBoolStyle.Style.Switch,
-                value = settings.themeDynamicColor,
-                onValueChange = {
-                    viewModel.updateThemeDynamicColor(it)
-                },
-                title = stringResource(Res.string.settings_title_theme_dynamic_color),
-                subtitle = stringResource(Res.string.settings_subtitle_theme_dynamic_color),
-                visible = themeDynamicColorDependency,
-            )
-            // Theme Color Settings
-            if (!settings.themeDynamicColor || !currentPlatform().supportDynamicColor()) {
-                PreferenceColor(
-                    value = Color(settings.themeColor),
+            // General Settings
+            PreferenceSection(
+                title = stringResource(Res.string.settings_title_general)
+            ) {
+                // Theme Settings
+                val themeList = listOf(
+                    stringResource(Res.string.settings_theme_system),
+                    stringResource(Res.string.settings_theme_light),
+                    stringResource(Res.string.settings_theme_dark)
+                )
+                PreferenceList(
+                    style = PreferenceListStyle.Style.SegmentedButtons,
+                    value = settings.theme,
                     onValueChange = {
-                        viewModel.updateThemeColor(it.toArgb())
+                        viewModel.updateTheme(it)
                     },
-                    title = stringResource(Res.string.settings_title_theme_color)
+                    items = listOf(0, 1, 2),
+                    itemTextProvider = { themeList[it] },
+                    title = stringResource(Res.string.settings_title_theme)
+                )
+                // Dynamic Color Settings
+                val themeDynamicColorDependency =
+                    Dependency.State(mutableStateOf(currentPlatform())) {
+                        it.supportDynamicColor()
+                    }
+                PreferenceBool(
+                    style = PreferenceBoolStyle.Style.Switch,
+                    value = settings.themeDynamicColor,
+                    onValueChange = {
+                        viewModel.updateThemeDynamicColor(it)
+                    },
+                    title = stringResource(Res.string.settings_title_theme_dynamic_color),
+                    subtitle = stringResource(Res.string.settings_subtitle_theme_dynamic_color),
+                    visible = themeDynamicColorDependency,
+                )
+                // Theme Color Settings
+                if (!settings.themeDynamicColor || !currentPlatform().supportDynamicColor()) {
+                    PreferenceColor(
+                        value = Color(settings.themeColor),
+                        onValueChange = {
+                            viewModel.updateThemeColor(it.toArgb())
+                        },
+                        title = stringResource(Res.string.settings_title_theme_color)
+                    )
+                }
+                // Current selected schedule settings
+                val selectedScheduleDependency = Dependency.State(settingsState) {
+                    it.schedule.values.any { !it.deleted }
+                }
+                PreferenceList(
+                    value = settings.selectedSchedule,
+                    onValueChange = {
+                        viewModel.updateSelectedSchedule(it)
+                    },
+                    items = settings.schedule.filter { !it.value.deleted }.keys.toList(),
+                    itemTextProvider = { settings.schedule[it]?.name ?: "" },
+                    title = stringResource(Res.string.settings_title_selected_schedule),
+                    subtitle =
+                        if (!settings.schedule.values.any { !it.deleted })
+                            stringResource(Res.string.settings_subtitle_schedule_empty)
+                        else
+                            null,
+                    enabled = selectedScheduleDependency
+                )
+                // Add New Schedule
+                val stringScheduleNameEmpty =
+                    stringResource(Res.string.settings_warning_schedule_name_empty)
+                PreferenceInputText(
+                    value = "",
+                    onValueChange = { newScheduleName ->
+                        if (newScheduleName.isNotEmpty()) {
+                            val newSchedule = Schedule(
+                                name = newScheduleName
+                            )
+                            viewModel.createSchedule(
+                                newSchedule
+                            )
+                        }
+                    },
+                    title = stringResource(Res.string.settings_title_create_schedule),
+                    subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
+                    validator = rememberDialogInputValidator(
+                        validate = {
+                            if (it.isNotEmpty())
+                                DialogInputValidator.Result.Valid
+                            else
+                                DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                        }
+                    )
                 )
             }
-            // Current selected schedule settings
-            val selectedScheduleDependency = Dependency.State(settingsState) {
-                it.schedule.values.any { !it.deleted }
+            PreferenceDivider()
+            // Schedule Settings
+            val scheduleDependency = Dependency.State(settingsState) {
+                it.selectedSchedule.isNotEmpty()
             }
-            PreferenceList(
-                value = settings.selectedSchedule,
-                onValueChange = {
-                    viewModel.updateSelectedSchedule(it)
-                },
-                items = settings.schedule.filter { !it.value.deleted }.keys.toList(),
-                itemTextProvider = { settings.schedule[it]?.name ?: "" },
-                title = stringResource(Res.string.settings_title_selected_schedule),
+            PreferenceSection(
+                title = stringResource(Res.string.settings_title_schedule),
                 subtitle =
-                    if (!settings.schedule.values.any { !it.deleted })
+                    if (settings.selectedSchedule.isNotEmpty())
+                        null
+                    else if (!settings.schedule.values.any { !it.deleted })
                         stringResource(Res.string.settings_subtitle_schedule_empty)
                     else
-                        null,
-                enabled = selectedScheduleDependency
-            )
-            // Add New Schedule
-            val stringScheduleNameEmpty = stringResource(Res.string.settings_warning_schedule_name_empty)
-            PreferenceInputText(
-                value = "",
-                onValueChange = { newScheduleName ->
-                    if (newScheduleName.isNotEmpty()) {
-                        val newSchedule = Schedule(
-                            name = newScheduleName
-                        )
-                        viewModel.createSchedule(
-                            newSchedule
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_create_schedule),
-                subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
-                validator = rememberDialogInputValidator(
-                    validate = {
-                        if (it.isNotEmpty())
-                            DialogInputValidator.Result.Valid
-                        else
-                            DialogInputValidator.Result.Error(stringScheduleNameEmpty)
-                    }
-                )
-            )
-        }
-        PreferenceDivider()
-        // Schedule Settings
-        val scheduleDependency = Dependency.State(settingsState) {
-            it.selectedSchedule.isNotEmpty()
-        }
-        PreferenceSection(
-            title = stringResource(Res.string.settings_title_schedule),
-            subtitle =
-                if (settings.selectedSchedule.isNotEmpty())
-                    null
-                else if (!settings.schedule.values.any { !it.deleted })
-                    stringResource(Res.string.settings_subtitle_schedule_empty)
-                else
-                    stringResource(Res.string.settings_subtitle_schedule_not_selected),
-            enabled = scheduleDependency
-        ) {
-            // Schedule Name
-            PreferenceInputText(
-                value = settings.schedule[settings.selectedSchedule]?.name ?: "",
-                onValueChange = { newName ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(name = newName)
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_name),
+                        stringResource(Res.string.settings_subtitle_schedule_not_selected),
                 enabled = scheduleDependency
-            )
-            // Term Start and End Dates
-            PreferenceDate(
-                value = settings.schedule[settings.selectedSchedule]?.termStartDate?.toLocalDate()
-                    ?: Schedule.defaultTermStartDate().toLocalDate(),
-                onValueChange = { newDate ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        val newTermStartDate = Date.fromLocalDate(newDate)
-                        val currentTermEndDate = currentSchedule.termEndDate
-                        val newTermEndDate =
-                            if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
-                                currentTermEndDate
-                            } else newTermStartDate.addWeeks(currentSchedule.totalWeeks())
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(
-                                termStartDate = newTermStartDate,
-                                termEndDate = newTermEndDate
-                            )
-                        )
-                    }
-                },
-
-                title = stringResource(Res.string.settings_title_schedule_term_start_date),
-                enabled = scheduleDependency
-            )
-            PreferenceDate(
-                value = settings.schedule[settings.selectedSchedule]?.termEndDate?.toLocalDate()
-                    ?: Schedule.defaultTermEndDate().toLocalDate(),
-                onValueChange = { newDate ->
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(termEndDate = Date.fromLocalDate(newDate))
-                        )
-                    }
-                },
-                selectableDates = object : SelectableDates {
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+            ) {
+                // Schedule Name
+                PreferenceInputText(
+                    value = settings.schedule[settings.selectedSchedule]?.name ?: "",
+                    onValueChange = { newName ->
                         val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        val termStartDate = currentSchedule?.termStartDate
-                            ?: Schedule.defaultTermStartDate()
-                        val epochDays = (utcTimeMillis / (MILLIS_PER_DAY)).toInt()
-                        val date = LocalDate.fromEpochDays(epochDays)
-                        return termStartDate.weeksTill(date) in 1..60
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_term_end_date),
-                enabled = scheduleDependency
-            )
-            // Term Weeks
-            PreferenceNumber(
-                style =
-                    if (currentPlatform().isDesktop())
-                        PreferenceNumberStyle.TextField()
-                    else
-                        PreferenceNumberStyle.Wheel,
-                value = settings.schedule[settings.selectedSchedule]?.totalWeeks()
-                    ?: 16,
-                min = 1,
-                max = 60,
-                onValueChange = {
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        val newEndDate = currentSchedule.termStartDate.addWeeks(it)
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(termEndDate = newEndDate)
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_schedule_total_weeks),
-                enabled = scheduleDependency,
-            )
-            // Lessons Per Day Settings
-            BasePreference(
-                title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
-                subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
-                onClick = {
-                    navHostController.navigate(SettingsDestination.LessonsPerDay.name)
-                },
-                enabled = scheduleDependency
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                    contentDescription = null
+                        if (currentSchedule != null) {
+                            viewModel.updateSchedule(
+                                schedule = currentSchedule.copy(name = newName)
+                            )
+                        }
+                    },
+                    title = stringResource(Res.string.settings_title_schedule_name),
+                    enabled = scheduleDependency
                 )
-            }
-            PreferenceBool(
-                style = PreferenceBoolStyle.Style.Switch,
-                value = settings.schedule[settings.selectedSchedule]?.displayWeekends == true,
-                onValueChange = {
-                    val currentSchedule = settings.schedule[settings.selectedSchedule]
-                    if (currentSchedule != null) {
-                        viewModel.updateSchedule(
-                            schedule = currentSchedule.copy(displayWeekends = it)
-                        )
-                    }
-                },
-                title = stringResource(Res.string.settings_title_display_weekends),
-                enabled = scheduleDependency
-            )
-        }
-        PreferenceDivider()
-        // Other
-        PreferenceSection(
-            title = stringResource(Res.string.settings_title_other)
-        ) {
-            BasePreference(
-                title = stringResource(Res.string.settings_title_about),
-                onClick = {
-                    navHostController.navigate(SettingsDestination.About.name)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                    contentDescription = null
+                // Term Start and End Dates
+                PreferenceDate(
+                    value = settings.schedule[settings.selectedSchedule]?.termStartDate?.toLocalDate()
+                        ?: Schedule.defaultTermStartDate().toLocalDate(),
+                    onValueChange = { newDate ->
+                        val currentSchedule = settings.schedule[settings.selectedSchedule]
+                        if (currentSchedule != null) {
+                            val newTermStartDate = Date.fromLocalDate(newDate)
+                            val currentTermEndDate = currentSchedule.termEndDate
+                            val newTermEndDate =
+                                if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
+                                    currentTermEndDate
+                                } else newTermStartDate.addWeeks(currentSchedule.totalWeeks())
+                            viewModel.updateSchedule(
+                                schedule = currentSchedule.copy(
+                                    termStartDate = newTermStartDate,
+                                    termEndDate = newTermEndDate
+                                )
+                            )
+                        }
+                    },
+
+                    title = stringResource(Res.string.settings_title_schedule_term_start_date),
+                    enabled = scheduleDependency
                 )
-            }
-            val configPathDependency =
-                Dependency.State(mutableStateOf(currentPlatform())) {
-                    it.isDesktop()
-                }
-            BasePreference(
-                title = stringResource(Res.string.settings_title_config_path),
-                subtitle = settingsFilePath,
-                onClick = {
-                    showFileInFileManager(settingsFilePath)
-                },
-                visible = configPathDependency
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Launch,
-                    contentDescription = null
+                PreferenceDate(
+                    value = settings.schedule[settings.selectedSchedule]?.termEndDate?.toLocalDate()
+                        ?: Schedule.defaultTermEndDate().toLocalDate(),
+                    onValueChange = { newDate ->
+                        val currentSchedule = settings.schedule[settings.selectedSchedule]
+                        if (currentSchedule != null) {
+                            viewModel.updateSchedule(
+                                schedule = currentSchedule.copy(
+                                    termEndDate = Date.fromLocalDate(
+                                        newDate
+                                    )
+                                )
+                            )
+                        }
+                    },
+                    selectableDates = object : SelectableDates {
+                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                            val currentSchedule = settings.schedule[settings.selectedSchedule]
+                            val termStartDate = currentSchedule?.termStartDate
+                                ?: Schedule.defaultTermStartDate()
+                            val epochDays = (utcTimeMillis / (MILLIS_PER_DAY)).toInt()
+                            val date = LocalDate.fromEpochDays(epochDays)
+                            return termStartDate.weeksTill(date) in 1..60
+                        }
+                    },
+                    title = stringResource(Res.string.settings_title_schedule_term_end_date),
+                    enabled = scheduleDependency
                 )
-            }
-            val urlDonate = stringResource(Res.string.url_donate)
-            BasePreference(
-                title = stringResource(Res.string.settings_title_donate),
-                onClick = {
-                    uriHandler.openUri(urlDonate)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Launch,
-                    contentDescription = null
+                // Term Weeks
+                PreferenceNumber(
+                    style =
+                        if (currentPlatform().isDesktop())
+                            PreferenceNumberStyle.TextField()
+                        else
+                            PreferenceNumberStyle.Wheel,
+                    value = settings.schedule[settings.selectedSchedule]?.totalWeeks()
+                        ?: 16,
+                    min = 1,
+                    max = 60,
+                    onValueChange = {
+                        val currentSchedule = settings.schedule[settings.selectedSchedule]
+                        if (currentSchedule != null) {
+                            val newEndDate = currentSchedule.termStartDate.addWeeks(it)
+                            viewModel.updateSchedule(
+                                schedule = currentSchedule.copy(termEndDate = newEndDate)
+                            )
+                        }
+                    },
+                    title = stringResource(Res.string.settings_title_schedule_total_weeks),
+                    enabled = scheduleDependency,
                 )
-            }
-            val urlFeedback = stringResource(Res.string.url_feedback)
-            BasePreference(
-                title = stringResource(Res.string.settings_title_feedback),
-                onClick = {
-                    uriHandler.openUri(urlFeedback)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Launch,
-                    contentDescription = null
-                )
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val isDark by LocalThemeIsDark.current
-            Icon(
-                modifier = Modifier
-                    .size(192.dp)
-                    .clip(RoundedCornerShape(45.dp)),
-                imageVector = vectorResource(
-                    if (isDark) Res.drawable.ic_launcher_night
-                    else Res.drawable.ic_launcher
-                ),
-                contentDescription = null,
-                tint = Color.Unspecified,
-            )
-            Text(
-                text = BuildConfig.APP_NAME,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}(${BuildConfig.APP_VERSION_CODE})")
-                Text(
-                    text = "©️ ${
-                        Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
-                            TimeZone.currentSystemDefault()
-                        ).year
-                    } ${BuildConfig.AUTHOR}"
-                )
-            }
-            val urlChangelog =
-                stringResource(Res.string.url_changelog, BuildConfig.APP_VERSION_NAME)
-            ElevatedButton(
-                onClick = {
-                    uriHandler.openUri(urlChangelog)
-                }
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                // Lessons Per Day Settings
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
+                    subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
+                    onClick = {
+                        navHostController.navigate(SettingsDestination.LessonsPerDay.name)
+                    },
+                    enabled = scheduleDependency
                 ) {
                     Icon(
-                        imageVector = Icons.Default.History,
+                        imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
                         contentDescription = null
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(Res.string.settings_title_changelog))
+                }
+                PreferenceBool(
+                    style = PreferenceBoolStyle.Style.Switch,
+                    value = settings.schedule[settings.selectedSchedule]?.displayWeekends == true,
+                    onValueChange = {
+                        val currentSchedule = settings.schedule[settings.selectedSchedule]
+                        if (currentSchedule != null) {
+                            viewModel.updateSchedule(
+                                schedule = currentSchedule.copy(displayWeekends = it)
+                            )
+                        }
+                    },
+                    title = stringResource(Res.string.settings_title_display_weekends),
+                    enabled = scheduleDependency
+                )
+            }
+            PreferenceDivider()
+            // Other
+            PreferenceSection(
+                title = stringResource(Res.string.settings_title_other)
+            ) {
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_about),
+                    onClick = {
+                        navHostController.navigate(SettingsDestination.About.name)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                        contentDescription = null
+                    )
+                }
+                val configPathDependency =
+                    Dependency.State(mutableStateOf(currentPlatform())) {
+                        it.isDesktop()
+                    }
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_config_path),
+                    subtitle = settingsFilePath,
+                    onClick = {
+                        showFileInFileManager(settingsFilePath)
+                    },
+                    visible = configPathDependency
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        contentDescription = null
+                    )
+                }
+                val urlDonate = stringResource(Res.string.url_donate)
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_donate),
+                    onClick = {
+                        uriHandler.openUri(urlDonate)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        contentDescription = null
+                    )
+                }
+                val urlFeedback = stringResource(Res.string.url_feedback)
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_feedback),
+                    onClick = {
+                        uriHandler.openUri(urlFeedback)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        contentDescription = null
+                    )
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val isDark by LocalThemeIsDark.current
+                Icon(
+                    modifier = Modifier
+                        .size(192.dp)
+                        .clip(RoundedCornerShape(45.dp)),
+                    imageVector = vectorResource(
+                        if (isDark) Res.drawable.ic_launcher_night
+                        else Res.drawable.ic_launcher
+                    ),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                )
+                Text(
+                    text = BuildConfig.APP_NAME,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}(${BuildConfig.APP_VERSION_CODE})")
+                    Text(
+                        text = "©️ ${
+                            Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
+                                TimeZone.currentSystemDefault()
+                            ).year
+                        } ${BuildConfig.AUTHOR}"
+                    )
+                }
+                val urlChangelog =
+                    stringResource(Res.string.url_changelog, BuildConfig.APP_VERSION_NAME)
+                ElevatedButton(
+                    onClick = {
+                        uriHandler.openUri(urlChangelog)
+                    }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.settings_title_changelog))
+                    }
                 }
             }
         }

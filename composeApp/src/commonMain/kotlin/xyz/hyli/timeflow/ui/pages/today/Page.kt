@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,13 +24,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -74,13 +74,14 @@ import timeflow.composeapp.generated.resources.wednesday_long
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Time
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.CustomScaffold
+import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(
     viewModel: TimeFlowViewModel
@@ -123,30 +124,22 @@ fun TodayScreen(
         Res.string.sunday_long
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .commonPadding()
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
+            Text(
+                text = stringResource(
+                    Res.string.today_value_date,
+                    today.month.number,
+                    today.day,
+                    stringResource(weekdays[today.dayOfWeek.ordinal])
+                ) + " " + stringResource(Res.string.schedule_value_course_week, currentWeek),
+            )
+        }
     ) {
-        Text(
-            modifier = Modifier.padding(vertical = 8.dp),
-            text = stringResource(
-                Res.string.today_value_date,
-                today.month.number,
-                today.day,
-                stringResource(weekdays[today.dayOfWeek.ordinal])
-            ),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        Text(
-            text = stringResource(Res.string.schedule_value_course_week, currentWeek),
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
         if (todayCourses.isEmpty()) {
             Text(
+                modifier = Modifier.padding(horizontal = 16.dp),
                 text = stringResource(Res.string.today_title_no_courses),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
@@ -171,10 +164,12 @@ fun TimelineCourseList(
     }
     var currentLessonFlag by remember { mutableStateOf(false) }
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp)
+    LazyColumn(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .bottomPadding()
     ) {
-        courses.forEachIndexed { index, course ->
+        itemsIndexed(courses) { index, course ->
             val startTime = lessonTimePeriodInfo.getLessonByIndex(course.time.start).start
             val endTime = lessonTimePeriodInfo.getLessonByIndex(course.time.end).end
             val isPast = currentTime >= endTime

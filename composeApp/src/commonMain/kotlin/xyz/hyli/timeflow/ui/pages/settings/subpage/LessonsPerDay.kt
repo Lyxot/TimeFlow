@@ -12,15 +12,13 @@ package xyz.hyli.timeflow.ui.pages.settings.subpage
 import androidx.collection.IntSet
 import androidx.collection.MutableIntSet
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,13 +28,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.back
 import timeflow.composeapp.generated.resources.save
 import timeflow.composeapp.generated.resources.schedule_value_course_time
 import timeflow.composeapp.generated.resources.settings_title_lessons_per_day
@@ -52,6 +48,8 @@ import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.LessonTimePeriodInfo
 import xyz.hyli.timeflow.datastore.Time
 import xyz.hyli.timeflow.ui.components.BasePreference
+import xyz.hyli.timeflow.ui.components.CustomScaffold
+import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.PreferenceDivider
 import xyz.hyli.timeflow.ui.components.PreferenceNumber
 import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
@@ -59,13 +57,14 @@ import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
 import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LessonsPerDayScreen(
     viewModel: TimeFlowViewModel,
@@ -84,26 +83,9 @@ fun LessonsPerDayScreen(
     val isModified = remember { mutableStateOf(false) }
     val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .commonPadding()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = {
-                    navHostController.popBackStack()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = stringResource(Res.string.back)
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
             if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
                 Text(
                     text = stringResource(Res.string.settings_warning_lessons_per_day_empty),
@@ -127,7 +109,11 @@ fun LessonsPerDayScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
+        },
+        navigationIcon = {
+            NavigationBackIcon(navHostController)
+        },
+        actions = {
             if (isModified.value) {
                 IconButton(
                     onClick = {
@@ -148,9 +134,12 @@ fun LessonsPerDayScreen(
                     )
                 }
             }
-        }
+        },
+    ) {
         PreferenceScreen(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .bottomPadding()
         ) {
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_lessons_per_day)

@@ -12,18 +12,16 @@ package xyz.hyli.timeflow.ui.pages.settings.subpage
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,7 +47,6 @@ import timeflow.composeapp.generated.resources.about_title_license_notice
 import timeflow.composeapp.generated.resources.about_title_source_code
 import timeflow.composeapp.generated.resources.about_value_description
 import timeflow.composeapp.generated.resources.about_value_download
-import timeflow.composeapp.generated.resources.back
 import timeflow.composeapp.generated.resources.ic_launcher
 import timeflow.composeapp.generated.resources.ic_launcher_night
 import timeflow.composeapp.generated.resources.settings_title_about
@@ -58,13 +55,16 @@ import timeflow.composeapp.generated.resources.url_github_repository
 import timeflow.composeapp.generated.resources.url_homepage
 import timeflow.composeapp.generated.resources.url_license
 import xyz.hyli.timeflow.BuildConfig
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.CustomScaffold
+import xyz.hyli.timeflow.ui.components.NavigationBackIcon
+import xyz.hyli.timeflow.ui.components.bottomPadding
+import xyz.hyli.timeflow.ui.components.navigationBarHorizontalPadding
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(navHostController: NavHostController) {
     val isDark by LocalThemeIsDark.current
@@ -73,149 +73,138 @@ fun AboutScreen(navHostController: NavHostController) {
     val urlProfile = stringResource(Res.string.url_github_profile)
     val urlSourceCode = stringResource(Res.string.url_github_repository)
     val urlLicense = stringResource(Res.string.url_license)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .commonPadding(),
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
+            Text(stringResource(Res.string.settings_title_about))
+        },
+        navigationIcon = {
+            NavigationBackIcon(navHostController)
+        }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarHorizontalPadding()
+                .bottomPadding(),
         ) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    IconButton(
-                        onClick = {
-                            navHostController.popBackStack()
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(Res.string.back)
-                        )
+                Icon(
+                    modifier = Modifier
+                        .size(192.dp)
+                        .clip(RoundedCornerShape(45.dp))
+                        .align(Alignment.CenterHorizontally),
+                    imageVector = vectorResource(
+                        if (isDark) Res.drawable.ic_launcher_night
+                        else Res.drawable.ic_launcher
+                    ),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    text = BuildConfig.APP_NAME,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    text = "©️ ${
+                        Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
+                            TimeZone.currentSystemDefault()
+                        ).year
+                    } ${BuildConfig.AUTHOR}",
+                )
+                TextButton(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    shape = ButtonDefaults.shape,
+                    onClick = {
+                        uriHandler.openUri(urlHomepage)
                     }
+                ) {
+                    Text(
+                        text = stringResource(Res.string.url_homepage),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-                Text(stringResource(Res.string.settings_title_about))
-                Spacer(Modifier.weight(1f))
+                Text(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    text = stringResource(Res.string.about_value_description)
+                )
+                Text(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    text = stringResource(Res.string.about_value_download)
+                )
             }
-
-            Icon(
-                modifier = Modifier
-                    .size(192.dp)
-                    .clip(RoundedCornerShape(45.dp))
-                    .align(Alignment.CenterHorizontally),
-                imageVector = vectorResource(
-                    if (isDark) Res.drawable.ic_launcher_night
-                    else Res.drawable.ic_launcher
-                ),
-                contentDescription = null,
-                tint = Color.Unspecified,
-            )
-            Text(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                text = BuildConfig.APP_NAME,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Text(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                text = "©️ ${
-                    Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
-                        TimeZone.currentSystemDefault()
-                    ).year
-                } ${BuildConfig.AUTHOR}",
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(Res.string.about_title_author))
+                TextButton(
+                    shape = ButtonDefaults.shape,
+                    onClick = {
+                        uriHandler.openUri(urlProfile)
+                    }
+                ) {
+                    Text(
+                        text = "@${BuildConfig.AUTHOR}",
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
             TextButton(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier = Modifier.padding(start = 4.dp),
                 shape = ButtonDefaults.shape,
                 onClick = {
                     uriHandler.openUri(urlHomepage)
                 }
             ) {
                 Text(
-                    text = stringResource(Res.string.url_homepage),
+                    text = stringResource(Res.string.about_title_homepage),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                text = stringResource(Res.string.about_value_description)
-            )
-            Text(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                text = stringResource(Res.string.about_value_download)
-            )
-        }
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(stringResource(Res.string.about_title_author))
             TextButton(
+                modifier = Modifier.padding(start = 4.dp),
                 shape = ButtonDefaults.shape,
                 onClick = {
-                    uriHandler.openUri(urlProfile)
+                    uriHandler.openUri(urlSourceCode)
                 }
             ) {
                 Text(
-                    text = "@${BuildConfig.AUTHOR}",
+                    text = stringResource(Res.string.about_title_source_code),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-        }
-        TextButton(
-            modifier = Modifier.padding(start = 4.dp),
-            shape = ButtonDefaults.shape,
-            onClick = {
-                uriHandler.openUri(urlHomepage)
+            TextButton(
+                modifier = Modifier.padding(start = 4.dp),
+                shape = ButtonDefaults.shape,
+                onClick = {
+                    uriHandler.openUri(urlLicense)
+                }
+            ) {
+                Text(
+                    text = stringResource(Res.string.about_title_license),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        ) {
-            Text(
-                text = stringResource(Res.string.about_title_homepage),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        TextButton(
-            modifier = Modifier.padding(start = 4.dp),
-            shape = ButtonDefaults.shape,
-            onClick = {
-                uriHandler.openUri(urlSourceCode)
+            TextButton(
+                modifier = Modifier.padding(start = 4.dp),
+                shape = ButtonDefaults.shape,
+                onClick = {
+                    navHostController.navigate(SettingsDestination.License.name)
+                }
+            ) {
+                Text(
+                    text = stringResource(Res.string.about_title_license_notice),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        ) {
-            Text(
-                text = stringResource(Res.string.about_title_source_code),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        TextButton(
-            modifier = Modifier.padding(start = 4.dp),
-            shape = ButtonDefaults.shape,
-            onClick = {
-                uriHandler.openUri(urlLicense)
-            }
-        ) {
-            Text(
-                text = stringResource(Res.string.about_title_license),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        TextButton(
-            modifier = Modifier.padding(start = 4.dp),
-            shape = ButtonDefaults.shape,
-            onClick = {
-                navHostController.navigate(SettingsDestination.License.name)
-            }
-        ) {
-            Text(
-                text = stringResource(Res.string.about_title_license_notice),
-                color = MaterialTheme.colorScheme.primary
-            )
         }
     }
 }

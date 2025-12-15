@@ -9,51 +9,49 @@
 
 package xyz.hyli.timeflow.ui.pages.settings.subpage
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.back
-import xyz.hyli.timeflow.ui.components.commonPadding
+import timeflow.composeapp.generated.resources.about_title_license_notice
+import xyz.hyli.timeflow.ui.components.CustomScaffold
+import xyz.hyli.timeflow.ui.components.NavigationBackIcon
+import xyz.hyli.timeflow.ui.components.bottomPadding
+import xyz.hyli.timeflow.ui.components.navigationBarHorizontalPadding
 import xyz.hyli.timeflow.utils.getLibrariesState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicenseScreen(navHostController: NavHostController) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .commonPadding()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = {
-                    navHostController.popBackStack()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = stringResource(Res.string.back)
-                )
-            }
+    val libraries by getLibrariesState()
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
+            Text(
+                text = stringResource(Res.string.about_title_license_notice)
+            )
+        },
+        navigationIcon = {
+            NavigationBackIcon(navHostController)
         }
-        val libraries by getLibrariesState()
-        LibrariesContainer(libraries, Modifier.fillMaxSize())
+    ) {
+        LibrariesContainer(
+            libraries = libraries,
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarHorizontalPadding(),
+            footer = {
+                item {
+                    Spacer(Modifier.bottomPadding())
+                }
+            }
+        )
     }
 }

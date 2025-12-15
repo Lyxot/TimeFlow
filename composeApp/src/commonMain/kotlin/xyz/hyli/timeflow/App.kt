@@ -9,6 +9,7 @@
 
 package xyz.hyli.timeflow
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -19,10 +20,15 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
+import xyz.hyli.timeflow.ui.components.drawRoundedCornerBackground
+import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
+import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -38,6 +44,7 @@ internal fun App(
     content = AppContent(viewModel)
 )
 
+@Suppress("ComposableNaming")
 @Composable
 internal fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) = {
     LaunchedEffect(viewModel.settings.value.initialized) {
@@ -72,6 +79,17 @@ internal fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) 
             navSuiteType = navSuiteType
         ) {
             TimeFlowNavHost(
+                modifier = Modifier.ifThen(navSuiteType !in NavigationBarType) {
+                    Modifier
+                        .drawRoundedCornerBackground(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            cornerRadius = 24.dp,
+                            topStart = true,
+                            topEnd = false,
+                            bottomStart = true,
+                            bottomEnd = false
+                        )
+                },
                 viewModel = viewModel,
                 navHostController = navController,
             )

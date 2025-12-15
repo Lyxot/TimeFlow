@@ -15,16 +15,16 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,21 +41,23 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
-import timeflow.composeapp.generated.resources.back
 import timeflow.composeapp.generated.resources.schedule_title_all_schedules
 import timeflow.composeapp.generated.resources.schedule_title_other_schedules
 import timeflow.composeapp.generated.resources.schedule_title_selected_schedule
 import xyz.hyli.timeflow.ui.components.BasePreference
+import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.DialogStateNoData
+import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.PreferenceDivider
 import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
-import xyz.hyli.timeflow.ui.components.commonPadding
+import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmSelectScheduleDialog
 import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleListScreen(
     viewModel: TimeFlowViewModel,
@@ -64,39 +66,18 @@ fun ScheduleListScreen(
     val settings by viewModel.settings.collectAsState()
     var multipleSelectionMode by remember { mutableStateOf(false) }
     val selectedSchedules = remember { mutableStateSetOf<String>() }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .commonPadding()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                IconButton(
-                    onClick = {
-                        navHostController.popBackStack()
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = stringResource(Res.string.back)
-                    )
-                }
-            }
+    CustomScaffold(
+        modifier = Modifier.fillMaxSize(),
+        title = {
             Text(
                 text = stringResource(Res.string.schedule_title_all_schedules)
             )
+        },
+        navigationIcon = {
+            NavigationBackIcon(navHostController)
+        },
+        actions = {
             Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .animateContentSize(),
                 horizontalArrangement = Arrangement.End,
             ) {
                 AnimatedVisibility(
@@ -157,8 +138,11 @@ fun ScheduleListScreen(
                 }
             }
         }
+    ) {
         PreferenceScreen(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .bottomPadding()
         ) {
             if (settings.selectedSchedule.isNotEmpty()
                 && settings.schedule[settings.selectedSchedule]?.deleted == false
