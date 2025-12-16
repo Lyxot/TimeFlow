@@ -91,6 +91,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":utils"))
             implementation(project(":data"))
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.core)

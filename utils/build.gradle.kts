@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.multiplatform)
-    alias(libs.plugins.kotlinx.serialization)
     id("com.android.library")
 }
 
@@ -54,9 +53,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":utils"))
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.serialization.protobuf)
+
+        }
+
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinx.browser)
         }
     }
 
@@ -70,7 +71,7 @@ kotlin {
 }
 
 android {
-    namespace = "xyz.hyli.timeflow.data"
+    namespace = "xyz.hyli.timeflow.utils"
     compileSdk = app.versions.compileSdk.get().toInt()
     defaultConfig {
         minSdk = app.versions.minSdk.get().toInt()

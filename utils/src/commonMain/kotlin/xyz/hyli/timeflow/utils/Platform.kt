@@ -18,10 +18,8 @@ import kotlin.contracts.contract
 
 sealed class Platform {
     abstract val name: String // don't change, it's actually an ID
-    abstract val arch: Arch
 
-    val nameAndArch get() = "$name ${arch.displayName}"
-    final override fun toString(): String = nameAndArch
+    final override fun toString(): String = name
 
     ///////////////////////////////////////////////////////////////////////////
     // mobile
@@ -30,7 +28,6 @@ sealed class Platform {
     sealed class Mobile : Platform()
 
     data class Android(
-        override val arch: Arch,
         val supportDynamicColor: Boolean,
     ) : Mobile() {
         override val name: String get() = "Android"
@@ -38,7 +35,6 @@ sealed class Platform {
 
     data object Ios : Mobile() {
         override val name: String get() = "iOS"
-        override val arch: Arch get() = Arch.AARCH64
     }
 
 
@@ -50,17 +46,17 @@ sealed class Platform {
         override val name: String
     ) : Platform()
 
-    data class Windows(
-        override val arch: Arch
-    ) : Desktop("Windows")
+    class Windows : Desktop("Windows")
 
-    data class MacOS(
-        override val arch: Arch
-    ) : Desktop("macOS")
+    class MacOS : Desktop("macOS")
 
-    data class Linux(
-        override val arch: Arch
-    ) : Desktop("Linux")
+    class Linux : Desktop("Linux")
+
+    data class Wasm(
+        val userAgent: String,
+    ) : Platform() {
+        override val name: String get() = "Wasm"
+    }
 }
 
 
@@ -82,43 +78,7 @@ fun currentPlatformDesktop(): Platform.Desktop {
     return platform
 }
 
-enum class ArchFamily {
-    X86,
-    AARCH,
-}
-
-// It's actually ABI
-enum class Arch(
-    val displayName: String, // Don't change, used by the server
-    val family: ArchFamily,
-    val addressSizeBits: Int,
-) {
-    /**
-     * macOS, Windows, Android
-     */
-    X86_64("x86_64", ArchFamily.X86, 64),
-
-    /**
-     * macOS
-     */
-    AARCH64("aarch64", ArchFamily.AARCH, 64),
-
-    /**
-     * AArch32 的一个细分 ABI. 只有很久的手机或电视才会用.
-     */
-    ARMV7A("armeabi-v7a", ArchFamily.AARCH, 32),
-
-    /**
-     * AArch64 的一个细分 ABI. 目前绝大多数手机都是这个.
-     */
-    ARMV8A("arm64-v8a", ArchFamily.AARCH, 64),
-}
-
 internal expect fun currentPlatformImpl(): Platform
-
-inline fun Platform.isAArch(): Boolean = this.arch.family == ArchFamily.AARCH
-
-inline fun Platform.is64bit(): Boolean = this.arch.addressSizeBits == 64
 
 @OptIn(ExperimentalContracts::class)
 inline fun Platform.isDesktop(): Boolean {
@@ -154,6 +114,12 @@ inline fun Platform.isMobile(): Boolean {
 inline fun Platform.isAndroid(): Boolean {
     contract { returns(true) implies (this@isAndroid is Platform.Android) }
     return this is Platform.Android
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun Platform.isWasm(): Boolean {
+    contract { returns(true) implies (this@isWasm is Platform.Wasm) }
+    return this is Platform.Wasm
 }
 
 inline fun Platform.supportDynamicColor(): Boolean {

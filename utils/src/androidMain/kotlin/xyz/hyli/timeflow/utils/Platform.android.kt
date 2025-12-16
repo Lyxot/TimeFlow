@@ -7,10 +7,11 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow
+package xyz.hyli.timeflow.utils
 
-class WasmPlatform: Platform {
-    override val name: String = "Web with Kotlin/Wasm"
+import android.os.Build
+
+internal actual fun currentPlatformImpl(): Platform {
+    val supportDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    return Platform.Android(supportDynamicColor)
 }
-
-actual fun getPlatform(): Platform = WasmPlatform()
