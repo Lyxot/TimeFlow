@@ -19,6 +19,8 @@ import okio.BufferedSource
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.use
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Settings
 
 expect val platformFileSystem: FileSystem
 

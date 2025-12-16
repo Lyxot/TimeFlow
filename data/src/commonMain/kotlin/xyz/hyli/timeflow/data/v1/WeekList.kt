@@ -7,68 +7,12 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.datastore
+package xyz.hyli.timeflow.data.v1
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 
-// Docs: https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/formats.md
-/* Example usage
-val course = Course(
-    name = "大学语文",
-    teacher = "王婷",
-    classroom = "松江SD306",
-    time = Range(6, 7),
-    week = WeekRangeType(
-        weekRange = WeekRange(
-            range = listOf(
-                Range(1, 16)
-            )
-        )
-    )
-)
-
-val hexString = ProtoBuf.encodeToHexString(course)
-val course = ProtoBuf.decodeFromHexString<Course>(hexString)
-*/
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-enum class Weekday {
-    @ProtoNumber(1)
-    MONDAY,
-    @ProtoNumber(2)
-    TUESDAY,
-    @ProtoNumber(3)
-    WEDNESDAY,
-    @ProtoNumber(4)
-    THURSDAY,
-    @ProtoNumber(5)
-    FRIDAY,
-    @ProtoNumber(6)
-    SATURDAY,
-    @ProtoNumber(7)
-    SUNDAY,
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-enum class WeekDescriptionEnum {
-    @ProtoNumber(1)
-    ALL,
-    @ProtoNumber(2)
-    ODD,
-    @ProtoNumber(3)
-    EVEN
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class Range(
-    @ProtoNumber(1) val start: Int,
-    @ProtoNumber(2) val end: Int
-)
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -128,20 +72,3 @@ data class WeekList(
         return result.joinToString(", ")
     }
 }
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class Course(
-    @ProtoNumber(1) val name: String,
-    @ProtoNumber(2) val teacher: String = "",
-    @ProtoNumber(3) val classroom: String = "",
-    @ProtoNumber(4) val time: Range,
-    @ProtoNumber(5) val weekday: Weekday,
-    @ProtoNumber(6) val week: WeekList,
-    @ProtoNumber(7) val color: Int,
-    @ProtoNumber(8) val reserved8: String? = null,
-    @ProtoNumber(9) val reserved9: String? = null,
-    @ProtoNumber(10) val reserved10: String? = null,
-    @ProtoNumber(11) val reserved11: String? = null,
-    @ProtoNumber(12) val reserved12: String? = null,
-)

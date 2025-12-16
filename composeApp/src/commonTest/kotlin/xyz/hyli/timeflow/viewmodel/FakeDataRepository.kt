@@ -11,8 +11,8 @@ package xyz.hyli.timeflow.viewmodel
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Settings
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.di.IDataRepository
 
 class FakeDataRepository : IDataRepository {

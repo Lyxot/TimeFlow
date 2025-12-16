@@ -32,8 +32,8 @@ import timeflow.composeapp.generated.resources.schedule_value_export_schedule_fa
 import timeflow.composeapp.generated.resources.schedule_value_export_schedule_success
 import timeflow.composeapp.generated.resources.schedule_value_import_schedule_failed
 import timeflow.composeapp.generated.resources.schedule_value_import_schedule_success
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Settings
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.datastore.toProtoBufByteArray
 import xyz.hyli.timeflow.datastore.toProtoBufData
 import xyz.hyli.timeflow.di.AppContainer

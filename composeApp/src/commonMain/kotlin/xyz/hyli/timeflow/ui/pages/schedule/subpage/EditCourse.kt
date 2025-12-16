@@ -88,11 +88,11 @@ import timeflow.composeapp.generated.resources.schedule_title_course_time_end
 import timeflow.composeapp.generated.resources.schedule_title_course_time_start
 import timeflow.composeapp.generated.resources.schedule_title_course_week
 import timeflow.composeapp.generated.resources.schedule_title_edit_course
-import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.datastore.Range
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
-import xyz.hyli.timeflow.datastore.WeekList
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Range
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.WeekDescriptionEnum
+import xyz.hyli.timeflow.data.WeekList
 import xyz.hyli.timeflow.ui.components.ColorButton
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.components.ColorPicker

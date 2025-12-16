@@ -11,8 +11,8 @@ package xyz.hyli.timeflow.di
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Settings
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.datastore.SettingsDataStore
 
 interface IDataRepository {

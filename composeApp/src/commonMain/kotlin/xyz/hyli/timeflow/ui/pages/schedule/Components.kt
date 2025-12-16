@@ -94,11 +94,11 @@ import timeflow.composeapp.generated.resources.sunday
 import timeflow.composeapp.generated.resources.thursday
 import timeflow.composeapp.generated.resources.tuesday
 import timeflow.composeapp.generated.resources.wednesday
-import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.datastore.Lesson
-import xyz.hyli.timeflow.datastore.Range
-import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
-import xyz.hyli.timeflow.datastore.WeekList
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Lesson
+import xyz.hyli.timeflow.data.Range
+import xyz.hyli.timeflow.data.WeekDescriptionEnum
+import xyz.hyli.timeflow.data.WeekList
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel

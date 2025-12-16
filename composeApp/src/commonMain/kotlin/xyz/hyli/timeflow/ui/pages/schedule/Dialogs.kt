@@ -68,11 +68,11 @@ import timeflow.composeapp.generated.resources.schedule_value_course_time_period
 import timeflow.composeapp.generated.resources.schedule_value_course_week
 import timeflow.composeapp.generated.resources.schedule_value_schedule_name_empty
 import timeflow.composeapp.generated.resources.schedule_value_update_selected_schedule
-import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.datastore.Range
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
-import xyz.hyli.timeflow.datastore.WeekList
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Range
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.WeekDescriptionEnum
+import xyz.hyli.timeflow.data.WeekList
 import xyz.hyli.timeflow.ui.components.DialogButton
 import xyz.hyli.timeflow.ui.components.DialogButtonType
 import xyz.hyli.timeflow.ui.components.DialogDefaults

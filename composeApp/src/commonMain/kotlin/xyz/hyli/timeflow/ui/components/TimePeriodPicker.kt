@@ -30,7 +30,7 @@ import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.cancel
 import timeflow.composeapp.generated.resources.confirm
 import timeflow.composeapp.generated.resources.dialog_title_time_period_picker
-import xyz.hyli.timeflow.datastore.Time
+import xyz.hyli.timeflow.data.Time
 import xyz.hyli.timeflow.ui.theme.NotoSans
 
 enum class TimePeriodPickerStyle {

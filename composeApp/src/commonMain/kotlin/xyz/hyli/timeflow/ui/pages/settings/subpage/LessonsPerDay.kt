@@ -47,9 +47,9 @@ import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_p
 import timeflow.composeapp.generated.resources.settings_title_schedule_lessons_per_day_morning
 import timeflow.composeapp.generated.resources.settings_warning_lessons_per_day_empty
 import timeflow.composeapp.generated.resources.settings_warning_lessons_time_conflict
-import xyz.hyli.timeflow.datastore.Lesson
-import xyz.hyli.timeflow.datastore.LessonTimePeriodInfo
-import xyz.hyli.timeflow.datastore.Time
+import xyz.hyli.timeflow.data.Lesson
+import xyz.hyli.timeflow.data.LessonTimePeriodInfo
+import xyz.hyli.timeflow.data.Time
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.NavigationBackIcon

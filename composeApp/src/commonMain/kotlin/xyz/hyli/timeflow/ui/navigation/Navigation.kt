@@ -59,7 +59,7 @@ import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.page_schedule
 import timeflow.composeapp.generated.resources.page_settings
 import timeflow.composeapp.generated.resources.page_today
-import xyz.hyli.timeflow.datastore.Course
+import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen

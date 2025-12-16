@@ -71,9 +71,9 @@ import timeflow.composeapp.generated.resources.today_title_no_courses
 import timeflow.composeapp.generated.resources.today_value_date
 import timeflow.composeapp.generated.resources.tuesday_long
 import timeflow.composeapp.generated.resources.wednesday_long
-import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Time
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Time
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.theme.NotoSans

@@ -73,10 +73,10 @@ import timeflow.composeapp.generated.resources.schedule_title_week_x_part_3
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_empty
 import timeflow.composeapp.generated.resources.settings_subtitle_schedule_not_selected
 import xyz.hyli.timeflow.LocalNavSuiteType
-import xyz.hyli.timeflow.datastore.Course
-import xyz.hyli.timeflow.datastore.Range
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Weekday
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Range
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Weekday
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.TopAppBarType
 import xyz.hyli.timeflow.ui.components.bottomPadding

@@ -16,8 +16,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import xyz.hyli.timeflow.datastore.Schedule
-import xyz.hyli.timeflow.datastore.Settings
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

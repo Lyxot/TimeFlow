@@ -84,8 +84,8 @@ import timeflow.composeapp.generated.resources.url_changelog
 import timeflow.composeapp.generated.resources.url_donate
 import timeflow.composeapp.generated.resources.url_feedback
 import xyz.hyli.timeflow.BuildConfig
-import xyz.hyli.timeflow.datastore.Date
-import xyz.hyli.timeflow.datastore.Schedule
+import xyz.hyli.timeflow.data.Date
+import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.CustomScaffold
