@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.data.v1
+package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -16,25 +16,12 @@ import kotlinx.serialization.protobuf.ProtoNumber
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-enum class Weekday {
-    @ProtoNumber(1)
-    MONDAY,
-
-    @ProtoNumber(2)
-    TUESDAY,
-
-    @ProtoNumber(3)
-    WEDNESDAY,
-
-    @ProtoNumber(4)
-    THURSDAY,
-
-    @ProtoNumber(5)
-    FRIDAY,
-
-    @ProtoNumber(6)
-    SATURDAY,
-
-    @ProtoNumber(7)
-    SUNDAY,
+data class Range(
+    @ProtoNumber(1) val start: Byte,
+    @ProtoNumber(2) val end: Byte
+) {
+    constructor(
+        start: Int,
+        end: Int
+    ) : this(start.toByte(), end.toByte())
 }

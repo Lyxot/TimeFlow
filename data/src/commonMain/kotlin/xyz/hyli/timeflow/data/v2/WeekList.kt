@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.data.v1
+package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -36,52 +36,50 @@ enum class WeekDescriptionEnum {
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class WeekList(
-    @ProtoNumber(1) val week: List<Int>
+    @ProtoNumber(1) val weeks: List<Byte>
 ) {
+    companion object {
+        fun fromIntList(weekList: List<Int>): WeekList = WeekList(weekList.map { it.toByte() })
+    }
+
     constructor(
         weekDescription: WeekDescriptionEnum,
         totalWeeks: Int,
         validWeeks: List<Int> = (1..totalWeeks).toList()
     ) : this(
-        week = when (weekDescription) {
-            WeekDescriptionEnum.ALL -> (1..totalWeeks).toList().filter { it in validWeeks }
-            WeekDescriptionEnum.ODD -> (1..totalWeeks step 2).toList().filter { it in validWeeks }
-            WeekDescriptionEnum.EVEN -> (2..totalWeeks step 2).toList().filter { it in validWeeks }
+        weeks = when (weekDescription) {
+            WeekDescriptionEnum.ALL -> validWeeks.filter { it in 1..totalWeeks }.map { it.toByte() }
+            WeekDescriptionEnum.ODD -> validWeeks.filter { it % 2 != 0 && it in 1..totalWeeks }
+                .map { it.toByte() }
+
+            WeekDescriptionEnum.EVEN -> validWeeks.filter { it % 2 == 0 && it in 1..totalWeeks }
+                .map { it.toByte() }
         }
     )
 
     constructor(weekRange: WeekRange) : this(
-        week = weekRange.range.flatMap { it.start..it.end }.distinct()
+        weeks = weekRange.range.flatMap { it.start..it.end }.distinct().map { it.toByte() }
     )
 
     fun getString(): String {
-        if (week.isEmpty()) return ""
+        if (weeks.isEmpty()) return ""
 
-        val sortedWeeks = week.sorted()
+        val sortedWeeks = weeks.sorted()
         val result = mutableListOf<String>()
         var start = sortedWeeks[0]
         var end = sortedWeeks[0]
 
         for (i in 1 until sortedWeeks.size) {
-            if (sortedWeeks[i] == end + 1) {
+            if (sortedWeeks[i] == (end + 1).toByte()) {
                 end = sortedWeeks[i]
             } else {
-                if (start == end) {
-                    result.add(start.toString())
-                } else {
-                    result.add("$start-$end")
-                }
+                result.add(if (start == end) "$start" else "$start-$end")
                 start = sortedWeeks[i]
                 end = sortedWeeks[i]
             }
         }
 
-        if (start == end) {
-            result.add(start.toString())
-        } else {
-            result.add("$start-$end")
-        }
-
+        result.add(if (start == end) "$start" else "$start-$end")
         return result.joinToString(", ")
     }
 }
