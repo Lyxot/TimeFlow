@@ -7,13 +7,21 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeUIViewController
 import platform.UIKit.UIViewController
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 @Suppress("unused", "FunctionName")
-fun MainViewController(viewModel: TimeFlowViewModel): UIViewController = ComposeUIViewController {
+@OptIn(ExperimentalComposeUiApi::class)
+fun MainViewController(
+    viewModel: TimeFlowViewModel
+): UIViewController = ComposeUIViewController(
+    configure = {
+        parallelRendering = true
+    }
+) {
     App(
         viewModel = viewModel
     )
