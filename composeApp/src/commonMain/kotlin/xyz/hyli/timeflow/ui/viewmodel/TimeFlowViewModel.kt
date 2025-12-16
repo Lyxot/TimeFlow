@@ -16,14 +16,31 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.path
+import io.github.vinceglb.filekit.readBytes
+import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import org.jetbrains.compose.resources.getString
+import timeflow.composeapp.generated.resources.Res
+import timeflow.composeapp.generated.resources.schedule_value_export_schedule_failed
+import timeflow.composeapp.generated.resources.schedule_value_export_schedule_success
+import timeflow.composeapp.generated.resources.schedule_value_import_schedule_failed
+import timeflow.composeapp.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.Settings
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.IDataRepository
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isMobile
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -83,6 +100,71 @@ class TimeFlowViewModel(
     fun updateSchedule(uuid: String = settings.value.selectedSchedule, schedule: Schedule) {
         viewModelScope.launch {
             repository.updateSchedule(uuid, schedule)
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    fun exportScheduleToFile(
+        uuid: String = settings.value.selectedSchedule,
+        file: PlatformFile,
+        showMessage: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val schedule = settings.value.schedule[uuid]
+            if (schedule == null) {
+                showMessage(
+                    getString(
+                        Res.string.schedule_value_export_schedule_failed,
+                        "Schedule not found"
+                    )
+                )
+                return@launch
+            }
+            try {
+                file.write(ProtoBuf.encodeToByteArray(schedule))
+                showMessage(
+                    getString(
+                        Res.string.schedule_value_export_schedule_success,
+                        if (currentPlatform().isMobile()) file.name else file.path
+                    )
+                )
+            } catch (e: Exception) {
+                showMessage(
+                    getString(
+                        Res.string.schedule_value_export_schedule_failed,
+                        e.message ?: ""
+                    )
+                )
+                e.printStackTrace()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    fun importScheduleFromFile(
+        file: PlatformFile,
+        showMessage: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val bytes = file.readBytes()
+                val importedSchedule = ProtoBuf.decodeFromByteArray<Schedule>(bytes)
+                createSchedule(importedSchedule)
+                showMessage(
+                    getString(
+                        Res.string.schedule_value_import_schedule_success,
+                        importedSchedule.name
+                    )
+                )
+            } catch (e: Exception) {
+                showMessage(
+                    getString(
+                        Res.string.schedule_value_import_schedule_failed,
+                        e.message ?: ""
+                    )
+                )
+                e.printStackTrace()
+            }
         }
     }
 

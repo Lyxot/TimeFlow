@@ -55,7 +55,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,19 +77,11 @@ import com.materialkolor.ktx.harmonize
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
-import io.github.vinceglb.filekit.path
-import io.github.vinceglb.filekit.readBytes
-import io.github.vinceglb.filekit.write
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.protobuf.ProtoBuf
-import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import timeflow.composeapp.generated.resources.Res
 import timeflow.composeapp.generated.resources.export
@@ -98,10 +89,6 @@ import timeflow.composeapp.generated.resources.friday
 import timeflow.composeapp.generated.resources.import
 import timeflow.composeapp.generated.resources.monday
 import timeflow.composeapp.generated.resources.saturday
-import timeflow.composeapp.generated.resources.schedule_value_export_schedule_failed
-import timeflow.composeapp.generated.resources.schedule_value_export_schedule_success
-import timeflow.composeapp.generated.resources.schedule_value_import_schedule_failed
-import timeflow.composeapp.generated.resources.schedule_value_import_schedule_success
 import timeflow.composeapp.generated.resources.schedule_warning_multiple_courses
 import timeflow.composeapp.generated.resources.sunday
 import timeflow.composeapp.generated.resources.thursday
@@ -110,7 +97,6 @@ import timeflow.composeapp.generated.resources.wednesday
 import xyz.hyli.timeflow.datastore.Course
 import xyz.hyli.timeflow.datastore.Lesson
 import xyz.hyli.timeflow.datastore.Range
-import xyz.hyli.timeflow.datastore.Schedule
 import xyz.hyli.timeflow.datastore.WeekDescriptionEnum
 import xyz.hyli.timeflow.datastore.WeekList
 import xyz.hyli.timeflow.ui.components.rememberDialogState
@@ -544,6 +530,24 @@ fun ScheduleFAB(
     val settings by viewModel.settings.collectAsState()
     val schedule = settings.schedule[settings.selectedSchedule]
     var showContent by remember { mutableStateOf(false) }
+    val saver = rememberFileSaverLauncher { file ->
+        if (file != null) {
+            viewModel.exportScheduleToFile(
+                file = file,
+                showMessage = showMessage
+            )
+        }
+    }
+    val reader = rememberFilePickerLauncher(
+        mode = FileKitMode.Single
+    ) { file ->
+        if (file != null) {
+            viewModel.importScheduleFromFile(
+                file = file,
+                showMessage = showMessage
+            )
+        }
+    }
     FloatingActionButtonMenu(
         modifier = modifier,
         button = {
@@ -569,55 +573,6 @@ fun ScheduleFAB(
         },
         expanded = showContent
     ) {
-        val scope = rememberCoroutineScope()
-        val saver = rememberFileSaverLauncher { file ->
-            if (file != null) {
-                scope.launch {
-                    try {
-                        file.write(ProtoBuf.encodeToByteArray(schedule))
-                        showMessage(
-                            getString(
-                                Res.string.schedule_value_export_schedule_success,
-                                file.path
-                            )
-                        )
-                    } catch (e: Exception) {
-                        showMessage(
-                            getString(
-                                Res.string.schedule_value_export_schedule_failed,
-                                e.message ?: ""
-                            )
-                        )
-                    }
-                }
-            }
-        }
-        val reader = rememberFilePickerLauncher(
-            mode = FileKitMode.Single
-        ) { file ->
-            if (file != null) {
-                scope.launch {
-                    val bytes = file.readBytes()
-                    try {
-                        val importedSchedule = ProtoBuf.decodeFromByteArray<Schedule>(bytes)
-                        viewModel.createSchedule(importedSchedule)
-                        showMessage(
-                            getString(
-                                Res.string.schedule_value_import_schedule_success,
-                                importedSchedule.name
-                            )
-                        )
-                    } catch (e: Exception) {
-                        showMessage(
-                            getString(
-                                Res.string.schedule_value_import_schedule_failed,
-                                e.message ?: ""
-                            )
-                        )
-                    }
-                }
-            }
-        }
         if (schedule != null) {
             FloatingActionButtonMenuItem(
                 onClick = {
