@@ -236,6 +236,7 @@ fun CourseListDialog(
                                     style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
+                                    modifier = Modifier.padding(start = 4.dp),
                                     text = buildAnnotatedString {
                                         append(
                                             stringResource(
@@ -262,7 +263,8 @@ fun CourseListDialog(
                                 )
                                 if (course.classroom.isNotBlank() || course.teacher.isNotBlank()) {
                                     Text(
-                                        buildAnnotatedString {
+                                        modifier = Modifier.padding(start = 4.dp),
+                                        text = buildAnnotatedString {
                                             append(course.classroom)
                                             if (course.classroom.isNotBlank() && course.teacher.isNotBlank()) {
                                                 withStyle(
@@ -275,6 +277,13 @@ fun CourseListDialog(
                                             }
                                             append(course.teacher)
                                         },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                                if (course.note.isNotBlank()) {
+                                    Text(
+                                        modifier = Modifier.padding(start = 4.dp),
+                                        text = course.note,
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }

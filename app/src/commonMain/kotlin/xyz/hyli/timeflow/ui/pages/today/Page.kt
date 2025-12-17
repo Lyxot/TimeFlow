@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
@@ -380,6 +381,13 @@ fun TimelineCourseItem(
                         CourseCardContentRow(
                             icon = Icons.Rounded.School,
                             content = course.teacher,
+                            color = contentColor
+                        )
+                    }
+                    if (course.note.isNotBlank()) {
+                        CourseCardContentRow(
+                            icon = Icons.AutoMirrored.Filled.Notes,
+                            content = course.note,
                             color = contentColor
                         )
                     }

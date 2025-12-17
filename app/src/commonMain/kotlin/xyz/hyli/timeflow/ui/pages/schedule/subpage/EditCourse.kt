@@ -83,6 +83,7 @@ import timeflow.app.generated.resources.schedule_title_add_course
 import timeflow.app.generated.resources.schedule_title_course_classroom
 import timeflow.app.generated.resources.schedule_title_course_color
 import timeflow.app.generated.resources.schedule_title_course_name
+import timeflow.app.generated.resources.schedule_title_course_note
 import timeflow.app.generated.resources.schedule_title_course_teacher
 import timeflow.app.generated.resources.schedule_title_course_time_end
 import timeflow.app.generated.resources.schedule_title_course_time_start
@@ -599,6 +600,20 @@ fun EditCourseContent(
                 }
             }
         }
+        // Course Note
+        OutlinedTextField(
+            value = course.note,
+            onValueChange = {
+                course = course.copy(note = it)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = {
+                Text(
+                    text = stringResource(Res.string.schedule_title_course_note)
+                )
+            },
+            shape = CardDefaults.shape
+        )
     }
 }
 
