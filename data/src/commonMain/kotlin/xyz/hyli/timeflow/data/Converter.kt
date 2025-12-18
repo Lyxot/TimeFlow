@@ -29,8 +29,8 @@ fun CourseV1.toV2(): CourseV2 =
             end = this.time.end
         ),
         weekday = this.weekday.toV2(),
-        week = WeekListV2.fromIntList(
-            this.week.week
+        week = WeekListV2(
+            weeks = this.week.week
         ),
         color = this.color,
         note = ""
@@ -91,7 +91,7 @@ fun SettingsV1.toV2(): SettingsV2 {
         }
     }
     return SettingsV2(
-        firstLaunch = this.firstLaunch.toShort(),
+        firstLaunch = this.firstLaunch,
         themeMode = when (this.theme) {
             1 -> ThemeModeV2.LIGHT
             2 -> ThemeModeV2.DARK
@@ -100,7 +100,7 @@ fun SettingsV1.toV2(): SettingsV2 {
         themeDynamicColor = this.themeDynamicColor,
         themeColor = this.themeColor,
         schedules = schedulesV2,
-        selectedSchedule = selectedSchedule
+        selectedScheduleID = selectedSchedule
     )
 }
 

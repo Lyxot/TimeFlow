@@ -26,16 +26,16 @@ typealias WeekRange = WeekRangeV1
 typealias WeekList = WeekListV1
 
 // V1 Data Structures
-internal typealias SettingsV1 = xyz.hyli.timeflow.data.v1.Settings
+typealias SettingsV1 = xyz.hyli.timeflow.data.v1.Settings
 
-internal typealias ScheduleV1 = xyz.hyli.timeflow.data.v1.Schedule
+typealias ScheduleV1 = xyz.hyli.timeflow.data.v1.Schedule
 internal typealias DateV1 = xyz.hyli.timeflow.data.v1.Date
 internal typealias RangeV1 = xyz.hyli.timeflow.data.v1.Range
 internal typealias TimeV1 = xyz.hyli.timeflow.data.v1.Time
 internal typealias LessonV1 = xyz.hyli.timeflow.data.v1.Lesson
 internal typealias LessonTimePeriodInfoV1 = xyz.hyli.timeflow.data.v1.LessonTimePeriodInfo
 
-internal typealias CourseV1 = xyz.hyli.timeflow.data.v1.Course
+typealias CourseV1 = xyz.hyli.timeflow.data.v1.Course
 internal typealias WeekdayV1 = xyz.hyli.timeflow.data.v1.Weekday
 internal typealias WeekDescriptionEnumV1 = xyz.hyli.timeflow.data.v1.WeekDescriptionEnum
 internal typealias WeekRangeV1 = xyz.hyli.timeflow.data.v1.WeekRange
@@ -43,17 +43,17 @@ internal typealias WeekListV1 = xyz.hyli.timeflow.data.v1.WeekList
 
 // V2 Data Structures
 typealias SettingsV2 = xyz.hyli.timeflow.data.v2.Settings
-typealias ThemeModeV2 = xyz.hyli.timeflow.data.v2.ThemeMode
+internal typealias ThemeModeV2 = xyz.hyli.timeflow.data.v2.ThemeMode
 
 typealias ScheduleV2 = xyz.hyli.timeflow.data.v2.Schedule
-typealias DateV2 = xyz.hyli.timeflow.data.v2.Date
-typealias RangeV2 = xyz.hyli.timeflow.data.v2.Range
-typealias TimeV2 = xyz.hyli.timeflow.data.v2.Time
-typealias LessonV2 = xyz.hyli.timeflow.data.v2.Lesson
-typealias LessonTimePeriodInfoV2 = xyz.hyli.timeflow.data.v2.LessonTimePeriodInfo
+internal typealias DateV2 = xyz.hyli.timeflow.data.v2.Date
+internal typealias RangeV2 = xyz.hyli.timeflow.data.v2.Range
+internal typealias TimeV2 = xyz.hyli.timeflow.data.v2.Time
+internal typealias LessonV2 = xyz.hyli.timeflow.data.v2.Lesson
+internal typealias LessonTimePeriodInfoV2 = xyz.hyli.timeflow.data.v2.LessonTimePeriodInfo
 
 typealias CourseV2 = xyz.hyli.timeflow.data.v2.Course
-typealias WeekdayV2 = xyz.hyli.timeflow.data.v2.Weekday
-typealias WeekDescriptionEnumV2 = xyz.hyli.timeflow.data.v2.WeekDescriptionEnum
-typealias WeekRangeV2 = xyz.hyli.timeflow.data.v2.WeekRange
-typealias WeekListV2 = xyz.hyli.timeflow.data.v2.WeekList
+internal typealias WeekdayV2 = xyz.hyli.timeflow.data.v2.Weekday
+internal typealias WeekDescriptionEnumV2 = xyz.hyli.timeflow.data.v2.WeekDescriptionEnum
+internal typealias WeekRangeV2 = xyz.hyli.timeflow.data.v2.WeekRange
+internal typealias WeekListV2 = xyz.hyli.timeflow.data.v2.WeekList

@@ -36,29 +36,22 @@ enum class WeekDescriptionEnum {
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class WeekList(
-    @ProtoNumber(1) val weeks: List<Byte>
+    @ProtoNumber(1) val weeks: List<Int>
 ) {
-    companion object {
-        fun fromIntList(weekList: List<Int>): WeekList = WeekList(weekList.map { it.toByte() })
-    }
-
     constructor(
         weekDescription: WeekDescriptionEnum,
         totalWeeks: Int,
         validWeeks: List<Int> = (1..totalWeeks).toList()
     ) : this(
         weeks = when (weekDescription) {
-            WeekDescriptionEnum.ALL -> validWeeks.filter { it in 1..totalWeeks }.map { it.toByte() }
+            WeekDescriptionEnum.ALL -> validWeeks.filter { it in 1..totalWeeks }
             WeekDescriptionEnum.ODD -> validWeeks.filter { it % 2 != 0 && it in 1..totalWeeks }
-                .map { it.toByte() }
-
             WeekDescriptionEnum.EVEN -> validWeeks.filter { it % 2 == 0 && it in 1..totalWeeks }
-                .map { it.toByte() }
         }
     )
 
     constructor(weekRange: WeekRange) : this(
-        weeks = weekRange.range.flatMap { it.start..it.end }.distinct().map { it.toByte() }
+        weeks = weekRange.range.flatMap { it.start..it.end }.distinct()
     )
 
     fun getString(): String {
@@ -70,7 +63,7 @@ data class WeekList(
         var end = sortedWeeks[0]
 
         for (i in 1 until sortedWeeks.size) {
-            if (sortedWeeks[i] == (end + 1).toByte()) {
+            if (sortedWeeks[i] == end + 1) {
                 end = sortedWeeks[i]
             } else {
                 result.add(if (start == end) "$start" else "$start-$end")

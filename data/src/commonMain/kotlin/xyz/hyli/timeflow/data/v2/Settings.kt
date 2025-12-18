@@ -25,7 +25,7 @@ data class Settings(
     /**
      * 0: 未启动，版本号: 上次启动的版本号
      */
-    @ProtoNumber(1) val firstLaunch: Short = 0,
+    @ProtoNumber(1) val firstLaunch: Int = 0,
     /**
      * 主题模式
      */
@@ -45,7 +45,7 @@ data class Settings(
     /**
      * 选中课程表的ID，如果没有选中则为0
      */
-    @ProtoNumber(6) val selectedSchedule: Short = ZERO_ID,
+    @ProtoNumber(6) val selectedScheduleID: Short = ZERO_ID,
     @ProtoNumber(7) val reserved7: String? = null,
     @ProtoNumber(8) val reserved8: String? = null,
     @ProtoNumber(9) val reserved9: String? = null,
@@ -55,6 +55,22 @@ data class Settings(
     companion object {
         const val ZERO_ID = 0.toShort()
     }
+
+    val nonDeletedSchedules: Map<Short, Schedule> =
+        schedules.filterValues { !it.deleted }
+
+    val nonSelectedSchedules: Map<Short, Schedule> =
+        schedules.filter { (id, schedule) ->
+            id != selectedScheduleID && !schedule.deleted
+        }
+
+    val selectedSchedule: Schedule? = schedules[selectedScheduleID]
+
+    val isScheduleEmpty: Boolean =
+        nonDeletedSchedules.isEmpty()
+
+    val isScheduleSelected: Boolean =
+        selectedScheduleID != ZERO_ID && schedules.containsKey(selectedScheduleID) && !schedules[selectedScheduleID]!!.deleted
 }
 
 @OptIn(ExperimentalSerializationApi::class)

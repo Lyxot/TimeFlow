@@ -17,14 +17,9 @@ import kotlinx.serialization.protobuf.ProtoNumber
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Time(
-    @ProtoNumber(1) val hour: Byte,
-    @ProtoNumber(2) val minute: Byte
+    @ProtoNumber(1) val hour: Int,
+    @ProtoNumber(2) val minute: Int
 ) {
-    constructor(
-        hour: Int,
-        minute: Int
-    ) : this(hour.toByte(), minute.toByte())
-
     override fun toString(): String {
         return this.hour.toString().padStart(2, '0') +
                 ":" + this.minute.toString().padStart(2, '0')

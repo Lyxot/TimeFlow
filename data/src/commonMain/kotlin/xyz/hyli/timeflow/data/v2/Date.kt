@@ -27,21 +27,15 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Date(
-    @ProtoNumber(1) val year: Short,
-    @ProtoNumber(2) val month: Byte,
-    @ProtoNumber(3) val day: Byte
+    @ProtoNumber(1) val year: Int,
+    @ProtoNumber(2) val month: Int,
+    @ProtoNumber(3) val day: Int
 ) {
     companion object {
         fun fromLocalDate(localDate: LocalDate): Date {
             return Date(localDate.year, localDate.month.number, localDate.day)
         }
     }
-
-    constructor(
-        year: Int,
-        month: Int,
-        day: Int
-    ) : this(year.toShort(), month.toByte(), day.toByte())
 
     override fun toString(): String =
         "$year/${if (month < 10) "0$month" else month}/${if (day < 10) "0$day" else day}"

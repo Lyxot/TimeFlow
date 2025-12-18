@@ -114,16 +114,26 @@ data class LessonTimePeriodInfo(
         }
     }
 
-    fun getTotalLessons(): Int {
-        return morning.size + afternoon.size + evening.size
-    }
+    val totalLessonsCount: Int = morning.size + afternoon.size + evening.size
+    val lessons: List<Lesson> = morning + afternoon + evening
 
     fun getLessonByIndex(index: Int): Lesson {
         return when (index) {
             in 1..morning.size -> morning[index - 1]
             in (morning.size + 1)..(morning.size + afternoon.size) -> afternoon[index - morning.size - 1]
-            in (morning.size + afternoon.size + 1)..getTotalLessons() -> evening[index - morning.size - afternoon.size - 1]
+            in (morning.size + afternoon.size + 1)..totalLessonsCount -> evening[index - morning.size - afternoon.size - 1]
             else -> throw IndexOutOfBoundsException("Lesson index out of range")
         }
+    }
+
+    fun getConflictSet(): Set<Int> {
+        val conflictSet = mutableSetOf<Int>()
+        for (i in 1 until lessons.size) {
+            if (lessons[i].start < lessons[i - 1].end) { // Overlapping lessons
+                conflictSet.add(i - 1)
+                conflictSet.add(i)
+            }
+        }
+        return conflictSet
     }
 }

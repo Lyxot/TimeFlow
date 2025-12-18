@@ -17,11 +17,6 @@ import kotlinx.serialization.protobuf.ProtoNumber
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Range(
-    @ProtoNumber(1) val start: Byte,
-    @ProtoNumber(2) val end: Byte
-) {
-    constructor(
-        start: Int,
-        end: Int
-    ) : this(start.toByte(), end.toByte())
-}
+    @ProtoNumber(1) val start: Int,
+    @ProtoNumber(2) val end: Int
+)

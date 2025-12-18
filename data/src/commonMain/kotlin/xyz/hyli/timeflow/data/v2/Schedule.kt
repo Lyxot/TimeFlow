@@ -20,6 +20,7 @@ import kotlinx.datetime.todayIn
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
+import xyz.hyli.timeflow.data.Weekday
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -72,9 +73,7 @@ data class Schedule(
         fun defaultTermEndDate(): Date = defaultTermStartDate().addWeeks(16)
     }
 
-    fun totalWeeks(): Int {
-        return this.termStartDate.weeksTill(this.termEndDate)
-    }
+    val totalWeeks: Int = this.termStartDate.weeksTill(this.termEndDate)
 
     fun dateList(week: Int): List<LocalDate> {
         var startDate = this.termStartDate.toLocalDate()
@@ -85,4 +84,24 @@ data class Schedule(
             startDate.plus((week - 1) * 7 + i, DateTimeUnit.DAY)
         }
     }
+
+    fun isInTerm(week: Int) = week in 1..totalWeeks
+
+    fun getWeekOfDate(date: LocalDate): Int =
+        this.termStartDate.weeksTill(date)
+
+    fun getCoursesOfDate(date: LocalDate): List<Course> =
+        this.courses.values.filter { course ->
+            course.week.weeks.contains(
+                this.termStartDate.weeksTill(date)
+            ) &&
+                    course.weekday.ordinal == date.dayOfWeek.ordinal
+        }
+            .sortedBy { it.time.start }
+
+    fun getCoursesOfWeekday(weekday: Weekday): Map<Short, Course> =
+        this.courses.filterValues { course ->
+            course.weekday == weekday
+        }
+
 }
