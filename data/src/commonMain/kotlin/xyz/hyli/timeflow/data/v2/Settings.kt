@@ -12,6 +12,7 @@ package xyz.hyli.timeflow.data.v2
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
+import xyz.hyli.timeflow.data.newShortId
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.supportDynamicColor
 
@@ -71,6 +72,9 @@ data class Settings(
 
     val isScheduleSelected: Boolean =
         selectedScheduleID != ZERO_ID && schedules.containsKey(selectedScheduleID) && !schedules[selectedScheduleID]!!.deleted
+
+    fun newScheduleId(): Short =
+        newShortId(schedules.keys)
 }
 
 @OptIn(ExperimentalSerializationApi::class)

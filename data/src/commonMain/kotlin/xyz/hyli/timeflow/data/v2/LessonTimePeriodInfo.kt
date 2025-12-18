@@ -126,14 +126,8 @@ data class LessonTimePeriodInfo(
         }
     }
 
-    fun getConflictSet(): Set<Int> {
-        val conflictSet = mutableSetOf<Int>()
-        for (i in 1 until lessons.size) {
-            if (lessons[i].start < lessons[i - 1].end) { // Overlapping lessons
-                conflictSet.add(i - 1)
-                conflictSet.add(i)
-            }
-        }
-        return conflictSet
-    }
+    val conflictSet: Set<Int> = (1 until lessons.size)
+        .filter { i -> lessons[i].start < lessons[i - 1].end }
+        .flatMap { i -> listOf(i - 1, i) }
+        .toSet()
 }

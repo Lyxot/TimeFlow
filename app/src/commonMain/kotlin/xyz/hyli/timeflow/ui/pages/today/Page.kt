@@ -87,7 +87,7 @@ fun TodayScreen(
     viewModel: TimeFlowViewModel
 ) {
     val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]
+    val schedule by viewModel.selectedSchedule.collectAsState()
 
     if (schedule == null) {
         // 显示空状态或错误信息
@@ -97,7 +97,7 @@ fun TodayScreen(
         ) {
             Text(
                 text =
-                    if (!settings.schedule.values.any { !it.deleted })
+                    if (settings.isScheduleEmpty)
                         stringResource(Res.string.settings_subtitle_schedule_empty)
                     else
                         stringResource(Res.string.settings_subtitle_schedule_not_selected),
@@ -109,10 +109,8 @@ fun TodayScreen(
     }
 
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
-    val currentWeek = remember { schedule.termStartDate.weeksTill(today) }
-    val todayCourses = schedule.courses.filter {
-        it.week.week.contains(currentWeek) && it.weekday.ordinal == today.dayOfWeek.ordinal
-    }.sortedBy { it.time.start }
+    val currentWeek = schedule!!.getWeekOfDate(today)
+    val courses = schedule!!.getCoursesOfDate(today)
 
     val weekdays = listOf(
         Res.string.monday_long,
@@ -137,7 +135,7 @@ fun TodayScreen(
             )
         }
     ) {
-        if (todayCourses.isEmpty()) {
+        if (courses.isEmpty()) {
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 text = stringResource(Res.string.today_title_no_courses),
@@ -146,8 +144,8 @@ fun TodayScreen(
             )
         } else {
             TimelineCourseList(
-                schedule = schedule,
-                courses = todayCourses
+                schedule = schedule!!,
+                courses = courses
             )
         }
     }

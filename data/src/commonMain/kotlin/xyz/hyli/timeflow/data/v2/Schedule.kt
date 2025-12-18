@@ -21,6 +21,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import xyz.hyli.timeflow.data.Weekday
+import xyz.hyli.timeflow.data.newShortId
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -104,4 +105,6 @@ data class Schedule(
             course.weekday == weekday
         }
 
+    fun newCourseId(): Short =
+        newShortId(this.courses.keys)
 }

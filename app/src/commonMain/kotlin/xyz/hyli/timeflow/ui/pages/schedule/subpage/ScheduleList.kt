@@ -65,7 +65,7 @@ fun ScheduleListScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     var multipleSelectionMode by remember { mutableStateOf(false) }
-    val selectedSchedules = remember { mutableStateSetOf<String>() }
+    val selectedSchedules = remember { mutableStateSetOf<Short>() }
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
         title = {
@@ -100,14 +100,14 @@ fun ScheduleListScreen(
                     if (showConfirmDeleteSelectedSchedulesDialog.visible) {
                         DeleteSelectedSchedulesDialog(
                             selectedScheduleName = selectedSchedules.map {
-                                settings.schedule[it]?.name ?: ""
+                                settings.schedules[it]?.name ?: ""
                             },
                             onConfirm = {
-                                selectedSchedules.forEach { uuid ->
-                                    val schedule = settings.schedule[uuid]
+                                selectedSchedules.forEach { id ->
+                                    val schedule = settings.schedules[id]
                                     if (schedule != null) {
                                         viewModel.updateSchedule(
-                                            uuid,
+                                            id,
                                             schedule.copy(deleted = true)
                                         )
                                     }
@@ -144,18 +144,18 @@ fun ScheduleListScreen(
                 .fillMaxWidth()
                 .bottomPadding()
         ) {
-            if (settings.selectedSchedule.isNotEmpty()
-                && settings.schedule[settings.selectedSchedule]?.deleted == false
+            val schedule by viewModel.selectedSchedule.collectAsState()
+            if (settings.isScheduleSelected
+                && schedule?.deleted == false
+                && schedule != null
             ) {
                 PreferenceSection(
                     title = stringResource(Res.string.schedule_title_selected_schedule)
                 ) {
-                    val schedule =
-                        settings.schedule[settings.selectedSchedule]!!
                     BasePreference(
-                        title = schedule.name,
-                        subtitle = schedule.termStartDate.toString() + " ~ " +
-                                schedule.termEndDate.toString(),
+                        title = schedule!!.name,
+                        subtitle = schedule!!.termStartDate.toString() + " ~ " +
+                                schedule!!.termEndDate.toString(),
                         onClick = {
                             navHostController.popBackStack()
                         }
@@ -167,32 +167,28 @@ fun ScheduleListScreen(
                     }
                 }
             }
-            if (settings.selectedSchedule.isNotEmpty()
-                && settings.schedule.values.any {
-                    !it.deleted && it != settings.schedule[settings.selectedSchedule]
-                }
+            if (settings.isScheduleSelected
+                && settings.nonSelectedSchedules.isNotEmpty()
             ) {
                 PreferenceDivider()
                 PreferenceSection(
                     title = stringResource(Res.string.schedule_title_other_schedules)
                 ) {
                     fun onClick(
-                        uuid: String,
+                        id: Short,
                         showConfirmSelectScheduleDialog: DialogStateNoData
                     ) {
                         if (multipleSelectionMode) {
-                            if (uuid in selectedSchedules) {
-                                selectedSchedules.remove(uuid)
+                            if (id in selectedSchedules) {
+                                selectedSchedules.remove(id)
                             } else {
-                                selectedSchedules.add(uuid)
+                                selectedSchedules.add(id)
                             }
                         } else {
                             showConfirmSelectScheduleDialog.show()
                         }
                     }
-                    settings.schedule.filter {
-                        !it.value.deleted && it.key != settings.selectedSchedule
-                    }.forEach { (uuid, schedule) ->
+                    settings.nonSelectedSchedules.forEach { (id, schedule) ->
                         val showConfirmSelectScheduleDialog = rememberDialogState()
                         Row(
                             modifier = Modifier.animateContentSize(),
@@ -204,9 +200,9 @@ fun ScheduleListScreen(
                                 exit = shrinkHorizontally(),
                             ) {
                                 Checkbox(
-                                    checked = uuid in selectedSchedules,
+                                    checked = id in selectedSchedules,
                                     onCheckedChange = {
-                                        onClick(uuid, showConfirmSelectScheduleDialog)
+                                        onClick(id, showConfirmSelectScheduleDialog)
                                     }
                                 )
                             }
@@ -214,7 +210,7 @@ fun ScheduleListScreen(
                                 title = schedule.name,
                                 subtitle = schedule.termStartDate.toString() + " ~ " +
                                         schedule.termEndDate.toString(),
-                                onClick = { onClick(uuid, showConfirmSelectScheduleDialog) }
+                                onClick = { onClick(id, showConfirmSelectScheduleDialog) }
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
@@ -227,7 +223,7 @@ fun ScheduleListScreen(
                                 name = schedule.name,
                                 showConfirmSelectScheduleDialog = showConfirmSelectScheduleDialog,
                                 onConfirm = {
-                                    viewModel.updateSelectedSchedule(uuid)
+                                    viewModel.updateSelectedSchedule(id)
                                     navHostController.popBackStack()
                                 },
                             )

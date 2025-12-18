@@ -86,6 +86,7 @@ import timeflow.app.generated.resources.url_feedback
 import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.CustomScaffold
@@ -151,12 +152,12 @@ fun SettingsScreen(
                 )
                 PreferenceList(
                     style = PreferenceListStyle.Style.SegmentedButtons,
-                    value = settings.theme,
+                    value = settings.themeMode,
                     onValueChange = {
                         viewModel.updateTheme(it)
                     },
-                    items = listOf(0, 1, 2),
-                    itemTextProvider = { themeList[it] },
+                    items = ThemeMode.entries,
+                    itemTextProvider = { themeList[ThemeMode.entries.indexOf(it)] },
                     title = stringResource(Res.string.settings_title_theme)
                 )
                 // Dynamic Color Settings
@@ -186,18 +187,18 @@ fun SettingsScreen(
                 }
                 // Current selected schedule settings
                 val selectedScheduleDependency = Dependency.State(settingsState) {
-                    it.schedule.values.any { !it.deleted }
+                    !it.isScheduleEmpty
                 }
                 PreferenceList(
-                    value = settings.selectedSchedule,
+                    value = settings.selectedScheduleID,
                     onValueChange = {
                         viewModel.updateSelectedSchedule(it)
                     },
-                    items = settings.schedule.filter { !it.value.deleted }.keys.toList(),
-                    itemTextProvider = { settings.schedule[it]?.name ?: "" },
+                    items = settings.nonDeletedSchedules.keys.toList(),
+                    itemTextProvider = { settings.schedules[it]?.name ?: "" },
                     title = stringResource(Res.string.settings_title_selected_schedule),
                     subtitle =
-                        if (!settings.schedule.values.any { !it.deleted })
+                        if (settings.isScheduleEmpty)
                             stringResource(Res.string.settings_subtitle_schedule_empty)
                         else
                             null,
@@ -233,77 +234,68 @@ fun SettingsScreen(
             PreferenceDivider()
             // Schedule Settings
             val scheduleDependency = Dependency.State(settingsState) {
-                it.selectedSchedule.isNotEmpty()
+                it.isScheduleSelected
             }
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_schedule),
                 subtitle =
-                    if (settings.selectedSchedule.isNotEmpty())
+                    if (settings.isScheduleSelected)
                         null
-                    else if (!settings.schedule.values.any { !it.deleted })
+                    else if (settings.isScheduleEmpty)
                         stringResource(Res.string.settings_subtitle_schedule_empty)
                     else
                         stringResource(Res.string.settings_subtitle_schedule_not_selected),
                 enabled = scheduleDependency
             ) {
+                val schedule by viewModel.selectedSchedule.collectAsState()
                 // Schedule Name
                 PreferenceInputText(
-                    value = settings.schedule[settings.selectedSchedule]?.name ?: "",
+                    value = settings.schedules[settings.selectedScheduleID]?.name ?: "",
                     onValueChange = { newName ->
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(name = newName)
-                            )
-                        }
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(name = newName)
+                        )
                     },
                     title = stringResource(Res.string.settings_title_schedule_name),
                     enabled = scheduleDependency
                 )
                 // Term Start and End Dates
                 PreferenceDate(
-                    value = settings.schedule[settings.selectedSchedule]?.termStartDate?.toLocalDate()
+                    value = schedule?.termStartDate?.toLocalDate()
                         ?: Schedule.defaultTermStartDate().toLocalDate(),
                     onValueChange = { newDate ->
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            val newTermStartDate = Date.fromLocalDate(newDate)
-                            val currentTermEndDate = currentSchedule.termEndDate
-                            val newTermEndDate =
-                                if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
-                                    currentTermEndDate
-                                } else newTermStartDate.addWeeks(currentSchedule.totalWeeks())
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(
-                                    termStartDate = newTermStartDate,
-                                    termEndDate = newTermEndDate
-                                )
+                        val newTermStartDate = Date.fromLocalDate(newDate)
+                        val currentTermEndDate = schedule!!.termEndDate
+                        val newTermEndDate =
+                            if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
+                                currentTermEndDate
+                            } else newTermStartDate.addWeeks(schedule!!.totalWeeks)
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(
+                                termStartDate = newTermStartDate,
+                                termEndDate = newTermEndDate
                             )
-                        }
+                        )
                     },
 
                     title = stringResource(Res.string.settings_title_schedule_term_start_date),
                     enabled = scheduleDependency
                 )
                 PreferenceDate(
-                    value = settings.schedule[settings.selectedSchedule]?.termEndDate?.toLocalDate()
+                    value = schedule?.termEndDate?.toLocalDate()
                         ?: Schedule.defaultTermEndDate().toLocalDate(),
                     onValueChange = { newDate ->
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(
-                                    termEndDate = Date.fromLocalDate(
-                                        newDate
-                                    )
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(
+                                termEndDate = Date.fromLocalDate(
+                                    newDate
                                 )
                             )
-                        }
+                        )
                     },
                     selectableDates = object : SelectableDates {
                         override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                            val currentSchedule = settings.schedule[settings.selectedSchedule]
-                            val termStartDate = currentSchedule?.termStartDate
+                            val termStartDate = schedule?.termStartDate
                                 ?: Schedule.defaultTermStartDate()
                             val epochDays = (utcTimeMillis / (MILLIS_PER_DAY)).toInt()
                             val date = LocalDate.fromEpochDays(epochDays)
@@ -320,18 +312,15 @@ fun SettingsScreen(
                             PreferenceNumberStyle.TextField()
                         else
                             PreferenceNumberStyle.Wheel,
-                    value = settings.schedule[settings.selectedSchedule]?.totalWeeks()
+                    value = schedule?.totalWeeks
                         ?: 16,
                     min = 1,
                     max = 60,
                     onValueChange = {
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            val newEndDate = currentSchedule.termStartDate.addWeeks(it)
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(termEndDate = newEndDate)
-                            )
-                        }
+                        val newEndDate = schedule!!.termStartDate.addWeeks(it)
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(termEndDate = newEndDate)
+                        )
                     },
                     title = stringResource(Res.string.settings_title_schedule_total_weeks),
                     enabled = scheduleDependency,
@@ -352,14 +341,11 @@ fun SettingsScreen(
                 }
                 PreferenceBool(
                     style = PreferenceBoolStyle.Style.Switch,
-                    value = settings.schedule[settings.selectedSchedule]?.displayWeekends == true,
+                    value = schedule?.displayWeekends == true,
                     onValueChange = {
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(displayWeekends = it)
-                            )
-                        }
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(displayWeekends = it)
+                        )
                     },
                     title = stringResource(Res.string.settings_title_display_weekends),
                     enabled = scheduleDependency

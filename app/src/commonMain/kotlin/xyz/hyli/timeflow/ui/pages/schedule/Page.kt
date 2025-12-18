@@ -99,8 +99,7 @@ data class ScheduleParams(
     val viewModel: TimeFlowViewModel,
     val navHostController: NavHostController,
     val schedule: Schedule,
-    val currentWeek: Int,
-    val totalWeeks: Int = schedule.totalWeeks()
+    val currentWeek: Int
 )
 
 data class TableState(
@@ -126,9 +125,9 @@ fun ScheduleScreen(
     navHostController: NavHostController,
 ) {
     val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]
+    val schedule by viewModel.selectedSchedule.collectAsState()
     val columns = if (schedule?.displayWeekends == true) 7 else 5
-    val rows = schedule?.lessonTimePeriodInfo?.getTotalLessons()
+    val rows = schedule?.lessonTimePeriodInfo?.totalLessonsCount
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -141,7 +140,7 @@ fun ScheduleScreen(
             Text(
                 modifier = Modifier.align(Alignment.Center),
                 text =
-                    if (!settings.schedule.values.any { !it.deleted })
+                    if (settings.isScheduleEmpty)
                         stringResource(Res.string.settings_subtitle_schedule_empty)
                     else
                         stringResource(Res.string.settings_subtitle_schedule_not_selected),
@@ -150,9 +149,9 @@ fun ScheduleScreen(
             )
             return
         }
-        val pagerState = schedule.totalWeeks().let {
+        val pagerState = schedule!!.totalWeeks.let {
             rememberPagerState(
-                initialPage = (schedule.termStartDate.weeksTill() - 1).coerceIn(
+                initialPage = (schedule!!.termStartDate.weeksTill() - 1).coerceIn(
                     0,
                     it
                 ), // page 0 for week 1
@@ -292,7 +291,7 @@ fun ScheduleScreen(
                     scheduleParams = ScheduleParams(
                         viewModel = viewModel,
                         navHostController = navHostController,
-                        schedule = schedule,
+                        schedule = schedule!!,
                         currentWeek = page + 1
                     ),
                     rows = rows,
@@ -363,9 +362,7 @@ fun ScheduleTable(
     columns: Int,
     modifier: Modifier = Modifier
 ) {
-    val lessonTimePeriodInfo = scheduleParams.schedule.lessonTimePeriodInfo.morning +
-            scheduleParams.schedule.lessonTimePeriodInfo.afternoon +
-            scheduleParams.schedule.lessonTimePeriodInfo.evening
+    val lessons = scheduleParams.schedule.lessonTimePeriodInfo.lessons
     val headerWidth = remember { mutableStateOf(48.dp) }
     val headerHeight = remember { mutableStateOf(40.dp) }
 
@@ -400,7 +397,7 @@ fun ScheduleTable(
         TableGrid(
             layoutParams = layoutParams,
             dateList = scheduleParams.schedule.dateList(scheduleParams.currentWeek),
-            lessonTimePeriodInfo = lessonTimePeriodInfo
+            lessonTimePeriodInfo = lessons
         )
 
         // 覆盖层：课程内容
@@ -440,10 +437,11 @@ fun CourseColumn(
     val showEditCourseDialog = rememberDialogState()
     val renderedTimeSlots = mutableSetOf<Int>()
     var noGridCells by layoutParams.noGridCells
-    var daySchedule by remember { mutableStateOf<List<Course>?>(null) }
+    var daySchedule by remember { mutableStateOf<Map<Short, Course>?>(null) }
     var dayScheduleTimeForCurrentWeek by remember { mutableStateOf<Set<Range>?>(null) }
     var dayScheduleTimeForOtherWeek by remember { mutableStateOf<Set<Range>?>(null) }
     var selectCourse by remember { mutableStateOf<Course?>(null) }
+    var selectCourseID by remember { mutableStateOf<Short?>(null) }
 
     LaunchedEffect(
         scheduleParams.schedule.courses,
@@ -451,23 +449,21 @@ fun CourseColumn(
         scheduleParams.currentWeek,
         layoutParams.rows
     ) {
-        val filteredSchedule = scheduleParams.schedule.courses.filter {
-            it.weekday == weekdays[dayIndex]
-        }
+        val filteredSchedule = scheduleParams.schedule.getCoursesOfWeekday(weekdays[dayIndex])
         val currentWeekTimes = mutableSetOf<Range>()
         val otherWeekTimes = mutableSetOf<Range>()
 
         filteredSchedule.forEach { course ->
-            if (course.week.week.contains(scheduleParams.currentWeek) &&
-                scheduleParams.currentWeek in 1..scheduleParams.totalWeeks
+            if (course.value.isInWeek(scheduleParams.currentWeek) &&
+                scheduleParams.schedule.isInTerm(scheduleParams.currentWeek)
             ) {
-                currentWeekTimes.add(course.time)
+                currentWeekTimes.add(course.value.time)
             } else {
-                otherWeekTimes.add(course.time)
+                otherWeekTimes.add(course.value.time)
             }
         }
 
-        daySchedule = filteredSchedule
+        daySchedule = scheduleParams.schedule.getCoursesOfWeekday(weekdays[dayIndex])
         dayScheduleTimeForCurrentWeek = currentWeekTimes
         dayScheduleTimeForOtherWeek = otherWeekTimes.sortedBy { it.end - it.start }.toSet()
     }
@@ -475,14 +471,16 @@ fun CourseColumn(
         (1..layoutParams.rows).filterNot { it in renderedTimeSlots }
     }
 
-    fun editCourse(course: Course) {
+    fun editCourse(courseID: Short, course: Course) {
         if (navSuiteType !in NavigationBarType) {
             selectCourse = course
+            selectCourseID = courseID
             showEditCourseDialog.show()
         } else {
             scheduleParams.navHostController.navigate(
                 EditCourseDestination(
-                    course
+                    courseID = courseID,
+                    course = course
                 )
             )
         }
@@ -492,6 +490,7 @@ fun CourseColumn(
         EditCourseDialog(
             state = state,
             scheduleParams = scheduleParams,
+            courseID = selectCourseID!!,
             initValue = selectCourse!!,
             showEditCourseDialog = showEditCourseDialog
         )
@@ -516,13 +515,13 @@ fun CourseColumn(
                         it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
                     }
                 }
-                var courses by remember { mutableStateOf<List<Course>?>(null) }
-                var coursesForThisTime by remember { mutableStateOf<List<Course>?>(null) }
+                var courses by remember { mutableStateOf<Map<Short, Course>?>(null) }
+                var coursesForThisTime by remember { mutableStateOf<Map<Short, Course>?>(null) }
                 LaunchedEffect(daySchedule, time, scheduleParams.currentWeek) {
-                    courses = daySchedule!!.filter { course ->
-                        course.time == time && course.week.week.contains(scheduleParams.currentWeek)
+                    courses = daySchedule!!.filterValues { course ->
+                        course.time == time && course.isInWeek(scheduleParams.currentWeek)
                     }
-                    coursesForThisTime = daySchedule!!.filter { course ->
+                    coursesForThisTime = daySchedule!!.filterValues { course ->
                         course.time.end >= time.start && course.time.start <= time.end
                     }
                 }
@@ -548,9 +547,13 @@ fun CourseColumn(
                             courses = courses!!,
                             coursesForThisTime = coursesForThisTime!!,
                             currentWeek = scheduleParams.currentWeek,
-                            totalWeeks = scheduleParams.totalWeeks,
-                            onClick = { course ->
-                                editCourse(course)
+                            totalWeeks = scheduleParams.schedule.totalWeeks,
+                            onEditCourse = { courseID, course ->
+                                editCourse(courseID, course)
+                            },
+                            onCreateNewCourse = { course ->
+                                val newCourseID = scheduleParams.schedule.newCourseId()
+                                editCourse(newCourseID, course)
                             }
                         )
                     }
@@ -580,23 +583,17 @@ fun CourseColumn(
                         it + (time.start until time.end).map { Pair(it + 1, dayIndex + 1) }
                     }
                 }
-                var courses by remember { mutableStateOf<List<Course>?>(null) }
-                var coursesForThisTime by remember { mutableStateOf<List<Course>?>(null) }
+                var courses by remember { mutableStateOf<Map<Short, Course>?>(null) }
+                var coursesForThisTime by remember { mutableStateOf<Map<Short, Course>?>(null) }
                 LaunchedEffect(daySchedule, time, scheduleParams.currentWeek) {
                     courses = daySchedule!!
-                        .filter { course ->
+                        .filterValues { course ->
                             course.time == time &&
-                                    (!course.week.week.contains(scheduleParams.currentWeek) || scheduleParams.currentWeek !in 1..scheduleParams.totalWeeks)
+                                    (!course.isInWeek(scheduleParams.currentWeek) ||
+                                            !scheduleParams.schedule.isInTerm(scheduleParams.currentWeek)
+                                            )
                         }
-                        .sortedBy {
-                            // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
-                            it.week.week.minOfOrNull { week ->
-                                (week - scheduleParams.currentWeek).let {
-                                    if (it < 0) it + scheduleParams.totalWeeks else it
-                                }
-                            } ?: Int.MAX_VALUE
-                        }
-                    coursesForThisTime = daySchedule!!.filter { course ->
+                    coursesForThisTime = daySchedule!!.filterValues { course ->
                         course.time.end >= time.start && course.time.start <= time.end
                     }
                 }
@@ -623,11 +620,15 @@ fun CourseColumn(
                             courses = courses!!,
                             coursesForThisTime = coursesForThisTime!!,
                             currentWeek = scheduleParams.currentWeek,
-                            totalWeeks = scheduleParams.totalWeeks,
+                            totalWeeks = scheduleParams.schedule.totalWeeks,
                             displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
                             displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
-                            onClick = { course ->
-                                editCourse(course)
+                            onEditCourse = { courseID, course ->
+                                editCourse(courseID, course)
+                            },
+                            onCreateNewCourse = { course ->
+                                val newCourseID = scheduleParams.schedule.newCourseId()
+                                editCourse(newCourseID, course)
                             }
                         )
                     }
@@ -648,12 +649,13 @@ fun CourseColumn(
                         state = state,
                         index = index,
                         dayIndex = dayIndex,
-                        totalWeeks = scheduleParams.totalWeeks,
-                        onClick = { course ->
+                        totalWeeks = scheduleParams.schedule.totalWeeks,
+                        onCreateNewCourse = { course ->
                             state.value = state.value.copy(
                                 isClicked = 2, // 点击后等待重置
                             )
-                            editCourse(course)
+                            val courseID = scheduleParams.schedule.newCourseId()
+                            editCourse(courseID, course)
                         }
                     )
                 }

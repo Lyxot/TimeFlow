@@ -9,8 +9,6 @@
 
 package xyz.hyli.timeflow.ui.pages.settings.subpage
 
-import androidx.collection.IntSet
-import androidx.collection.MutableIntSet
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -73,10 +71,10 @@ fun LessonsPerDayScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController
 ) {
-    val settings by viewModel.settings.collectAsState()
+    val schedule by viewModel.selectedSchedule.collectAsState()
     val lessonTimePeriodInfo = remember {
         mutableStateOf(
-            settings.schedule[settings.selectedSchedule]?.lessonTimePeriodInfo
+            schedule?.lessonTimePeriodInfo
                 ?: LessonTimePeriodInfo.fromPeriodCounts()
         )
     }
@@ -84,7 +82,7 @@ fun LessonsPerDayScreen(
     val afternoonCount = remember { mutableStateOf(lessonTimePeriodInfo.value.afternoon.size) }
     val eveningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.evening.size) }
     val isModified = remember { mutableStateOf(false) }
-    val conflictSet = lessonsPerDayValidator(lessonTimePeriodInfo.value)
+    val conflictSet = lessonTimePeriodInfo.value.conflictSet
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(lessonTimePeriodInfo.value) {
         if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
@@ -92,7 +90,7 @@ fun LessonsPerDayScreen(
                 message = getString(Res.string.settings_warning_lessons_per_day_empty),
                 duration = SnackbarDuration.Indefinite
             )
-        } else if (conflictSet.size > 0) {
+        } else if (conflictSet.isNotEmpty()) {
             snackbarHostState.showSnackbar(
                 message = getString(Res.string.settings_warning_lessons_time_conflict),
                 duration = SnackbarDuration.Indefinite
@@ -114,15 +112,12 @@ fun LessonsPerDayScreen(
             if (isModified.value) {
                 IconButton(
                     onClick = {
-                        val currentSchedule = settings.schedule[settings.selectedSchedule]
-                        if (currentSchedule != null) {
-                            viewModel.updateSchedule(
-                                schedule = currentSchedule.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
-                            )
-                            navHostController.popBackStack()
-                        }
+                        viewModel.updateSchedule(
+                            schedule = schedule!!.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
+                        )
+                        navHostController.popBackStack()
                     },
-                    enabled = conflictSet.size == 0 &&
+                    enabled = conflictSet.isEmpty() &&
                             (morningCount.value + afternoonCount.value + eveningCount.value) > 0,
                 ) {
                     Icon(
@@ -468,19 +463,4 @@ fun LessonsPerDayScreen(
             }
         }
     }
-}
-
-private fun lessonsPerDayValidator(
-    lessonTimePeriodInfo: LessonTimePeriodInfo
-): IntSet {
-    val lessons =
-        lessonTimePeriodInfo.morning + lessonTimePeriodInfo.afternoon + lessonTimePeriodInfo.evening
-    val conflictSet = MutableIntSet()
-    for (i in 1 until lessons.size) {
-        if (lessons[i].start < lessons[i - 1].end) { // Overlapping lessons
-            conflictSet.add(i - 1)
-            conflictSet.add(i)
-        }
-    }
-    return conflictSet
 }

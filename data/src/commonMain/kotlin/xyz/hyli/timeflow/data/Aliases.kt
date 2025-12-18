@@ -7,23 +7,25 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+@file:Suppress("unused")
 package xyz.hyli.timeflow.data
 
 // Current Data Structures
-typealias Settings = SettingsV1
+typealias Settings = SettingsV2
+typealias ThemeMode = ThemeModeV2
 
-typealias Schedule = ScheduleV1
-typealias Date = DateV1
-typealias Range = RangeV1
-typealias Time = TimeV1
-typealias Lesson = LessonV1
-typealias LessonTimePeriodInfo = LessonTimePeriodInfoV1
+typealias Schedule = ScheduleV2
+typealias Date = DateV2
+typealias Range = RangeV2
+typealias Time = TimeV2
+typealias Lesson = LessonV2
+typealias LessonTimePeriodInfo = LessonTimePeriodInfoV2
 
-typealias Course = CourseV1
-typealias Weekday = WeekdayV1
-typealias WeekDescriptionEnum = WeekDescriptionEnumV1
-typealias WeekRange = WeekRangeV1
-typealias WeekList = WeekListV1
+typealias Course = CourseV2
+typealias Weekday = WeekdayV2
+typealias WeekDescriptionEnum = WeekDescriptionEnumV2
+typealias WeekRange = WeekRangeV2
+typealias WeekList = WeekListV2
 
 // V1 Data Structures
 typealias SettingsV1 = xyz.hyli.timeflow.data.v1.Settings

@@ -51,7 +51,7 @@ data class Date(
             }"
         }
 
-    fun toLocalDate(): LocalDate = LocalDate(year.toInt(), month.toInt(), day.toInt())
+    fun toLocalDate(): LocalDate = LocalDate(year, month, day)
 
     @OptIn(ExperimentalTime::class)
     fun weeksTill(date: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Int {

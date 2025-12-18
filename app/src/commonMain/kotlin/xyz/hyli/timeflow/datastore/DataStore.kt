@@ -21,6 +21,7 @@ import okio.Path.Companion.toPath
 import okio.use
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.ThemeMode
 
 expect val platformFileSystem: FileSystem
 
@@ -29,7 +30,7 @@ internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
     override val defaultValue = Settings()
 
     override suspend fun readFrom(source: BufferedSource) =
-        source.readByteArray().toProtoBufData(defaultValue)!!
+        readSettingsFromByteArray(source.readByteArray()) ?: defaultValue
 
     override suspend fun writeTo(t: Settings, sink: BufferedSink) {
         sink.use {
@@ -65,9 +66,9 @@ class SettingsDataStore(
         }
     }
 
-    suspend fun updateTheme(theme: Int) {
+    suspend fun updateTheme(themeMode: ThemeMode) {
         db.updateData { currentSettings ->
-            currentSettings.copy(theme = theme)
+            currentSettings.copy(themeMode = themeMode)
         }
     }
     suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
@@ -80,27 +81,29 @@ class SettingsDataStore(
             currentSettings.copy(themeColor = color)
         }
     }
-    suspend fun updateSelectedSchedule(uuid: String) {
+    suspend fun updateSelectedSchedule(id: Short) {
         db.updateData { currentSettings ->
-            currentSettings.copy(selectedSchedule = uuid)
+            currentSettings.copy(selectedScheduleID = id)
         }
     }
-    suspend fun createSchedule(uuid: String, schedule: Schedule) {
+
+    suspend fun createSchedule(id: Short, schedule: Schedule) {
         db.updateData { currentSettings ->
-            val updatedSchedule = currentSettings.schedule.toMutableMap()
-            updatedSchedule[uuid] = schedule
-            currentSettings.copy(schedule = updatedSchedule)
+            val updatedSchedule = currentSettings.schedules.toMutableMap()
+            updatedSchedule[id] = schedule
+            currentSettings.copy(schedules = updatedSchedule)
         }
     }
-    suspend fun updateSchedule(uuid: String, schedule: Schedule) {
+
+    suspend fun updateSchedule(id: Short, schedule: Schedule) {
         db.updateData { currentSettings ->
-            val updatedSchedule = currentSettings.schedule.toMutableMap()
-            updatedSchedule[uuid] = schedule
-            currentSettings.copy(schedule = updatedSchedule)
+            val updatedSchedule = currentSettings.schedules.toMutableMap()
+            updatedSchedule[id] = schedule
+            currentSettings.copy(schedules = updatedSchedule)
         }
     }
     suspend fun reset() {
-        db.updateData { currentSettings ->
+        db.updateData { _ ->
             Settings()
         }
     }

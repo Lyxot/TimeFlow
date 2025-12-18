@@ -13,12 +13,12 @@ import kotlin.random.Random
 
 const val ZERO_ID = 0.toShort()
 
-val random = Random.Default
+internal val random = Random.Default
 
-fun getRandomShort(): Short =
+private fun getRandomShort(): Short =
     random.nextInt(1, Short.MAX_VALUE.toInt() + 1).toShort()
 
-fun newShortId(
+internal fun newShortId(
     idList: Set<Short>
 ): Short {
     var newId: Short = getRandomShort()

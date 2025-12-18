@@ -118,10 +118,10 @@ enum class EditCourseStyle {
 fun EditCourseScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController,
+    courseID: Short,
     initValue: Course
 ) {
-    val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]!!
+    val schedule by viewModel.selectedSchedule.collectAsState()
     val course = remember { mutableStateOf(initValue) }
     val isNameValid =
         remember { mutableStateOf(course.value.name.isNotBlank()) }
@@ -130,26 +130,26 @@ fun EditCourseScreen(
             if (course.value.time.start > course.value.time.end) {
                 false
             } else {
-                schedule.courses.none {
-                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.week.any { it in course.value.week.week }
+                schedule!!.courses.none { (_, it) ->
+                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.weeks.any { it in course.value.week.weeks }
                 }
             }
         )
     }
-    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
-        it - schedule.courses.filter {
+    val validWeeks = (1..schedule!!.totalWeeks).toMutableList().let {
+        it - schedule!!.courses.filter { (_, it) ->
             it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMapTo(mutableSetOf()) { it.week.week }
+        }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
     }
     val isWeekValid =
-        remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
+        remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
 
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
         title = {
             Text(
                 text =
-                    if (initValue in schedule.courses) stringResource(Res.string.schedule_title_edit_course)
+                    if (initValue in schedule!!.courses.values) stringResource(Res.string.schedule_title_edit_course)
                     else stringResource(Res.string.schedule_title_add_course)
             )
         },
@@ -161,9 +161,9 @@ fun EditCourseScreen(
                 onClick = {
                     confirmEditCourse(
                         courseValue = course,
-                        initValue = initValue,
+                        courseID = courseID,
                         viewModel = viewModel,
-                        schedule = schedule
+                        schedule = schedule!!
                     )
                     navHostController.popBackStack()
                 },
@@ -193,12 +193,14 @@ fun EditCourseScreen(
                 isWeekValid = isWeekValid,
                 validWeeks = validWeeks
             )
-            if (initValue in schedule.courses) {
+            if (schedule!!.courses.contains(courseID)) {
                 DeleteCourseButton(
                     onClick = {
                         viewModel.updateSchedule(
-                            schedule = schedule.copy(
-                                courses = schedule.courses - initValue
+                            schedule = schedule!!.copy(
+                                courses = schedule!!.courses.toMutableMap().apply {
+                                    remove(courseID)
+                                }
                             )
                         )
                         navHostController.popBackStack()
@@ -221,8 +223,7 @@ fun EditCourseContent(
     isWeekValid: MutableState<Boolean>,
     validWeeks: List<Int>
 ) {
-    val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]!!
+    val schedule by viewModel.selectedSchedule.collectAsState()
     var course by courseValue
 
     var isColorChanged by remember { mutableStateOf(false) }
@@ -234,17 +235,17 @@ fun EditCourseContent(
         isTimeValid.value = if (course.time.start > course.time.end) {
             false
         } else {
-            schedule.courses.none {
-                it != initValue && it.time.start <= course.time.end && it.time.end >= course.time.start && it.weekday == course.weekday && it.week.week.any { it in course.week.week }
+            schedule!!.courses.none { (_, it) ->
+                it != initValue && it.time.start <= course.time.end && it.time.end >= course.time.start && it.weekday == course.weekday && it.week.weeks.any { it in course.week.weeks }
             }
         }
         isWeekValid.value =
-            course.week.week.isNotEmpty() && course.week.week.all { it in validWeeks }
+            course.week.weeks.isNotEmpty() && course.week.weeks.all { it in validWeeks }
     }
 
     // Auto select color, classroom, teacher if they are the same in other sections
     LaunchedEffect(course.name) {
-        schedule.courses.filter { it.name == course.name }.let { courseList ->
+        schedule!!.courses.filterValues { it.name == course.name }.let { courseList ->
             if (courseList.isEmpty()) {
                 course.let {
                     var copy = it.copy()
@@ -256,21 +257,21 @@ fun EditCourseContent(
                 return@let
             }
             if (!isColorChanged && course.color == -1) {
-                courseList.map { it.color }.toSet().let {
+                courseList.map { it.value.color }.toSet().let {
                     if (it.size == 1) {
                         course = course.copy(color = it.first())
                     }
                 }
             }
             if (!isClassroomChanged && course.classroom.isBlank()) {
-                courseList.map { it.classroom }.toSet().let {
+                courseList.map { it.value.classroom }.toSet().let {
                     if (it.size == 1) {
                         course = course.copy(classroom = it.first())
                     }
                 }
             }
             if (!isTeacherChanged && course.teacher.isBlank()) {
-                courseList.map { it.teacher }.toSet().let {
+                courseList.map { it.value.teacher }.toSet().let {
                     if (it.size == 1) {
                         course = course.copy(teacher = it.first())
                     }
@@ -339,11 +340,11 @@ fun EditCourseContent(
         fun onCourseTimeChange(range: Range) {
             course = course.copy(
                 time = range, week = WeekList(
-                    week = course.week.week.filter {
-                        it in (1..schedule.totalWeeks()).toMutableList().let {
-                            it - schedule.courses.filter {
+                    weeks = course.week.weeks.filter {
+                        it in (1..schedule!!.totalWeeks).toMutableList().let {
+                            it - schedule!!.courses.filter { (_, it) ->
                                 it != initValue && it.time.start <= range.end && it.time.end >= range.start && it.weekday == course.weekday
-                            }.flatMapTo(mutableSetOf()) { it.week.week }
+                            }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
                         }
                     }
                 )
@@ -354,7 +355,7 @@ fun EditCourseContent(
                 CourseTimeDialog(
                     initStartTime = course.time.start,
                     initEndTime = course.time.end,
-                    totalLessonsCount = schedule.lessonTimePeriodInfo.getTotalLessons(),
+                    totalLessonsCount = schedule!!.lessonTimePeriodInfo.totalLessonsCount,
                     containerColor = containerColor,
                     borderColor = borderColor,
                     onCourseTimeChange = { onCourseTimeChange(it) }
@@ -365,7 +366,7 @@ fun EditCourseContent(
                 CourseTimeCard(
                     initStartTime = course.time.start,
                     initEndTime = course.time.end,
-                    totalLessonsCount = schedule.lessonTimePeriodInfo.getTotalLessons(),
+                    totalLessonsCount = schedule!!.lessonTimePeriodInfo.totalLessonsCount,
                     onCourseTimeChange = { onCourseTimeChange(it) }
                 )
             }
@@ -398,24 +399,24 @@ fun EditCourseContent(
                         val items = listOf(
                             WeekList(
                                 weekDescription = WeekDescriptionEnum.ODD,
-                                totalWeeks = schedule.totalWeeks(),
+                                totalWeeks = schedule!!.totalWeeks,
                                 validWeeks = validWeeks
                             ) to stringResource(Res.string.odd_week),
                             WeekList(
                                 weekDescription = WeekDescriptionEnum.EVEN,
-                                totalWeeks = schedule.totalWeeks(),
+                                totalWeeks = schedule!!.totalWeeks,
                                 validWeeks = validWeeks
                             ) to stringResource(Res.string.even_week),
                             WeekList(
                                 weekDescription = WeekDescriptionEnum.ALL,
-                                totalWeeks = schedule.totalWeeks(),
+                                totalWeeks = schedule!!.totalWeeks,
                                 validWeeks = validWeeks
                             ) to stringResource(Res.string.all_week)
                         )
                         items.forEachIndexed { index, item ->
-                            val courseWeeks = course.week.week.toSet()
-                            val allWeeks = items[2].first.week.toSet()
-                            val checked = courseWeeks == item.first.week.toSet()
+                            val courseWeeks = course.week.weeks.toSet()
+                            val allWeeks = items[2].first.weeks.toSet()
+                            val checked = courseWeeks == item.first.weeks.toSet()
                                     && !(index != 2 && courseWeeks == allWeeks)
                                     && courseWeeks.isNotEmpty()
                             ToggleButton(
@@ -424,7 +425,8 @@ fun EditCourseContent(
                                     .semantics { role = Role.RadioButton },
                                 checked = checked,
                                 onCheckedChange = {
-                                    course = if (checked) course.copy(week = WeekList(week = emptyList()))
+                                    course =
+                                        if (checked) course.copy(week = WeekList(weeks = emptyList()))
                                     else course.copy(week = item.first)
                                 },
                                 shapes =
@@ -441,10 +443,10 @@ fun EditCourseContent(
                 }
                 val weekItemSize = DpSize(56.dp, 40.dp)
                 val weekButtons = buildList<@Composable RowScope.() -> Unit> {
-                    (1..schedule.totalWeeks()).map { i ->
+                    (1..schedule!!.totalWeeks).map { i ->
                         add(
                             @Composable {
-                                val isSelected = course.week.week.contains(i)
+                                val isSelected = course.week.weeks.contains(i)
                                 val containerColor by ToggleButtonDefaults.toggleButtonColors().let {
                                     animateColorAsState(
                                         if (isSelected) it.checkedContainerColor
@@ -479,9 +481,9 @@ fun EditCourseContent(
                                     enabled = i in validWeeks || isSelected,
                                     onCheckedChange = {
                                         course = if (isSelected) {
-                                            course.copy(week = course.week.copy(week = course.week.week - i))
+                                            course.copy(week = course.week.copy(weeks = course.week.weeks - i))
                                         } else {
-                                            course.copy(week = course.week.copy(week = course.week.week + i))
+                                            course.copy(week = course.week.copy(weeks = course.week.weeks + i))
                                         }
                                     },
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
@@ -505,13 +507,13 @@ fun EditCourseContent(
                     buttons = weekButtons,
                     onItemDrag = { index ->
                         val week = index + 1
-                        val isSelected = course.week.week.contains(week)
+                        val isSelected = course.week.weeks.contains(week)
                         val isEnabled = week in validWeeks || isSelected
                         if (isEnabled) {
                             course = if (isSelected) {
-                                course.copy(week = course.week.copy(week = course.week.week - week))
+                                course.copy(week = course.week.copy(weeks = course.week.weeks - week))
                             } else {
-                                course.copy(week = course.week.copy(week = course.week.week + week))
+                                course.copy(week = course.week.copy(weeks = course.week.weeks + week))
                             }
                         }
                     },
@@ -735,7 +737,7 @@ fun DeleteCourseButton(
 
 fun confirmEditCourse(
     courseValue: MutableState<Course>,
-    initValue: Course,
+    courseID: Short,
     viewModel: TimeFlowViewModel,
     schedule: Schedule,
 ) {
@@ -743,16 +745,14 @@ fun confirmEditCourse(
     if (course.color == -1) {
         course = course.copy(
             color =
-                schedule.courses.firstOrNull { it.name == course.name }?.color
+                schedule.courses.values.firstOrNull { it.name == course.name }?.color
                     ?: COLORS.random().toArgb()
         )
     }
     viewModel.updateSchedule(
         schedule = schedule.copy(
-            courses = if (initValue in schedule.courses) {
-                schedule.courses.map { if (it == initValue) course else it }
-            } else {
-                schedule.courses + course
+            courses = schedule.courses.toMutableMap().apply {
+                this[courseID] = course
             }
         )
     )

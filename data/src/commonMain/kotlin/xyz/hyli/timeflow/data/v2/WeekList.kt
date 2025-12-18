@@ -54,7 +54,7 @@ data class WeekList(
         weeks = weekRange.range.flatMap { it.start..it.end }.distinct()
     )
 
-    fun getString(): String {
+    override fun toString(): String {
         if (weeks.isEmpty()) return ""
 
         val sortedWeeks = weeks.sorted()

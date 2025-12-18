@@ -98,12 +98,22 @@ val NavigationBarType = listOf(
 
 @Serializable
 data class EditCourseDestination(
-    val courseProtoBufHexString: String
+    val courseID: Int,
+    val courseHexString: String
 ) {
     @OptIn(ExperimentalSerializationApi::class)
-    constructor(course: Course) : this(
-        courseProtoBufHexString = ProtoBuf.encodeToHexString(course)
+    constructor(courseID: Short, course: Course) : this(
+        courseID = courseID.toInt(),
+        courseHexString = ProtoBuf.encodeToHexString(course)
     )
+
+    @OptIn(ExperimentalSerializationApi::class)
+    fun toCourse(): Pair<Short, Course> {
+        return Pair(
+            courseID.toShort(),
+            ProtoBuf.decodeFromHexString<Course>(courseHexString)
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -225,10 +235,9 @@ fun TimeFlowNavHost(
             popEnterTransition = NavigationAnimation.enterSlideIn,
             popExitTransition = NavigationAnimation.exitSlideOut
         ) { backStackEntry ->
-            val courseProtoBufHexString: String =
-                backStackEntry.toRoute<EditCourseDestination>().courseProtoBufHexString
-            val course = ProtoBuf.decodeFromHexString<Course>(courseProtoBufHexString)
-            EditCourseScreen(viewModel, navHostController, course)
+            val destination = backStackEntry.toRoute<EditCourseDestination>()
+            val (courseID, course) = destination.toCourse()
+            EditCourseScreen(viewModel, navHostController, courseID, course)
         }
     }
 }

@@ -13,6 +13,13 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.ScheduleV1
+import xyz.hyli.timeflow.data.ScheduleV2
+import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.SettingsV1
+import xyz.hyli.timeflow.data.SettingsV2
+import xyz.hyli.timeflow.data.toV2
 import xyz.hyli.timeflow.utils.gzipCompress
 import xyz.hyli.timeflow.utils.gzipDecompress
 
@@ -42,7 +49,7 @@ inline fun <reified T> ByteArray.toProtoBufData(defaultValue: T? = null): T? {
 
 /**
  * 将对象序列化为 ProtoBuf 字节数组
- * @param compress 是否使用 zstd 压缩，默认为 true
+ * @param compress 是否使用 gzip 压缩，默认为 true
  * @return 序列化后的字节数组
  */
 @OptIn(ExperimentalSerializationApi::class)
@@ -54,5 +61,15 @@ inline fun <reified T> T.toProtoBufByteArray(
     } else {
         it
     }
+}
+
+fun readSettingsFromByteArray(bytes: ByteArray): Settings? {
+    return bytes.toProtoBufData<SettingsV2>(null)
+        ?: bytes.toProtoBufData<SettingsV1>(null)?.toV2()
+}
+
+fun readScheduleFromByteArray(bytes: ByteArray): Schedule? {
+    return bytes.toProtoBufData<ScheduleV2>(null)
+        ?: bytes.toProtoBufData<ScheduleV1>(null)?.toV2()
 }
 

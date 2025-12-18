@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.materialkolor.ktx.animateColorScheme
+import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
@@ -34,10 +35,10 @@ internal fun AppTheme(
 ) {
     val systemIsDark = isSystemInDarkTheme()
     val settings by viewModel.settings.collectAsState()
-    val isDarkState = remember(systemIsDark, settings.theme) {
-        if (settings.theme != 1 && settings.theme != 2) // 0: System, 1: Light, 2: Dark
+    val isDarkState = remember(systemIsDark, settings.themeMode) {
+        if (settings.themeMode == ThemeMode.SYSTEM) // 0: System, 1: Light, 2: Dark
             mutableStateOf(systemIsDark)
-        else mutableStateOf(settings.theme == 2)
+        else mutableStateOf(settings.themeMode == ThemeMode.DARK)
     }
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState

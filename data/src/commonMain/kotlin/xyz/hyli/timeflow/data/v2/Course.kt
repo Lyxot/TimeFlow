@@ -31,15 +31,6 @@ data class Course(
     @ProtoNumber(11) val reserved11: String? = null,
     @ProtoNumber(12) val reserved12: String? = null,
 ) {
-    companion object {
-        fun getValidWeeks(totalWeeks: Int, courses: List<Course>) =
-            (1..totalWeeks).toList().filter {
-                it in courses.flatMap { course ->
-                    course.week.weeks
-                }
-            }
-    }
-
     fun isInWeek(week: Int) =
         this.week.weeks.contains(week)
 }

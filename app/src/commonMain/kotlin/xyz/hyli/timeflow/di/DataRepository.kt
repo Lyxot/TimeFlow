@@ -13,17 +13,18 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.datastore.SettingsDataStore
 
 interface IDataRepository {
     val settings: Flow<Settings>
     suspend fun updateFirstLaunch(versionCode: Int)
-    suspend fun updateTheme(theme: Int)
+    suspend fun updateThemeMode(themeMode: ThemeMode)
     suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean)
     suspend fun updateThemeColor(color: Int)
-    suspend fun updateSelectedSchedule(uuid: String)
-    suspend fun createSchedule(uuid: String, schedule: Schedule)
-    suspend fun updateSchedule(uuid: String, schedule: Schedule)
+    suspend fun updateSelectedSchedule(id: Short)
+    suspend fun createSchedule(id: Short, schedule: Schedule)
+    suspend fun updateSchedule(id: Short, schedule: Schedule)
 }
 
 class DataRepository(
@@ -35,8 +36,8 @@ class DataRepository(
         settingsDataStore.updateFirstLaunch(versionCode)
     }
 
-    override suspend fun updateTheme(theme: Int) {
-        settingsDataStore.updateTheme(theme)
+    override suspend fun updateThemeMode(themeMode: ThemeMode) {
+        settingsDataStore.updateTheme(themeMode)
     }
 
     override suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
@@ -47,15 +48,15 @@ class DataRepository(
         settingsDataStore.updateThemeColor(color)
     }
 
-    override suspend fun updateSelectedSchedule(uuid: String) {
-        settingsDataStore.updateSelectedSchedule(uuid)
+    override suspend fun updateSelectedSchedule(id: Short) {
+        settingsDataStore.updateSelectedSchedule(id)
     }
 
-    override suspend fun createSchedule(uuid: String, schedule: Schedule) {
-        settingsDataStore.createSchedule(uuid, schedule)
+    override suspend fun createSchedule(id: Short, schedule: Schedule) {
+        settingsDataStore.createSchedule(id, schedule)
     }
 
-    override suspend fun updateSchedule(uuid: String, schedule: Schedule) {
-        settingsDataStore.updateSchedule(uuid, schedule)
+    override suspend fun updateSchedule(id: Short, schedule: Schedule) {
+        settingsDataStore.updateSchedule(id, schedule)
     }
 }

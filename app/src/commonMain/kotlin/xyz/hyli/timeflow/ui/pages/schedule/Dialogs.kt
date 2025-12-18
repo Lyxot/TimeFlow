@@ -146,12 +146,13 @@ fun ConfirmSelectScheduleDialog(
 
 @Composable
 fun CourseListDialog(
-    courses: List<Course>,
+    courses: Map<Short, Course>,
     currentWeek: Int,
     totalWeeks: Int,
     time: Range,
     showCourseListDialog: DialogState,
-    onClick: (Course) -> Unit
+    onEditCourse: (Short, Course) -> Unit,
+    onCreateNewCourse: (Course) -> Unit
 ) {
     MyDialog(
         state = showCourseListDialog,
@@ -166,13 +167,13 @@ fun CourseListDialog(
                 IconButton(
                     onClick = {
                         val validWeeks = (1..totalWeeks).toMutableList().let { it ->
-                            it - courses.flatMapTo(mutableSetOf()) { it.week.week }
+                            it - courses.flatMapTo(mutableSetOf()) { it.value.week.weeks }
                         }
-                        onClick(
+                        onCreateNewCourse(
                             Course(
                                 name = "",
                                 time = time,
-                                weekday = courses.first().weekday,
+                                weekday = courses.values.first().weekday,
                                 week = WeekList(
                                     weekDescription = WeekDescriptionEnum.ALL,
                                     totalWeeks = totalWeeks,
@@ -200,13 +201,13 @@ fun CourseListDialog(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
         ) {
-            courses.forEachIndexed { index, course ->
+            courses.toList().forEachIndexed { index, (courseID, course) ->
                 SubcomposeLayout { constraints ->
                     val button = subcompose("button") {
                         Button(
                             modifier = Modifier,
                             onClick = {
-                                onClick(course)
+                                onEditCourse(courseID, course)
                                 showCourseListDialog.dismiss()
                             }
                         ) {
@@ -229,7 +230,7 @@ fun CourseListDialog(
                             ) {
                                 Text(
                                     text = course.name.let {
-                                        if (course.week.week.contains(currentWeek)) it
+                                        if (course.isInWeek(currentWeek)) it
                                         else it + " " + stringResource(Res.string.schedule_course_not_this_week)
                                     },
                                     style = MaterialTheme.typography.titleMedium
@@ -239,7 +240,7 @@ fun CourseListDialog(
                                         append(
                                             stringResource(
                                                 Res.string.schedule_value_course_week,
-                                                course.week.getString()
+                                                course.week.toString()
                                             )
                                         )
                                         withStyle(
@@ -301,6 +302,7 @@ fun CourseListDialog(
 fun EditCourseDialog(
     state: MutableState<TableState>,
     scheduleParams: ScheduleParams,
+    courseID: Short,
     initValue: Course,
     showEditCourseDialog: DialogState
 ) {
@@ -313,19 +315,19 @@ fun EditCourseDialog(
             if (course.value.time.start > course.value.time.end) {
                 false
             } else {
-                schedule.courses.none {
-                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.week.any { it in course.value.week.week }
+                schedule.courses.none { (_, it) ->
+                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.weeks.any { it in course.value.week.weeks }
                 }
             }
         )
     }
-    val validWeeks = (1..schedule.totalWeeks()).toMutableList().let {
-        it - schedule.courses.filter {
+    val validWeeks = (1..schedule.totalWeeks).toMutableList().let {
+        it - schedule.courses.filter { (_, it) ->
             it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMapTo(mutableSetOf()) { it.week.week }
+        }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
     }
     val isWeekValid =
-        remember { mutableStateOf(course.value.week.week.isNotEmpty() && course.value.week.week.all { it in validWeeks }) }
+        remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
     showEditCourseDialog.enableButton(
         button = DialogButtonType.Positive,
         enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
@@ -335,7 +337,7 @@ fun EditCourseDialog(
         title = {
             Text(
                 text =
-                    if (initValue in schedule.courses) stringResource(Res.string.schedule_title_edit_course)
+                    if (initValue in schedule.courses.values) stringResource(Res.string.schedule_title_edit_course)
                     else stringResource(Res.string.schedule_title_add_course)
             )
         },
@@ -347,7 +349,7 @@ fun EditCourseDialog(
             if (event.isPositiveButton) {
                 confirmEditCourse(
                     courseValue = course,
-                    initValue = initValue,
+                    courseID = courseID,
                     viewModel = scheduleParams.viewModel,
                     schedule = schedule
                 )
@@ -369,12 +371,14 @@ fun EditCourseDialog(
                 isWeekValid = isWeekValid,
                 validWeeks = validWeeks
             )
-            if (initValue in schedule.courses) {
+            if (schedule.courses.contains(courseID)) {
                 DeleteCourseButton(
                     onClick = {
                         scheduleParams.viewModel.updateSchedule(
                             schedule = schedule.copy(
-                                courses = schedule.courses - initValue
+                                courses = schedule.courses.toMutableMap().apply {
+                                    remove(courseID)
+                                }
                             )
                         )
                         showEditCourseDialog.dismiss()

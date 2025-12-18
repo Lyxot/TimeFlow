@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.di.IDataRepository
 
 class FakeDataRepository : IDataRepository {
@@ -23,8 +24,8 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(firstLaunch = versionCode)
     }
 
-    override suspend fun updateTheme(theme: Int) {
-        _settings.value = _settings.value.copy(theme = theme)
+    override suspend fun updateThemeMode(themeMode: ThemeMode) {
+        _settings.value = _settings.value.copy(themeMode = themeMode)
     }
 
     override suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
@@ -35,20 +36,20 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(themeColor = color)
     }
 
-    override suspend fun updateSelectedSchedule(uuid: String) {
-        _settings.value = _settings.value.copy(selectedSchedule = uuid)
+    override suspend fun updateSelectedSchedule(id: Short) {
+        _settings.value = _settings.value.copy(selectedScheduleID = id)
     }
 
-    override suspend fun createSchedule(uuid: String, schedule: Schedule) {
-        val newMap = _settings.value.schedule.toMutableMap()
-        newMap[uuid] = schedule
-        _settings.value = _settings.value.copy(schedule = newMap)
+    override suspend fun createSchedule(id: Short, schedule: Schedule) {
+        val newMap = _settings.value.schedules.toMutableMap()
+        newMap[id] = schedule
+        _settings.value = _settings.value.copy(schedules = newMap)
     }
 
-    override suspend fun updateSchedule(uuid: String, schedule: Schedule) {
-        val newMap = _settings.value.schedule.toMutableMap()
-        newMap[uuid] = schedule
-        _settings.value = _settings.value.copy(schedule = newMap)
+    override suspend fun updateSchedule(id: Short, schedule: Schedule) {
+        val newMap = _settings.value.schedules.toMutableMap()
+        newMap[id] = schedule
+        _settings.value = _settings.value.copy(schedules = newMap)
     }
 
     // Helper function for tests to manually set the settings

@@ -284,7 +284,7 @@ fun EmptyTableCell(
     index: Int,
     dayIndex: Int,
     totalWeeks: Int,
-    onClick: (Course) -> Unit
+    onCreateNewCourse: (Course) -> Unit
 ) {
     val isActive =
         state.value.row == index && state.value.column == dayIndex + 1 && state.value.isClicked != 0
@@ -308,7 +308,7 @@ fun EmptyTableCell(
                     modifier = Modifier
                         .fillMaxSize()
                         .clickable {
-                            onClick(
+                            onCreateNewCourse(
                                 Course(
                                     name = "",
                                     time = Range(
@@ -357,22 +357,30 @@ fun EmptyTableCell(
 
 @Composable
 fun CourseCell(
-    courses: List<Course>,
-    coursesForThisTime: List<Course>,
+    courses: Map<Short, Course>,
+    coursesForThisTime: Map<Short, Course>,
     currentWeek: Int,
     totalWeeks: Int,
     displayOffSet: Dp = 0.dp,
-    displayHeight: Dp = courses.first().time.let { (it.end - it.start + 1) * 64 }.dp,
-    onClick: (Course) -> Unit
+    displayHeight: Dp = courses.values.first().time.let { (it.end - it.start + 1) * 64 }.dp,
+    onEditCourse: (Short, Course) -> Unit,
+    onCreateNewCourse: (Course) -> Unit
 ) {
     val showCourseListDialog = rememberDialogState()
-    val course = courses.first()
+    val course = courses.values.minBy { course ->
+        // 按照距离当前周的最小差值排序, 优先显示在当前周之后的课程
+        course.week.weeks.minOfOrNull { week ->
+            (week - currentWeek).let {
+                if (it < 0) it + totalWeeks else it
+            }
+        } ?: Int.MAX_VALUE
+    }
     var containerColor by remember { mutableStateOf(Color.Unspecified) }
     var contentColor by remember { mutableStateOf(Color.Unspecified) }
-    if (course.week.week.contains(currentWeek) && courses.size > 1) {
+    if (course.isInWeek(currentWeek) && courses.size > 1) {
         containerColor = MaterialTheme.colorScheme.error
         contentColor = MaterialTheme.colorScheme.onError
-    } else if (course.week.week.contains(currentWeek)) {
+    } else if (course.isInWeek(currentWeek)) {
         containerColor =
             Color(course.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
         contentColor =
@@ -388,7 +396,8 @@ fun CourseCell(
             totalWeeks = totalWeeks,
             time = course.time,
             showCourseListDialog = showCourseListDialog,
-            onClick = onClick
+            onEditCourse = onEditCourse,
+            onCreateNewCourse = onCreateNewCourse
         )
     }
 
@@ -450,7 +459,7 @@ fun CourseCell(
                             y = displayOffSet
                         )
                 ) {
-                    if (course.week.week.contains(currentWeek) && courses.size > 1) {
+                    if (course.isInWeek(currentWeek) && courses.size > 1) {
                         Text(
                             text = stringResource(
                                 Res.string.schedule_warning_multiple_courses,
@@ -527,8 +536,7 @@ fun ScheduleFAB(
     visible: Boolean,
     showMessage: (String) -> Unit,
 ) {
-    val settings by viewModel.settings.collectAsState()
-    val schedule = settings.schedule[settings.selectedSchedule]
+    val schedule by viewModel.selectedSchedule.collectAsState()
     var showContent by remember { mutableStateOf(false) }
     val saver = rememberFileSaverLauncher { file ->
         if (file != null) {
@@ -578,7 +586,7 @@ fun ScheduleFAB(
                 onClick = {
                     showContent = false
                     // TODO: 分享课程表Dialog
-                    saver.launch(schedule.name, "pb")
+                    saver.launch(schedule!!.name, "pb")
                 },
                 text = {
                     Text(stringResource(Res.string.export))

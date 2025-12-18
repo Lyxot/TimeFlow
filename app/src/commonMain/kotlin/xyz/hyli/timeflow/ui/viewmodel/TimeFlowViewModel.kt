@@ -23,6 +23,7 @@ import io.github.vinceglb.filekit.readBytes
 import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -34,14 +35,14 @@ import timeflow.app.generated.resources.schedule_value_import_schedule_failed
 import timeflow.app.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.ThemeMode
+import xyz.hyli.timeflow.datastore.readScheduleFromByteArray
 import xyz.hyli.timeflow.datastore.toProtoBufByteArray
-import xyz.hyli.timeflow.datastore.toProtoBufData
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMobile
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 class TimeFlowViewModel(
     private val repository: IDataRepository
@@ -54,15 +55,23 @@ class TimeFlowViewModel(
                 initialValue = Settings(initialized = false)
             )
 
+    val selectedSchedule: StateFlow<Schedule?> =
+        settings.map { settings -> settings.selectedSchedule }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = null
+            )
+
     fun updateFirstLaunch(versionCode: Int) {
         viewModelScope.launch {
             repository.updateFirstLaunch(versionCode)
         }
     }
 
-    fun updateTheme(theme: Int) {
+    fun updateTheme(themeMode: ThemeMode) {
         viewModelScope.launch {
-            repository.updateTheme(theme)
+            repository.updateThemeMode(themeMode)
         }
     }
 
@@ -78,38 +87,35 @@ class TimeFlowViewModel(
         }
     }
 
-    fun updateSelectedSchedule(uuid: String) {
+    fun updateSelectedSchedule(id: Short) {
         viewModelScope.launch {
-            repository.updateSelectedSchedule(uuid)
+            repository.updateSelectedSchedule(id)
         }
     }
 
     @OptIn(ExperimentalUuidApi::class)
     fun createSchedule(schedule: Schedule) {
-        var uuid = Uuid.random().toString()
-        while (settings.value.schedule.containsKey(uuid)) {
-            uuid = Uuid.random().toString()
-        }
+        val id = settings.value.newScheduleId()
         viewModelScope.launch {
-            repository.createSchedule(uuid, schedule)
-            repository.updateSelectedSchedule(uuid)
+            repository.createSchedule(id, schedule)
+            repository.updateSelectedSchedule(id)
         }
     }
 
-    fun updateSchedule(uuid: String = settings.value.selectedSchedule, schedule: Schedule) {
+    fun updateSchedule(id: Short = settings.value.selectedScheduleID, schedule: Schedule) {
         viewModelScope.launch {
-            repository.updateSchedule(uuid, schedule)
+            repository.updateSchedule(id, schedule)
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     fun exportScheduleToFile(
-        uuid: String = settings.value.selectedSchedule,
+        id: Short = settings.value.selectedScheduleID,
         file: PlatformFile,
         showMessage: (String) -> Unit
     ) {
         viewModelScope.launch {
-            val schedule = settings.value.schedule[uuid]
+            val schedule = settings.value.schedules[id]
             if (schedule == null) {
                 showMessage(
                     getString(
@@ -147,7 +153,7 @@ class TimeFlowViewModel(
         viewModelScope.launch {
             try {
                 val bytes = file.readBytes()
-                val importedSchedule = bytes.toProtoBufData<Schedule>(null)
+                val importedSchedule = readScheduleFromByteArray(bytes)
                 createSchedule(importedSchedule!!)
                 showMessage(
                     getString(

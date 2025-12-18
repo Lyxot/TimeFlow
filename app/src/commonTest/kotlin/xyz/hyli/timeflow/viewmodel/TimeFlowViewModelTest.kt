@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -45,22 +46,22 @@ class TimeFlowViewModelTest {
 
     @Test
     fun `test initial settings are loaded`() = runTest {
-        val initialSettings = Settings(theme = 1, themeDynamicColor = true)
+        val initialSettings = Settings(themeMode = ThemeMode.LIGHT, themeDynamicColor = true)
         fakeRepository.setSettings(initialSettings)
 
         val loadedSettings = viewModel.settings.first { it.initialized }
 
-        assertEquals(initialSettings.theme, loadedSettings.theme)
+        assertEquals(initialSettings.themeMode, loadedSettings.themeMode)
         assertEquals(initialSettings.themeDynamicColor, loadedSettings.themeDynamicColor)
     }
 
     @Test
     fun `test updateTheme updates settings`() = runTest {
-        val newTheme = 2
+        val newTheme = ThemeMode.DARK
         viewModel.updateTheme(newTheme)
 
-        val updatedSettings = viewModel.settings.first { it.theme == newTheme }
-        assertEquals(newTheme, updatedSettings.theme)
+        val updatedSettings = viewModel.settings.first { it.themeMode == newTheme }
+        assertEquals(newTheme, updatedSettings.themeMode)
     }
 
     @Test
@@ -68,10 +69,10 @@ class TimeFlowViewModelTest {
         val newSchedule = Schedule(name = "New Semester")
         viewModel.createSchedule(newSchedule)
 
-        val updatedSettings = viewModel.settings.first { it.schedule.containsValue(newSchedule) }
+        val updatedSettings = viewModel.settings.first { it.schedules.containsValue(newSchedule) }
 
-        assertEquals(newSchedule, updatedSettings.schedule[updatedSettings.selectedSchedule])
-        assertEquals(1, updatedSettings.schedule.size)
+        assertEquals(newSchedule, updatedSettings.schedules[updatedSettings.selectedScheduleID])
+        assertEquals(1, updatedSettings.schedules.size)
     }
 
     @Test
@@ -80,21 +81,21 @@ class TimeFlowViewModelTest {
         val initialSchedule = Schedule(name = "Initial Schedule")
         viewModel.createSchedule(initialSchedule)
         val initialSettings =
-            viewModel.settings.first { it.schedule.containsValue(initialSchedule) }
-        val scheduleId = initialSettings.selectedSchedule
+            viewModel.settings.first { it.schedules.containsValue(initialSchedule) }
+        val scheduleId = initialSettings.selectedScheduleID
 
         // Now, update it
         val updatedSchedule = initialSchedule.copy(name = "Updated Name")
         viewModel.updateSchedule(scheduleId, updatedSchedule)
 
         val finalSettings =
-            viewModel.settings.first { it.schedule[scheduleId]?.name == "Updated Name" }
-        assertEquals(updatedSchedule, finalSettings.schedule[scheduleId])
+            viewModel.settings.first { it.schedules[scheduleId]?.name == "Updated Name" }
+        assertEquals(updatedSchedule, finalSettings.schedules[scheduleId])
     }
 
     @Test
     fun `test updateFirstLaunch updates settings`() = runTest {
-        val newVersionCode = 123
+        val newVersionCode = 114514
         viewModel.updateFirstLaunch(newVersionCode)
 
         val updatedSettings = viewModel.settings.first { it.firstLaunch == newVersionCode }
@@ -121,10 +122,10 @@ class TimeFlowViewModelTest {
 
     @Test
     fun `test updateSelectedSchedule updates settings`() = runTest {
-        val newUuid = "new-uuid"
-        viewModel.updateSelectedSchedule(newUuid)
+        val newID: Short = 1145
+        viewModel.updateSelectedSchedule(newID)
 
-        val updatedSettings = viewModel.settings.first { it.selectedSchedule == newUuid }
-        assertEquals(newUuid, updatedSettings.selectedSchedule)
+        val updatedSettings = viewModel.settings.first { it.selectedScheduleID == newID }
+        assertEquals(newID, updatedSettings.selectedScheduleID)
     }
 }
