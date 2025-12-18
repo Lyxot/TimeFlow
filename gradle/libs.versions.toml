@@ -64,6 +64,7 @@ material-kolor = { group = "com.materialkolor", name = "material-kolor", version
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 build-config = { id = "com.github.gmazzo.buildconfig", version.ref = "build-config" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }

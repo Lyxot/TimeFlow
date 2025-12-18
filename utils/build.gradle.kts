@@ -7,65 +7,29 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-@file:Suppress("UnstableApiUsage")
-@file:OptIn(ExperimentalKotlinGradlePluginApi::class, ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalWasmDsl::class)
 
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.multiplatform)
-    id("com.android.library")
+    alias(libs.plugins.android.library)
 }
 
 kotlin {
-    androidTarget {
-        //https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-test.html
-        instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
-
-    jvm {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
-
+    androidTarget { }
+    iosX64 { }
+    iosArm64 { }
+    iosSimulatorArm64 { }
+    jvm { }
     wasmJs {
         browser()
         binaries.executable()
     }
 
-    iosX64 {
-
-    }
-    iosArm64 {
-
-    }
-    iosSimulatorArm64 {
-
-    }
-
     sourceSets {
-        commonMain.dependencies {
-
-        }
-
         wasmJsMain.dependencies {
             implementation(libs.kotlinx.browser)
-        }
-    }
-
-    sourceSets.all {
-        languageSettings.apply {
-            languageVersion = "2.2"
-            apiVersion = "2.2"
-            progressiveMode = true
         }
     }
 }
@@ -73,11 +37,4 @@ kotlin {
 android {
     namespace = "xyz.hyli.timeflow.utils"
     compileSdk = app.versions.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = app.versions.minSdk.get().toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }
