@@ -123,20 +123,9 @@ fun EditCourseScreen(
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
     val course = remember { mutableStateOf(initValue) }
-    val isNameValid =
-        remember { mutableStateOf(course.value.name.isNotBlank()) }
-    val isTimeValid = remember {
-        mutableStateOf(
-            if (course.value.time.start > course.value.time.end) {
-                false
-            } else {
-                !schedule!!.hasConflict(course.value, courseID)
-            }
-        )
+    var isConfirmEnabled by remember {
+        mutableStateOf(false)
     }
-    val validWeeks = schedule!!.getValidWeeksFor(course.value.time, course.value.weekday, courseID)
-    val isWeekValid =
-        remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
 
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
@@ -161,7 +150,7 @@ fun EditCourseScreen(
                     )
                     navHostController.popBackStack()
                 },
-                enabled = isNameValid.value && isTimeValid.value && isWeekValid.value,
+                enabled = isConfirmEnabled,
             ) {
                 Icon(
                     imageVector = Icons.Default.Done,
@@ -183,10 +172,7 @@ fun EditCourseScreen(
                 courseID = courseID,
                 initValue = initValue,
                 courseValue = course,
-                isNameValid = isNameValid,
-                isTimeValid = isTimeValid,
-                isWeekValid = isWeekValid,
-                validWeeks = validWeeks
+                enableConfirmAction = { isConfirmEnabled = it },
             )
             if (schedule!!.courses.contains(courseID)) {
                 DeleteCourseButton(
@@ -214,10 +200,7 @@ fun EditCourseContent(
     courseID: Short,
     initValue: Course,
     courseValue: MutableState<Course>,
-    isNameValid: MutableState<Boolean>,
-    isTimeValid: MutableState<Boolean>,
-    isWeekValid: MutableState<Boolean>,
-    validWeeks: List<Int>
+    enableConfirmAction: (Boolean) -> Unit,
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
     var course by courseValue
@@ -226,15 +209,26 @@ fun EditCourseContent(
     var isClassroomChanged by remember { mutableStateOf(false) }
     var isTeacherChanged by remember { mutableStateOf(false) }
 
-    LaunchedEffect(course) {
-        isNameValid.value = course.name.isNotBlank()
-        isTimeValid.value = if (course.time.start > course.time.end) {
+    val isNameValid = remember(course.name, schedule) { course.name.isNotBlank() }
+    val isTimeValid = remember(course.time, schedule) {
+        if (course.time.start > course.time.end) {
             false
         } else {
             !schedule!!.hasConflict(course, courseID)
         }
-        isWeekValid.value =
-            course.week.weeks.isNotEmpty() && course.week.weeks.all { it in validWeeks }
+    }
+    val validWeeks = remember(course.time, course.weekday, schedule) {
+        schedule!!.getValidWeeksFor(
+            course.time,
+            course.weekday,
+            courseID
+        )
+    }
+    val isWeekValid = remember(course.week, schedule) {
+        course.week.weeks.isNotEmpty() && course.week.weeks.all { it in validWeeks }
+    }
+    LaunchedEffect(isNameValid, isTimeValid, isWeekValid) {
+        enableConfirmAction(isNameValid && isTimeValid && isWeekValid)
     }
 
     // Auto select color, classroom, teacher if they are the same in other sections
@@ -283,7 +277,7 @@ fun EditCourseContent(
             onValueChange = { course = course.copy(name = it.trim()) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            isError = !isNameValid.value,
+            isError = !isNameValid,
             label = {
                 Text(
                     text = stringResource(Res.string.schedule_title_course_name) + "*"

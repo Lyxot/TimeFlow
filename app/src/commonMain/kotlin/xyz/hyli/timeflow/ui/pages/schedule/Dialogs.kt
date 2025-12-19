@@ -308,23 +308,10 @@ fun EditCourseDialog(
 ) {
     val schedule = scheduleParams.schedule
     val course = remember { mutableStateOf(initValue) }
-    val isNameValid =
-        remember { mutableStateOf(course.value.name.isNotBlank()) }
-    val isTimeValid = remember {
-        mutableStateOf(
-            if (course.value.time.start > course.value.time.end) {
-                false
-            } else {
-                !schedule.hasConflict(course.value, courseID)
-            }
-        )
-    }
-    val validWeeks = schedule.getValidWeeksFor(course.value.time, course.value.weekday, courseID)
-    val isWeekValid =
-        remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
+    var isConfirmEnabled by remember { mutableStateOf(false) }
     showEditCourseDialog.enableButton(
         button = DialogButtonType.Positive,
-        enabled = isNameValid.value && isTimeValid.value && isWeekValid.value
+        enabled = isConfirmEnabled
     )
     MyDialog(
         state = showEditCourseDialog,
@@ -361,10 +348,7 @@ fun EditCourseDialog(
                 courseID = courseID,
                 initValue = initValue,
                 courseValue = course,
-                isNameValid = isNameValid,
-                isTimeValid = isTimeValid,
-                isWeekValid = isWeekValid,
-                validWeeks = validWeeks
+                enableConfirmAction = { isConfirmEnabled = it },
             )
             if (schedule.courses.contains(courseID)) {
                 DeleteCourseButton(

@@ -454,8 +454,8 @@ fun CourseColumn(
         (1..layoutParams.rows).filterNot { it in renderedTimeSlots }
     }
 
-    noGridCells = remember(timeSlots) {
-        noGridCells.toMutableList().apply {
+    LaunchedEffect(timeSlots) {
+        noGridCells = noGridCells.toMutableList().apply {
             this[dayIndex] = timeSlots.flatMapTo(mutableSetOf()) { time ->
                 if (time.end - time.start > 0) {
                     (time.start until time.end).map { it + 1 }
