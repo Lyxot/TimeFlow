@@ -1,8 +1,8 @@
 import SwiftUI
-import ComposeApp
+import App
 
 @main
-struct ComposeApp: App {
+struct TimeFlowApp: App {
     let appContainer = AppContainer(factory: Factory(path: nil))
     var body: some Scene {
         WindowGroup {

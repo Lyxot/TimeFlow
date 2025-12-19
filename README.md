@@ -37,15 +37,15 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
 **构建 Android 应用 (APK):**
 
 ```bash
-./gradlew :composeApp:assembleDebug
+./gradlew :app:assembleDebug
 ```
 
-生成的 APK 文件位于 `composeApp/build/outputs/apk/debug/composeApp-debug.apk`。
+生成的 APK 文件位于 `app/build/outputs/apk/debug/app-debug.apk`。
 
 **运行桌面端应用:**
 
 ```bash
-./gradlew :composeApp:run
+./gradlew :app:run
 ```
 
 **运行测试:**
