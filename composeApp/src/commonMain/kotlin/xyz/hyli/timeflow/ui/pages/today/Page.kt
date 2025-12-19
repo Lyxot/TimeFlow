@@ -162,7 +162,7 @@ fun TimelineCourseList(
     val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).let {
         Time(it.hour, it.minute)
     }
-    var currentLessonFlag by remember { mutableStateOf(false) }
+    var currentLessonFlag by remember { mutableStateOf<Int?>(null) }
     val lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
     LazyColumn(
         modifier = Modifier
@@ -173,10 +173,10 @@ fun TimelineCourseList(
             val startTime = lessonTimePeriodInfo.getLessonByIndex(course.time.start).start
             val endTime = lessonTimePeriodInfo.getLessonByIndex(course.time.end).end
             val isPast = currentTime >= endTime
-            val isCurrent = if (!currentLessonFlag && !isPast && currentTime <= endTime) {
-                currentLessonFlag = true
-                true
-            } else false
+            if (currentLessonFlag == null && !isPast && currentTime <= endTime) {
+                currentLessonFlag = index
+            }
+            val isCurrent = currentLessonFlag == index
             val previousColor = if (index > 0) {
                 if (isCurrent || isPast) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 else Color(courses[index - 1].color).harmonize(
