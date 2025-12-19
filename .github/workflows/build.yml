@@ -153,37 +153,37 @@ jobs:
     steps:
       # 下载所有需要的 artifacts
       - name: Download macOS aarch64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: macos-aarch64
           path: macos-aarch64
 
       - name: Download macOS x86_64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: macos-x86_64
           path: macos-x86_64
 
       - name: Download Linux x86_64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: linux-x86_64
           path: linux-x86_64
 
       - name: Download Linux aarch64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: linux-aarch64
           path: linux-aarch64
 
       - name: Download Windows x86_64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: windows-x86_64
           path: windows-x86_64
 
       - name: Download Windows arm64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: windows-arm64
           path: windows-arm64
@@ -328,13 +328,13 @@ jobs:
           submodules: 'recursive'
 
       - name: Download macOS aarch64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: macos-aarch64
           path: macos-aarch64
 
       - name: Download Linux ${{ matrix.arch }} artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: linux-${{ matrix.arch }}
           path: linux-${{ matrix.arch }}
