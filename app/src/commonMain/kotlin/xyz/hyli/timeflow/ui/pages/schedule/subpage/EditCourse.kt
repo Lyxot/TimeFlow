@@ -130,17 +130,11 @@ fun EditCourseScreen(
             if (course.value.time.start > course.value.time.end) {
                 false
             } else {
-                schedule!!.courses.none { (_, it) ->
-                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.weeks.any { it in course.value.week.weeks }
-                }
+                !schedule!!.hasConflict(course.value, courseID)
             }
         )
     }
-    val validWeeks = (1..schedule!!.totalWeeks).toMutableList().let {
-        it - schedule!!.courses.filter { (_, it) ->
-            it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
-    }
+    val validWeeks = schedule!!.getValidWeeksFor(course.value.time, course.value.weekday, courseID)
     val isWeekValid =
         remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
 
@@ -186,6 +180,7 @@ fun EditCourseScreen(
             EditCourseContent(
                 style = EditCourseStyle.Screen,
                 viewModel = viewModel,
+                courseID = courseID,
                 initValue = initValue,
                 courseValue = course,
                 isNameValid = isNameValid,
@@ -216,6 +211,7 @@ fun EditCourseScreen(
 fun EditCourseContent(
     style: EditCourseStyle,
     viewModel: TimeFlowViewModel,
+    courseID: Short,
     initValue: Course,
     courseValue: MutableState<Course>,
     isNameValid: MutableState<Boolean>,
@@ -235,9 +231,7 @@ fun EditCourseContent(
         isTimeValid.value = if (course.time.start > course.time.end) {
             false
         } else {
-            schedule!!.courses.none { (_, it) ->
-                it != initValue && it.time.start <= course.time.end && it.time.end >= course.time.start && it.weekday == course.weekday && it.week.weeks.any { it in course.week.weeks }
-            }
+            !schedule!!.hasConflict(course, courseID)
         }
         isWeekValid.value =
             course.week.weeks.isNotEmpty() && course.week.weeks.all { it in validWeeks }
@@ -341,11 +335,7 @@ fun EditCourseContent(
             course = course.copy(
                 time = range, week = WeekList(
                     weeks = course.week.weeks.filter {
-                        it in (1..schedule!!.totalWeeks).toMutableList().let {
-                            it - schedule!!.courses.filter { (_, it) ->
-                                it != initValue && it.time.start <= range.end && it.time.end >= range.start && it.weekday == course.weekday
-                            }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
-                        }
+                        it in schedule!!.getValidWeeksFor(range, course.weekday, courseID)
                     }
                 )
             )

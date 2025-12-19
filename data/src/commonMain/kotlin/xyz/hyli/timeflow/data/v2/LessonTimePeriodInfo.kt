@@ -17,18 +17,36 @@ import kotlinx.serialization.protobuf.ProtoNumber
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Lesson(
+    /** 课程开始时间 */
     @ProtoNumber(1) val start: Time,
+    /** 课程结束时间 */
     @ProtoNumber(2) val end: Time,
 )
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class LessonTimePeriodInfo(
+    /** 上午的课程列表 */
     @ProtoNumber(1) val morning: List<Lesson>,
+    /** 下午的课程列表 */
     @ProtoNumber(2) val afternoon: List<Lesson>,
+    /** 晚上的课程列表 */
     @ProtoNumber(3) val evening: List<Lesson>
 ) {
     companion object {
+        /**
+         * 根据早、中、晚的课程节数以及时间参数，工厂方法创建 [LessonTimePeriodInfo] 实例。
+         *
+         * @param morningCount 上午的课程节数。
+         * @param afternoonCount 下午的课程节数。
+         * @param eveningCount 晚上的课程节数。
+         * @param lessonDuration 每节课的持续时间（分钟）。
+         * @param breakDuration 课间休息时间（分钟）。
+         * @param morningStart 上午第一节课的开始时间。
+         * @param afternoonStart 下午第一节课的开始时间。
+         * @param eveningStart 晚上第一节课的开始时间。
+         * @return 一个新的 [LessonTimePeriodInfo] 实例。
+         */
         fun fromPeriodCounts(
             morningCount: Int = 5,
             afternoonCount: Int = 5,
@@ -98,6 +116,14 @@ data class LessonTimePeriodInfo(
 
         val defaultLessonTimePeriodInfo = fromPeriodCounts()
 
+        /**
+         * 根据指定的参数生成一个课程时间列表。
+         * @param count 要生成的课程数量。
+         * @param startTime 第一节课的开始时间。
+         * @param lessonDuration 每节课的持续时间（分钟）。
+         * @param breakDuration 课间休息时间（分钟）。
+         * @return 生成的 [Lesson] 列表。
+         */
         fun generateLessons(
             count: Int,
             startTime: Time,
@@ -114,9 +140,20 @@ data class LessonTimePeriodInfo(
         }
     }
 
+    /** 一天中的总课程节数 */
     val totalLessonsCount: Int = morning.size + afternoon.size + evening.size
+
+    /** 按早、中、晚顺序合并的总课程列表 */
     val lessons: List<Lesson> = morning + afternoon + evening
 
+    /**
+     * 根据 1-based 的索引获取对应的课程时间。
+     * 例如，索引 1 对应上午第一节课。
+     *
+     * @param index 课程的 1-based 索引。
+     * @return 对应的 [Lesson] 对象。
+     * @throws IndexOutOfBoundsException 如果索引超出了总课程数的范围。
+     */
     fun getLessonByIndex(index: Int): Lesson {
         return when (index) {
             in 1..morning.size -> morning[index - 1]
@@ -126,6 +163,10 @@ data class LessonTimePeriodInfo(
         }
     }
 
+    /**
+     * 存在时间冲突的课程索引集合。
+     * 如果第 n 节课的开始时间早于第 n-1 节课的结束时间，则认为存在冲突。
+     */
     val conflictSet: Set<Int> = (1 until lessons.size)
         .filter { i -> lessons[i].start < lessons[i - 1].end }
         .flatMap { i -> listOf(i - 1, i) }

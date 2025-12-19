@@ -97,6 +97,7 @@ import timeflow.app.generated.resources.wednesday
 import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.Lesson
 import xyz.hyli.timeflow.data.Range
+import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.WeekDescriptionEnum
 import xyz.hyli.timeflow.data.WeekList
 import xyz.hyli.timeflow.ui.components.rememberDialogState
@@ -264,7 +265,7 @@ fun TableGrid(
                 )
         ) {
             for (lessonIndex in 0 until layoutParams.rows) {
-                if (Pair(lessonIndex + 1, dayIndex + 1) in layoutParams.noGridCells.value) continue
+                if (lessonIndex + 1 in layoutParams.noGridCells.value[dayIndex]) continue
                 HorizontalDivider(
                     thickness = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant,
@@ -357,6 +358,7 @@ fun EmptyTableCell(
 
 @Composable
 fun CourseCell(
+    schedule: Schedule,
     courses: Map<Short, Course>,
     coursesForThisTime: Map<Short, Course>,
     currentWeek: Int,
@@ -391,6 +393,7 @@ fun CourseCell(
     }
     if (showCourseListDialog.visible) {
         CourseListDialog(
+            schedule = schedule,
             courses = coursesForThisTime,
             currentWeek = currentWeek,
             totalWeeks = totalWeeks,

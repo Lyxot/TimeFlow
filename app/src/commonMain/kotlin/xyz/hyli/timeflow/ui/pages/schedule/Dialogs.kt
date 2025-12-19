@@ -146,6 +146,7 @@ fun ConfirmSelectScheduleDialog(
 
 @Composable
 fun CourseListDialog(
+    schedule: Schedule,
     courses: Map<Short, Course>,
     currentWeek: Int,
     totalWeeks: Int,
@@ -166,9 +167,8 @@ fun CourseListDialog(
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        val validWeeks = (1..totalWeeks).toMutableList().let { it ->
-                            it - courses.flatMapTo(mutableSetOf()) { it.value.week.weeks }
-                        }
+                        val validWeeks =
+                            schedule.getValidWeeksFor(time, courses.values.first().weekday)
                         onCreateNewCourse(
                             Course(
                                 name = "",
@@ -315,17 +315,11 @@ fun EditCourseDialog(
             if (course.value.time.start > course.value.time.end) {
                 false
             } else {
-                schedule.courses.none { (_, it) ->
-                    it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday && it.week.weeks.any { it in course.value.week.weeks }
-                }
+                !schedule.hasConflict(course.value, courseID)
             }
         )
     }
-    val validWeeks = (1..schedule.totalWeeks).toMutableList().let {
-        it - schedule.courses.filter { (_, it) ->
-            it != initValue && it.time.start <= course.value.time.end && it.time.end >= course.value.time.start && it.weekday == course.value.weekday
-        }.flatMapTo(mutableSetOf()) { it.value.week.weeks }
-    }
+    val validWeeks = schedule.getValidWeeksFor(course.value.time, course.value.weekday, courseID)
     val isWeekValid =
         remember { mutableStateOf(course.value.week.weeks.isNotEmpty() && course.value.week.weeks.all { it in validWeeks }) }
     showEditCourseDialog.enableButton(
@@ -364,6 +358,7 @@ fun EditCourseDialog(
             EditCourseContent(
                 style = EditCourseStyle.Dialog,
                 viewModel = scheduleParams.viewModel,
+                courseID = courseID,
                 initValue = initValue,
                 courseValue = course,
                 isNameValid = isNameValid,

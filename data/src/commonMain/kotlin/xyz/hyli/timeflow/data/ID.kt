@@ -11,7 +11,7 @@ package xyz.hyli.timeflow.data
 
 import kotlin.random.Random
 
-const val ZERO_ID = 0.toShort()
+const val ZERO_ID = Settings.ZERO_ID
 
 internal val random = Random.Default
 
