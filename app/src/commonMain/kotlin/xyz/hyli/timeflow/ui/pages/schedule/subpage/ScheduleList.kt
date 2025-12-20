@@ -159,12 +159,7 @@ fun ScheduleListScreen(
                         onClick = {
                             navHostController.popBackStack()
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                            contentDescription = null
-                        )
-                    }
+                    )
                 }
             }
             if (settings.isScheduleSelected

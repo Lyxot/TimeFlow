@@ -107,6 +107,7 @@ import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
+import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
 import xyz.hyli.timeflow.ui.navigation.SettingsDestination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -189,20 +190,24 @@ fun SettingsScreen(
                 val selectedScheduleDependency = Dependency.State(settingsState) {
                     !it.isScheduleEmpty
                 }
-                PreferenceList(
-                    value = settings.selectedScheduleID,
-                    onValueChange = {
-                        viewModel.updateSelectedSchedule(it)
+                BasePreference(
+                    trailingContent = {
+                        Text(
+                            text = settings.selectedSchedule?.name ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     },
-                    items = settings.nonDeletedSchedules.keys.toList(),
-                    itemTextProvider = { settings.schedules[it]?.name ?: "" },
                     title = stringResource(Res.string.settings_title_selected_schedule),
                     subtitle =
                         if (settings.isScheduleEmpty)
                             stringResource(Res.string.settings_subtitle_schedule_empty)
                         else
                             null,
-                    enabled = selectedScheduleDependency
+                    enabled = selectedScheduleDependency,
+                    onClick = {
+                        navHostController.navigate(ScheduleDestination.ScheduleList.name)
+                    }
                 )
                 // Add New Schedule
                 val stringScheduleNameEmpty =
