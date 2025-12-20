@@ -37,17 +37,21 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -74,20 +78,54 @@ import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
 
-enum class Destination {
-    Schedule,
-    Today,
-    Settings
-}
+@Serializable
+sealed class Destination {
+    @Serializable
+    object ScheduleGraph
 
-enum class ScheduleDestination {
-    ScheduleList
-}
+    @Serializable
+    data object Schedule : Destination() {
+        @Serializable
+        object ScheduleList : Destination()
 
-enum class SettingsDestination {
-    LessonsPerDay,
-    About,
-    License
+        @Serializable
+        data class EditCourse(
+            val courseID: Int,
+            val courseHexString: String
+        ) : Destination() {
+            @OptIn(ExperimentalSerializationApi::class)
+            constructor(courseID: Short, course: Course) : this(
+                courseID = courseID.toInt(),
+                courseHexString = ProtoBuf.encodeToHexString(course)
+            )
+
+            @OptIn(ExperimentalSerializationApi::class)
+            fun toCourse(): Pair<Short, Course> {
+                return Pair(
+                    courseID.toShort(),
+                    ProtoBuf.decodeFromHexString<Course>(courseHexString)
+                )
+            }
+        }
+    }
+
+    @Serializable
+    object Today : Destination()
+
+    @Serializable
+    object SettingsGraph
+
+    @Serializable
+    data object Settings : Destination() {
+        @Serializable
+        object LessonsPerDay
+
+        @Serializable
+        object About
+
+        @Serializable
+        object License
+    }
 }
 
 val NavigationBarType = listOf(
@@ -96,26 +134,6 @@ val NavigationBarType = listOf(
     NavigationSuiteType.ShortNavigationBarMedium
 )
 
-@Serializable
-data class EditCourseDestination(
-    val courseID: Int,
-    val courseHexString: String
-) {
-    @OptIn(ExperimentalSerializationApi::class)
-    constructor(courseID: Short, course: Course) : this(
-        courseID = courseID.toInt(),
-        courseHexString = ProtoBuf.encodeToHexString(course)
-    )
-
-    @OptIn(ExperimentalSerializationApi::class)
-    fun toCourse(): Pair<Short, Course> {
-        return Pair(
-            courseID.toShort(),
-            ProtoBuf.decodeFromHexString<Course>(courseHexString)
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AdaptiveNavigation(
@@ -123,17 +141,30 @@ fun AdaptiveNavigation(
     navSuiteType: NavigationSuiteType,
     content: @Composable () -> Unit
 ) {
-    val currentBackStackEntry = navHostController.currentBackStackEntryFlow.collectAsState(initial = null)
-    val currentPage = currentBackStackEntry.value?.destination?.route
+    val navBackStackEntry by navHostController.currentBackStackEntryAsState()
+    val destination = navBackStackEntry?.destination
+
+    val isSchedule =
+        destination?.hierarchy?.any { it.hasRoute<Destination.ScheduleGraph>() } == true
+    val isToday = destination?.hasRoute<Destination.Today>() == true
+    val isSettings =
+        destination?.hierarchy?.any { it.hasRoute<Destination.SettingsGraph>() } == true
+
     val state = rememberNavigationSuiteScaffoldState()
-    LaunchedEffect(currentPage) {
+    LaunchedEffect(isSchedule, isToday, isSettings, navSuiteType) {
         if (navSuiteType in NavigationBarType) {
-            if (currentPage in Destination.entries.map { it.name })
+            val isInMainPage = destination?.hasRoute<Destination.Schedule>() == true ||
+                    destination?.hasRoute<Destination.Today>() == true ||
+                    destination?.hasRoute<Destination.Settings>() == true
+
+            if (isInMainPage) {
                 state.show()
-            else
+            } else {
                 state.hide()
+            }
         }
     }
+
     NavigationSuiteScaffold(
         state = state,
         layoutType = navSuiteType,
@@ -152,43 +183,35 @@ fun AdaptiveNavigation(
                         Modifier.padding(top = 28.dp)
                     },
                 icon = { Icon(
-                    if (currentPage == Destination.Schedule.name
-                        || currentPage?.contains("EditCourseDestination") == true
-                        || currentPage in ScheduleDestination.entries.map { it.name }
-                    )
+                    if (isSchedule)
                         Icons.AutoMirrored.Filled.EventNote
                     else
                         Icons.AutoMirrored.Outlined.EventNote,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_schedule)) },
-                selected = currentPage == Destination.Schedule.name
-                        || currentPage?.contains("EditCourseDestination") == true
-                        || currentPage in ScheduleDestination.entries.map { it.name },
+                selected = isSchedule,
                 onClick = { switchPageSingleTop(navHostController, Destination.Schedule) }
             )
             item(
                 icon = { Icon(
-                    if (currentPage == Destination.Today.name)
+                    if (isToday)
                         Icons.Filled.CalendarViewDay
                     else
                         Icons.Outlined.CalendarViewDay,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_today)) },
-                selected = currentPage == Destination.Today.name,
+                selected = isToday,
                 onClick = { switchPageSingleTop(navHostController, Destination.Today) }
             )
             item(
                 icon = { Icon(
-                    if (currentPage == Destination.Settings.name
-                        || currentPage in SettingsDestination.entries.map { it.name }
-                    )
+                    if (isSettings)
                         Icons.Filled.Settings
                     else
                         Icons.Outlined.Settings,
                     contentDescription = null) },
                 label = { Text(stringResource(Res.string.page_settings)) },
-                selected = currentPage == Destination.Settings.name
-                        || currentPage in SettingsDestination.entries.map { it.name },
+                selected = isSettings,
                 onClick = { switchPageSingleTop(navHostController, Destination.Settings) }
             )
         }
@@ -208,36 +231,42 @@ fun TimeFlowNavHost(
     NavHost(
         modifier = modifier.fillMaxSize(),
         navController = navHostController,
-        startDestination = Destination.Schedule.name,
+        startDestination = Destination.ScheduleGraph,
         enterTransition = NavigationAnimation.enterFadeIn,
         exitTransition = NavigationAnimation.exitFadeOut,
         popEnterTransition = NavigationAnimation.enterFadeIn,
         popExitTransition = NavigationAnimation.exitFadeOut
     ) {
-        composable(Destination.Today.name) { TodayScreen(viewModel) }
-        composable(Destination.Schedule.name) { ScheduleScreen(viewModel, navHostController) }
-        composable(Destination.Settings.name) { SettingsScreen(viewModel, navHostController) }
-        subScreenComposable(ScheduleDestination.ScheduleList.name) {
-            ScheduleListScreen(viewModel, navHostController)
+        composable<Destination.Today> { TodayScreen(viewModel) }
+
+        navigation<Destination.ScheduleGraph>(startDestination = Destination.Schedule) {
+            composable<Destination.Schedule> { ScheduleScreen(viewModel, navHostController) }
+            subScreenComposable<Destination.Schedule.ScheduleList> {
+                ScheduleListScreen(viewModel, navHostController)
+            }
+            composable<Destination.Schedule.EditCourse>(
+                enterTransition = NavigationAnimation.enterSlideIn,
+                exitTransition = NavigationAnimation.exitSlideOut,
+                popEnterTransition = NavigationAnimation.enterSlideIn,
+                popExitTransition = NavigationAnimation.exitSlideOut
+            ) { backStackEntry ->
+                val destination = backStackEntry.toRoute<Destination.Schedule.EditCourse>()
+                val (courseID, course) = destination.toCourse()
+                EditCourseScreen(viewModel, navHostController, courseID, course)
+            }
         }
-        subScreenComposable(SettingsDestination.LessonsPerDay.name) {
-            LessonsPerDayScreen(viewModel, navHostController)
-        }
-        subScreenComposable(SettingsDestination.About.name) {
-            AboutScreen(navHostController)
-        }
-        subScreenComposable(SettingsDestination.License.name) {
-            LicenseScreen(navHostController)
-        }
-        composable<EditCourseDestination>(
-            enterTransition = NavigationAnimation.enterSlideIn,
-            exitTransition = NavigationAnimation.exitSlideOut,
-            popEnterTransition = NavigationAnimation.enterSlideIn,
-            popExitTransition = NavigationAnimation.exitSlideOut
-        ) { backStackEntry ->
-            val destination = backStackEntry.toRoute<EditCourseDestination>()
-            val (courseID, course) = destination.toCourse()
-            EditCourseScreen(viewModel, navHostController, courseID, course)
+
+        navigation<Destination.SettingsGraph>(startDestination = Destination.Settings) {
+            composable<Destination.Settings> { SettingsScreen(viewModel, navHostController) }
+            subScreenComposable<Destination.Settings.LessonsPerDay> {
+                LessonsPerDayScreen(viewModel, navHostController)
+            }
+            subScreenComposable<Destination.Settings.About> {
+                AboutScreen(navHostController)
+            }
+            subScreenComposable<Destination.Settings.License> {
+                LicenseScreen(navHostController)
+            }
         }
     }
 }
@@ -246,7 +275,7 @@ fun switchPageSingleTop(
     navHostController: NavHostController,
     destination: Destination
 ) {
-    navHostController.navigate(destination.name) {
+    navHostController.navigate(destination) {
         popUpTo(navHostController.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
@@ -275,12 +304,10 @@ private class NavigationAnimation {
     }
 }
 
-private fun NavGraphBuilder.subScreenComposable(
-    destination: String,
-    content: @Composable (AnimatedContentScope.(NavBackStackEntry) -> Unit)
+private inline fun <reified T : Any> NavGraphBuilder.subScreenComposable(
+    crossinline content: @Composable (AnimatedContentScope.(NavBackStackEntry) -> Unit)
 ) {
-    composable(
-        destination,
+    composable<T>(
         enterTransition = NavigationAnimation.enterSlideIn,
         exitTransition = NavigationAnimation.exitSlideOut,
         popEnterTransition = NavigationAnimation.enterSlideIn,

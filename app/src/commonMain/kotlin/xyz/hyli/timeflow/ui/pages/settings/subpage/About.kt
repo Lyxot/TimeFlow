@@ -59,7 +59,7 @@ import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.navigationBarHorizontalPadding
-import xyz.hyli.timeflow.ui.navigation.SettingsDestination
+import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -197,7 +197,7 @@ fun AboutScreen(navHostController: NavHostController) {
                 modifier = Modifier.padding(start = 4.dp),
                 shape = ButtonDefaults.shape,
                 onClick = {
-                    navHostController.navigate(SettingsDestination.License.name)
+                    navHostController.navigate(Destination.Settings.License)
                 }
             ) {
                 Text(

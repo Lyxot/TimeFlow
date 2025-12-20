@@ -107,8 +107,7 @@ import xyz.hyli.timeflow.ui.components.PreferenceScreen
 import xyz.hyli.timeflow.ui.components.PreferenceSection
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
-import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
-import xyz.hyli.timeflow.ui.navigation.SettingsDestination
+import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -206,7 +205,7 @@ fun SettingsScreen(
                             null,
                     enabled = selectedScheduleDependency,
                     onClick = {
-                        navHostController.navigate(ScheduleDestination.ScheduleList.name)
+                        navHostController.navigate(Destination.Schedule.ScheduleList)
                     }
                 )
                 // Add New Schedule
@@ -335,7 +334,7 @@ fun SettingsScreen(
                     title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
                     subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
                     onClick = {
-                        navHostController.navigate(SettingsDestination.LessonsPerDay.name)
+                        navHostController.navigate(Destination.Settings.LessonsPerDay)
                     },
                     enabled = scheduleDependency
                 ) {
@@ -364,7 +363,7 @@ fun SettingsScreen(
                 BasePreference(
                     title = stringResource(Res.string.settings_title_about),
                     onClick = {
-                        navHostController.navigate(SettingsDestination.About.name)
+                        navHostController.navigate(Destination.Settings.About)
                     }
                 ) {
                     Icon(

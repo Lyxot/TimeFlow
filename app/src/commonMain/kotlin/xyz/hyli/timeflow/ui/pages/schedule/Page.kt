@@ -80,9 +80,8 @@ import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.TopAppBarType
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
-import xyz.hyli.timeflow.ui.navigation.EditCourseDestination
+import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
-import xyz.hyli.timeflow.ui.navigation.ScheduleDestination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 data class ScheduleLayoutParams(
@@ -250,7 +249,7 @@ fun ScheduleScreen(
             navigationIcon = {
                 IconButton(
                     onClick = {
-                        navHostController.navigate(ScheduleDestination.ScheduleList.name)
+                        navHostController.navigate(Destination.Schedule.ScheduleList)
                     },
                 ) {
                     Icon(
@@ -473,7 +472,7 @@ fun CourseColumn(
             showEditCourseDialog.show()
         } else {
             scheduleParams.navHostController.navigate(
-                EditCourseDestination(
+                Destination.Schedule.EditCourse(
                     courseID = courseID,
                     course = course
                 )
