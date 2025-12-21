@@ -102,6 +102,22 @@ class SettingsDataStore(
             currentSettings.copy(schedules = updatedSchedule)
         }
     }
+
+    suspend fun deleteSchedule(id: Short, permanently: Boolean) {
+        db.updateData { currentSettings ->
+            val updatedSchedule = currentSettings.schedules.toMutableMap()
+            if (permanently) {
+                updatedSchedule.remove(id)
+            } else {
+                val schedule = updatedSchedule[id]
+                if (schedule != null) {
+                    updatedSchedule[id] = schedule.copy(deleted = true)
+                }
+            }
+            currentSettings.copy(schedules = updatedSchedule)
+        }
+    }
+
     suspend fun reset() {
         db.updateData { _ ->
             Settings()

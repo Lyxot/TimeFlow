@@ -62,12 +62,11 @@ import timeflow.app.generated.resources.schedule_title_course_detail
 import timeflow.app.generated.resources.schedule_title_course_time_start
 import timeflow.app.generated.resources.schedule_title_create_schedule
 import timeflow.app.generated.resources.schedule_title_edit_course
-import timeflow.app.generated.resources.schedule_title_update_selected_schedule
 import timeflow.app.generated.resources.schedule_value_confirm_delete_schedule
+import timeflow.app.generated.resources.schedule_value_confirm_delete_schedule_permanently
 import timeflow.app.generated.resources.schedule_value_course_time_period
 import timeflow.app.generated.resources.schedule_value_course_week
 import timeflow.app.generated.resources.schedule_value_schedule_name_empty
-import timeflow.app.generated.resources.schedule_value_update_selected_schedule
 import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.Range
 import xyz.hyli.timeflow.data.Schedule
@@ -116,17 +115,16 @@ fun AddScheduleDialog(
 }
 
 @Composable
-fun ConfirmSelectScheduleDialog(
-    name: String,
+fun ConfirmActionDialog(
     showConfirmSelectScheduleDialog: DialogState,
+    title: String,
+    content: String,
     onConfirm: () -> Unit
 ) {
     MyDialog(
         state = showConfirmSelectScheduleDialog,
         title = {
-            Text(
-                text = stringResource(Res.string.schedule_title_update_selected_schedule)
-            )
+            Text(title)
         },
         buttons = DialogDefaults.buttons(
             positive = DialogButton(stringResource(Res.string.confirm)),
@@ -138,9 +136,7 @@ fun ConfirmSelectScheduleDialog(
             }
         }
     ) {
-        Text(
-            text = stringResource(Res.string.schedule_value_update_selected_schedule, name),
-        )
+        Text(content)
     }
 }
 
@@ -495,6 +491,7 @@ fun CourseTimeDialog(
 fun DeleteSelectedSchedulesDialog(
     selectedScheduleName: List<String>,
     onConfirm: () -> Unit,
+    permanently: Boolean,
     showConfirmDeleteSelectedSchedulesDialog: DialogState
 ) {
     MyDialog(
@@ -519,7 +516,8 @@ fun DeleteSelectedSchedulesDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = stringResource(Res.string.schedule_value_confirm_delete_schedule)
+                text = if (permanently) stringResource(Res.string.schedule_value_confirm_delete_schedule_permanently)
+                else stringResource(Res.string.schedule_value_confirm_delete_schedule)
             )
             Spacer(modifier = Modifier.height(8.dp))
             selectedScheduleName.forEach {

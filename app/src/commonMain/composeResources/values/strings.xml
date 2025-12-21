@@ -20,6 +20,7 @@
     <string name="all_week">全选</string>
     <string name="export">导出</string>
     <string name="import">导入</string>
+    <string name="undo">撤回</string>
 
     <string name="page_today">今日</string>
     <string name="page_schedule">课程表</string>
@@ -58,6 +59,14 @@
     <string name="schedule_value_update_selected_schedule">是否将“%1$s”设置为当前课程表？</string>
     <string name="schedule_title_confirm_delete_schedule">删除课程表</string>
     <string name="schedule_value_confirm_delete_schedule">是否将以下课程表移入回收站？</string>
+    <string name="schedule_value_confirm_delete_schedule_permanently">该操作将永久删除以下课程表，且无法恢复，是否确认删除？</string>
+    <string name="schedule_title_recycle_bin">回收站</string>
+    <string name="schedule_value_recycle_bin_empty">回收站为空</string>
+    <string name="schedule_title_deleted_schedule">已删除的课程表</string>
+    <string name="schedule_title_restore_schedule">恢复课程表</string>
+    <string name="schedule_value_restore_schedule">是否将“%1$s”从回收站中恢复？</string>
+    <string name="schedule_value_deleted_schedule_success">已将课程表%1$s移入回收站</string>
+    <string name="schedule_value_deleted_schedule_permanently_success">已永久删除课程表%1$s</string>
     <string name="schedule_value_export_schedule_success">已成功导出课程表到：%1$s</string>
     <string name="schedule_value_import_schedule_success">已成功导入课程表“%1$s”</string>
     <string name="schedule_value_export_schedule_failed">导出课程表失败：%1$s</string>

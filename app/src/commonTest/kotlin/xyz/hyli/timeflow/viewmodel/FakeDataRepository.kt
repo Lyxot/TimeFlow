@@ -52,6 +52,12 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(schedules = newMap)
     }
 
+    override suspend fun deleteSchedule(id: Short, permanently: Boolean) {
+        val newMap = _settings.value.schedules.toMutableMap()
+        newMap.remove(id)
+        _settings.value = _settings.value.copy(schedules = newMap)
+    }
+
     // Helper function for tests to manually set the settings
     fun setSettings(settings: Settings) {
         _settings.value = settings

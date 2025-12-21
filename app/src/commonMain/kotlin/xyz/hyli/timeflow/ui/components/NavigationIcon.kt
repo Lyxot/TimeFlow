@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import timeflow.app.generated.resources.Res
@@ -21,15 +22,17 @@ import timeflow.app.generated.resources.back
 
 @Composable
 fun NavigationBackIcon(
-    navHostController: NavHostController
+    navHostController: NavHostController,
+    onClick: (() -> Unit) = {
+        navHostController.popBackStack()
+    },
+    imageVector: ImageVector = Icons.AutoMirrored.Outlined.ArrowBack,
 ) {
     IconButton(
-        onClick = {
-            navHostController.popBackStack()
-        },
+        onClick = onClick,
     ) {
         Icon(
-            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+            imageVector = imageVector,
             contentDescription = stringResource(Res.string.back)
         )
     }

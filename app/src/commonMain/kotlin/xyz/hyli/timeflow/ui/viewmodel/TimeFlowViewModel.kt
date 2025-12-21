@@ -108,6 +108,12 @@ class TimeFlowViewModel(
         }
     }
 
+    fun deleteSchedule(id: Short, permanently: Boolean = false) {
+        viewModelScope.launch {
+            repository.deleteSchedule(id, permanently)
+        }
+    }
+
     @OptIn(ExperimentalSerializationApi::class)
     fun exportScheduleToFile(
         id: Short = settings.value.selectedScheduleID,

@@ -67,6 +67,10 @@ data class Settings(
             id != selectedScheduleID && !schedule.deleted
         }
 
+    /** 已被删除（在回收站内）的所有课程表。 */
+    val deletedSchedules: Map<Short, Schedule> =
+        schedules.filterValues { it.deleted }
+
     /** 检查当前是否有选中的、且未被删除的课程表。 */
     val isScheduleSelected: Boolean =
         selectedScheduleID != ZERO_ID && schedules.containsKey(selectedScheduleID) && !schedules[selectedScheduleID]!!.deleted

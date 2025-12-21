@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -127,6 +128,7 @@ fun CustomScaffold(
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
+                    .fillMaxSize()
                     .ifThen(navSuiteType !in NavigationBarType) {
                         Modifier
                             .drawRoundedCornerBackground(

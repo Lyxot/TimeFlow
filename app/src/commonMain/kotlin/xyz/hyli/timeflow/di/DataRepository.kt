@@ -25,6 +25,7 @@ interface IDataRepository {
     suspend fun updateSelectedSchedule(id: Short)
     suspend fun createSchedule(id: Short, schedule: Schedule)
     suspend fun updateSchedule(id: Short, schedule: Schedule)
+    suspend fun deleteSchedule(id: Short, permanently: Boolean)
 }
 
 class DataRepository(
@@ -58,5 +59,9 @@ class DataRepository(
 
     override suspend fun updateSchedule(id: Short, schedule: Schedule) {
         settingsDataStore.updateSchedule(id, schedule)
+    }
+
+    override suspend fun deleteSchedule(id: Short, permanently: Boolean) {
+        settingsDataStore.deleteSchedule(id, permanently)
     }
 }
