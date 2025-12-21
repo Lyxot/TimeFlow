@@ -1,6 +1,6 @@
 # TODO
 - [x] 发布第一个 Release
-- [ ] 课程备注
+- [x] 课程备注
 - [ ] 调休/调课
 - [ ] 分享课程表
     - [x] 从文件导入和导出课程表
@@ -13,3 +13,4 @@
 - [ ] 桌面小组件
     - [ ] Android
     - [ ] iOS
+- [ ] 升级到最新的 KMP 插件(https://developer.android.com/kotlin/multiplatform/plugin)
