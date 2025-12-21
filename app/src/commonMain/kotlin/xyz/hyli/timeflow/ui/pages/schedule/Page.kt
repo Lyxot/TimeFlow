@@ -373,7 +373,7 @@ fun ScheduleTable(
         val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
         val noGridCells = remember {
             mutableStateOf(
-                List(5) { setOf<Int>() }
+                List(rows) { setOf<Int>() }
             )
         }
         // 自动重置状态的逻辑 - 修复无限循环问题
