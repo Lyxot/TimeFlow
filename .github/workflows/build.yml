@@ -229,7 +229,12 @@ jobs:
             # Package portable as zip
             if [ -d "windows-${arch}/app/TimeFlow" ]; then
               cd windows-${arch}/app
-              zip -r "../../${BASE_NAME}-windows-${arch}.zip" TimeFlow
+              # 使用 7z 创建 zip 包，并将 TimeFlow 文件夹递归压缩为最高压缩等级，同时压缩后自动删除源文件
+              # 7z a      : 添加文件到归档
+              # -tzip     : 选择归档类型为 zip
+              # -mx9      : 设置压缩等级为最高(9)
+              # -r        : 递归包含文件夹下所有内容
+              7z a -tzip -mx9 -r "../../${BASE_NAME}-windows-${arch}.zip" TimeFlow
               cd ../..
             fi
           done
