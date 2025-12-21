@@ -7,19 +7,12 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.datastore
+package xyz.hyli.timeflow.data
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.ScheduleV1
-import xyz.hyli.timeflow.data.ScheduleV2
-import xyz.hyli.timeflow.data.Settings
-import xyz.hyli.timeflow.data.SettingsV1
-import xyz.hyli.timeflow.data.SettingsV2
-import xyz.hyli.timeflow.data.toV2
 import xyz.hyli.timeflow.utils.gzipCompress
 import xyz.hyli.timeflow.utils.gzipDecompress
 

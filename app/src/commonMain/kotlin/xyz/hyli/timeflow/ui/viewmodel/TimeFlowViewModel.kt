@@ -36,8 +36,8 @@ import timeflow.app.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
-import xyz.hyli.timeflow.datastore.readScheduleFromByteArray
-import xyz.hyli.timeflow.datastore.toProtoBufByteArray
+import xyz.hyli.timeflow.data.readScheduleFromByteArray
+import xyz.hyli.timeflow.data.toProtoBufByteArray
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.utils.currentPlatform

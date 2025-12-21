@@ -23,6 +23,8 @@ import okio.use
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
+import xyz.hyli.timeflow.data.readSettingsFromByteArray
+import xyz.hyli.timeflow.data.toProtoBufByteArray
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
