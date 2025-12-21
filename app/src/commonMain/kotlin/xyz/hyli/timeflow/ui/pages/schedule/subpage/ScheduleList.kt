@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -48,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -346,6 +348,36 @@ fun ScheduleListScreen(
                     tint = iconColor,
                     contentDescription = null
                 )
+            }
+            AnimatedVisibility(
+                visible = selectedSchedules.size == 1 && multipleSelectionMode && !recycleBinMode,
+            ) {
+                val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
+                val saver = rememberFileSaverLauncher { file ->
+                    if (file != null) {
+                        viewModel.exportScheduleToFile(
+                            id = id,
+                            file = file,
+                            showMessage = { message ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(message)
+                                }
+                            }
+                        )
+                    }
+                    multipleSelectionMode = false
+                }
+                IconButton(
+                    onClick = {
+                        saver.launch(settings.schedules[id]!!.name, "pb")
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.IosShare,
+                        contentDescription = null
+                    )
+                }
+                // TODO: More share methods
             }
             FilledTonalIconToggleButton(
                 checked = multipleSelectionMode,
