@@ -28,6 +28,9 @@ kotlin {
     }
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(libs.korlibs.compression)
+        }
         wasmJsMain.dependencies {
             implementation(libs.kotlinx.browser)
         }

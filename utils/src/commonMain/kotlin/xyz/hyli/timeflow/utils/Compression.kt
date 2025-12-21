@@ -7,8 +7,17 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.datastore
+package xyz.hyli.timeflow.utils
 
-import okio.FileSystem
+import korlibs.io.compression.compress
+import korlibs.io.compression.deflate.GZIP
+import korlibs.io.compression.uncompress
 
-actual val platformFileSystem: FileSystem = FileSystem.SYSTEM
+fun ByteArray.gzipCompress(): ByteArray = this.compress(
+    method = GZIP
+)
+
+fun ByteArray.gzipDecompress(): ByteArray =
+    this.uncompress(
+        method = GZIP
+    )

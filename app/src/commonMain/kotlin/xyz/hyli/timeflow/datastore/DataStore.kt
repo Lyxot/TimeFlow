@@ -18,12 +18,11 @@ import okio.BufferedSink
 import okio.BufferedSource
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import okio.SYSTEM
 import okio.use
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
-
-expect val platformFileSystem: FileSystem
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
@@ -52,7 +51,7 @@ class SettingsDataStore(
 
     private val db = DataStoreFactory.create(
         storage = OkioStorage(
-            fileSystem = platformFileSystem,
+            fileSystem = FileSystem.SYSTEM,
             serializer = SettingsProtobufSerializer,
             producePath = {
                 produceFilePath().toPath()

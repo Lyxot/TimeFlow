@@ -114,6 +114,7 @@ kotlin {
             implementation(libs.kotlin.inject)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.io.okio)
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.material.kolor)
         }
