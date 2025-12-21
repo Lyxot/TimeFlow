@@ -156,8 +156,8 @@ kotlin {
 
     sourceSets.all {
         languageSettings.apply {
-            languageVersion = "2.2"
-            apiVersion = "2.2"
+            languageVersion = "2.3"
+            apiVersion = "2.3"
             progressiveMode = true
         }
     }
