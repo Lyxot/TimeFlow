@@ -1,5 +1,5 @@
 import SwiftUI
-import App
+import TimeFlow
 
 @main
 struct TimeFlowApp: App {
