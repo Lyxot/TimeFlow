@@ -20,24 +20,34 @@ plugins {
 kotlin {
     androidLibrary {
         withJava()
-        namespace = "xyz.hyli.timeflow.utils"
+        namespace = "xyz.hyli.timeflow.datastore"
         compileSdk = app.versions.compileSdk.get().toInt()
     }
     iosX64 { }
     iosArm64 { }
     iosSimulatorArm64 { }
     jvm { }
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.korlibs.compression)
+            api(project(":app:app-interface"))
+            implementation(libs.androidx.datastore)
+            implementation(libs.filekit.core)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.io.okio)
+            implementation(libs.kotlinx.serialization.protobuf)
         }
-        wasmJsMain.dependencies {
-            implementation(libs.kotlinx.browser)
+
+        androidMain.dependencies {
+            implementation(libs.kotlinx.coroutines.android)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.kotlinx.coroutines.swing)
+        }
+
+        iosMain.dependencies {
+
         }
     }
 }

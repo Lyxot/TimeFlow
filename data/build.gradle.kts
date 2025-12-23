@@ -9,16 +9,20 @@
 
 @file:OptIn(ExperimentalWasmDsl::class)
 
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.multiplatform.android)
     alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    androidTarget { }
+    androidLibrary {
+        namespace = "xyz.hyli.timeflow.data"
+        compileSdk = app.versions.compileSdk.get().toInt()
+    }
     iosX64 { }
     iosArm64 { }
     iosSimulatorArm64 { }
@@ -35,9 +39,4 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
         }
     }
-}
-
-android {
-    namespace = "xyz.hyli.timeflow.data"
-    compileSdk = app.versions.compileSdk.get().toInt()
 }

@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.name }}
-          path: app/build/compose/binaries/main-release
+          path: app/desktop/build/compose/binaries/main-release
 
   build-mobile:
     strategy:
@@ -98,11 +98,11 @@ jobs:
           - name: ios
             runner: macos-latest
             task: ./gradlew buildReleaseIpa
-            path: app/build/archives/release/*.ipa
+            path: app/ios/build/archives/release/*.ipa
           - name: android
             runner: ubuntu-latest
             task: ./gradlew assembleRelease
-            path: app/build/outputs/apk/release/*.apk
+            path: app/android/build/outputs/apk/release/*.apk
 
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
@@ -129,8 +129,8 @@ jobs:
         id: sign
         if: ${{ matrix.name == 'android' }}
         run: |
-          base64 --decode <<< "${{ secrets.RELEASE_KEY }}" > app/release-key.jks
-          grep -q '[^[:space:]]' app/release-key.jks && echo release_key_exists=true >> $GITHUB_OUTPUT || echo release_key_exists=false >> $GITHUB_OUTPUT
+          base64 --decode <<< "${{ secrets.RELEASE_KEY }}" > app/android/release-key.jks
+          grep -q '[^[:space:]]' app/android/release-key.jks && echo release_key_exists=true >> $GITHUB_OUTPUT || echo release_key_exists=false >> $GITHUB_OUTPUT
 
       - name: Build
         env:
@@ -381,8 +381,8 @@ jobs:
           EOF
 
           # Copy icon if exists
-          if [ -f "app/desktopAppIcons/LinuxIcon.png" ]; then
-            cp app/desktopAppIcons/LinuxIcon.png AppDir/TimeFlow.png
+          if [ -f "app/desktop/desktopAppIcons/LinuxIcon.png" ]; then
+            cp app/desktop/desktopAppIcons/LinuxIcon.png AppDir/TimeFlow.png
           fi
 
           # Fix permissions

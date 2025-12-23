@@ -18,9 +18,10 @@ plugins {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
     androidLibrary {
         withJava()
-        namespace = "xyz.hyli.timeflow.utils"
+        namespace = "xyz.hyli.timeflow.interface"
         compileSdk = app.versions.compileSdk.get().toInt()
     }
     iosX64 { }
@@ -34,10 +35,21 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.korlibs.compression)
+            api(project(":data"))
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.protobuf)
         }
-        wasmJsMain.dependencies {
-            implementation(libs.kotlinx.browser)
+
+        androidMain.dependencies {
+            implementation(libs.kotlinx.coroutines.android)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.kotlinx.coroutines.swing)
+        }
+
+        iosMain.dependencies {
+
         }
     }
 }

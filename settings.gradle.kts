@@ -52,5 +52,10 @@ plugins {
 
 include(":utils")
 include(":data")
-include(":app")
+include(":app:app-datastore")
+include(":app:app-interface")
+include(":app:shared")
+include(":app:android")
+include(":app:ios")
+include(":app:desktop")
 
