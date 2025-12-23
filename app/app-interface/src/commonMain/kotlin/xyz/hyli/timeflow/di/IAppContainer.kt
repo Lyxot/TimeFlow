@@ -7,8 +7,8 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.utils
+package xyz.hyli.timeflow.di
 
-lateinit var settingsFilePath: String
-
-expect fun showFileInFileManager(path: String)
+interface IAppContainer {
+    val dataRepository: IDataRepository
+}

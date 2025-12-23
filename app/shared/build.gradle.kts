@@ -55,12 +55,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":utils"))
-            implementation(project(":data"))
+            api(project(":utils"))
+            api(project(":app:app-interface"))
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.core)
             implementation(libs.aboutlibraries.compose.m3)
-            implementation(libs.androidx.datastore)
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
@@ -78,14 +77,11 @@ kotlin {
             implementation(libs.kotlin.inject)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.io.okio)
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.material.kolor)
         }
 
         androidMain.dependencies {
-            implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
         }
 
@@ -97,7 +93,7 @@ kotlin {
         }
 
         iosMain.dependencies {
-
+            api(project(":app:app-datastore"))
         }
 
 //        wasmJsMain.dependencies {
@@ -125,6 +121,8 @@ kotlin {
                 framework {
                     baseName = "App"
                     isStatic = true
+
+                    export(project(":app:app-datastore"))
                 }
             }
         }

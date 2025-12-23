@@ -14,7 +14,6 @@
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.gradle.ComposeHotRun
-import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
@@ -29,8 +28,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":app:shared"))
-    implementation(project(":utils"))
+    api(project(":app:shared"))
+    api(project(":app:app-datastore"))
     implementation(compose.desktop.currentOs)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel)
@@ -104,9 +103,6 @@ compose.desktop {
 }
 
 //https://github.com/JetBrains/compose-hot-reload
-composeCompiler {
-    featureFlags.add(ComposeFeatureFlag.OptimizeNonSkippingGroups)
-}
 tasks.withType<ComposeHotRun>().configureEach {
     mainClass.set("MainKt")
 }

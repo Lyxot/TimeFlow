@@ -6,7 +6,6 @@ androidx-core-ktx = "1.17.0"
 androidx-datastore = "1.2.0"
 androidx-lifecycle = "2.9.6"
 androidx-navigation = "2.9.1"
-androidx-startup-runtime = "1.2.0"
 build-config = "6.0.6"
 compose = "1.11.0-alpha01"
 composables = "1.49.3"
@@ -38,7 +37,6 @@ androidx-datastore = { group = "androidx.datastore", name = "datastore-preferenc
 androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
-androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup-runtime" }
 composables-core = { module = "com.composables:core", version.ref = "composables" }
 compose-animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "compose" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }

@@ -12,10 +12,10 @@ package xyz.hyli.timeflow.ui.viewmodel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import xyz.hyli.timeflow.di.AppContainer
+import xyz.hyli.timeflow.di.IAppContainer
 
 class ViewModelOwner(
-    appContainer: AppContainer
+    appContainer: IAppContainer
 ): ViewModelStoreOwner {
     override val viewModelStore: ViewModelStore = ViewModelStore()
     val timeFlowViewModel: TimeFlowViewModel = ViewModelProvider.create(

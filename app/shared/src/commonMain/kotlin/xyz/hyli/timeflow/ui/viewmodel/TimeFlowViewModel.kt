@@ -38,7 +38,7 @@ import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.data.readScheduleFromByteArray
 import xyz.hyli.timeflow.data.toProtoBufByteArray
-import xyz.hyli.timeflow.di.AppContainer
+import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMobile
@@ -180,16 +180,16 @@ class TimeFlowViewModel(
     }
 
     companion object {
-        val APP_CONTAINER_KEY = CreationExtras.Key<AppContainer>()
+        val APP_CONTAINER_KEY = CreationExtras.Key<IAppContainer>()
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val appContainer = this[APP_CONTAINER_KEY] as AppContainer
+                val appContainer = this[APP_CONTAINER_KEY] as IAppContainer
                 val repository = appContainer.dataRepository
                 TimeFlowViewModel(repository = repository)
             }
         }
 
-        fun newCreationExtras(appContainer: AppContainer): CreationExtras =
+        fun newCreationExtras(appContainer: IAppContainer): CreationExtras =
             MutableCreationExtras().apply {
                 set(APP_CONTAINER_KEY, appContainer)
             }

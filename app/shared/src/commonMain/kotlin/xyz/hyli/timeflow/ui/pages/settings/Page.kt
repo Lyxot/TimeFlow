@@ -87,7 +87,6 @@ import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ThemeMode
-import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.ui.components.BasePreference
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.Dependency
@@ -112,6 +111,7 @@ import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
+import xyz.hyli.timeflow.utils.settingsFilePath
 import xyz.hyli.timeflow.utils.showFileInFileManager
 import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.ExperimentalTime

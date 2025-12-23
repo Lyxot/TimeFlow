@@ -32,6 +32,7 @@ import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.AppContent
 import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.datastore.dataStoreFileName
+import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
@@ -115,6 +116,9 @@ fun main() = application {
             }
             App(viewModel = viewModelOwner.timeFlowViewModel)
         }
+    }
+    LaunchedEffect(settingsFilePath) {
+        xyz.hyli.timeflow.utils.settingsFilePath = settingsFilePath
     }
 }
 

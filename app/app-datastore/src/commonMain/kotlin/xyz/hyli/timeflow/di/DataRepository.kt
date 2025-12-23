@@ -16,18 +16,6 @@ import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.datastore.SettingsDataStore
 
-interface IDataRepository {
-    val settings: Flow<Settings>
-    suspend fun updateFirstLaunch(versionCode: Int)
-    suspend fun updateThemeMode(themeMode: ThemeMode)
-    suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean)
-    suspend fun updateThemeColor(color: Int)
-    suspend fun updateSelectedSchedule(id: Short)
-    suspend fun createSchedule(id: Short, schedule: Schedule)
-    suspend fun updateSchedule(id: Short, schedule: Schedule)
-    suspend fun deleteSchedule(id: Short, permanently: Boolean)
-}
-
 class DataRepository(
     private val settingsDataStore: SettingsDataStore,
 ) : IDataRepository {

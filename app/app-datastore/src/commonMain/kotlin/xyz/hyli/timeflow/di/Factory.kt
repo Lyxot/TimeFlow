@@ -17,7 +17,7 @@ import xyz.hyli.timeflow.datastore.SettingsDataStore
 import xyz.hyli.timeflow.datastore.dataStoreFileName
 
 class Factory(
-    val path: String? = null
+    private val path: String? = null
 ) {
     fun createDataStore(): SettingsDataStore =
         SettingsDataStore {

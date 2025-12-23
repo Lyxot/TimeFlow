@@ -18,12 +18,12 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":app:shared"))
+    api(project(":app:shared"))
+    api(project(":app:app-datastore"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel)
-    implementation(libs.kotlinx.coroutines.android)
 }
 
 android {
