@@ -123,7 +123,7 @@ kotlin {
         .configureEach {
             binaries {
                 framework {
-                    baseName = "TimeFlow"
+                    baseName = "App"
                     isStatic = true
                 }
             }

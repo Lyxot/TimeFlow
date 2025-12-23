@@ -129,7 +129,7 @@ jobs:
         id: sign
         if: ${{ matrix.name == 'android' }}
         run: |
-          base64 --decode <<< "${{ secrets.RELEASE_KEY }}" > app/release-key.jks
+          base64 --decode <<< "${{ secrets.RELEASE_KEY }}" > app/android/release-key.jks
           grep -q '[^[:space:]]' app/android/release-key.jks && echo release_key_exists=true >> $GITHUB_OUTPUT || echo release_key_exists=false >> $GITHUB_OUTPUT
 
       - name: Build
