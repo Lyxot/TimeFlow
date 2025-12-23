@@ -38,12 +38,15 @@ import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.ViewModelOwner
 import xyz.hyli.timeflow.utils.BasicWindowProc
+import xyz.hyli.timeflow.utils.Files
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
 import xyz.hyli.timeflow.utils.windowProc
 import xyz.hyli.timeflow.window.CustomWindow
+import java.awt.Desktop
 import java.awt.Dimension
+import java.io.File
 import kotlin.jvm.optionals.getOrNull
 
 fun main() = application {
@@ -117,8 +120,16 @@ fun main() = application {
             App(viewModel = viewModelOwner.timeFlowViewModel)
         }
     }
-    LaunchedEffect(settingsFilePath) {
-        xyz.hyli.timeflow.utils.settingsFilePath = settingsFilePath
+    Files.settingsFilePath = settingsFilePath
+    Files.showFileInFileManager = { path ->
+        val file = File(path)
+        if (file.exists()) {
+            try {
+                Desktop.getDesktop().browseFileDirectory(file)
+            } catch (e: Exception) {
+                Desktop.getDesktop().open(file.parentFile)
+            }
+        }
     }
 }
 

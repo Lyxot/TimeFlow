@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.utils
 
-lateinit var settingsFilePath: String
 
-expect fun showFileInFileManager(path: String)
+object Files {
+    lateinit var settingsFilePath: String
+    var showFileInFileManager: ((String) -> Unit)? = null
+}
