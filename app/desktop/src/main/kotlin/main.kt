@@ -10,6 +10,7 @@
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,14 +37,15 @@ import xyz.hyli.timeflow.datastore.settingsFilePath
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
+import xyz.hyli.timeflow.ui.theme.accentColorFlow
 import xyz.hyli.timeflow.ui.viewmodel.ViewModelOwner
-import xyz.hyli.timeflow.utils.BasicWindowProc
 import xyz.hyli.timeflow.utils.Files
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
-import xyz.hyli.timeflow.utils.windowProc
+import xyz.hyli.timeflow.window.BasicWindowProc
 import xyz.hyli.timeflow.window.CustomWindow
+import xyz.hyli.timeflow.window.windowProc
 import java.awt.Desktop
 import java.awt.Dimension
 import java.io.File
@@ -91,6 +93,12 @@ fun main() = application {
                     windowProc.value?.close()
                     windowProc.tryEmit(null)
                 }
+            }
+            val windowProc by windowProc.collectAsState(initial = null)
+            LaunchedEffect(windowProc) {
+                accentColorFlow.tryEmit(
+                    windowProc?.accentColor?.value
+                )
             }
             AppContent(viewModel = viewModelOwner.timeFlowViewModel).invoke()
         }

@@ -109,7 +109,7 @@ import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.Files
+import xyz.hyli.timeflow.utils.Files.settingsFilePath
 import xyz.hyli.timeflow.utils.Files.showFileInFileManager
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
@@ -377,9 +377,9 @@ fun SettingsScreen(
                     }
                 BasePreference(
                     title = stringResource(Res.string.settings_title_config_path),
-                    subtitle = Files.settingsFilePath,
+                    subtitle = settingsFilePath,
                     onClick = {
-                        showFileInFileManager?.invoke(Files.settingsFilePath)
+                        settingsFilePath?.let { showFileInFileManager?.invoke(it) }
                     },
                     visible = configPathDependency
                 ) {

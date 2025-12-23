@@ -11,6 +11,6 @@ package xyz.hyli.timeflow.utils
 
 
 object Files {
-    lateinit var settingsFilePath: String
+    var settingsFilePath: String? = null
     var showFileInFileManager: ((String) -> Unit)? = null
 }

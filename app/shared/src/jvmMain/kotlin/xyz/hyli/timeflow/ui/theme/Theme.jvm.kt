@@ -18,25 +18,28 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.supportDynamicColor
-import xyz.hyli.timeflow.utils.windowProc
+
+val accentColorFlow = MutableStateFlow<Color?>(null)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 val accentColor: Flow<Color>
-    get() = windowProc.flatMapLatest {
-        it?.accentColor ?: flowOf(Color.Unspecified)
+    get() = accentColorFlow.flatMapLatest {
+        flowOf(it ?: Color.Unspecified)
     }
+
 @Composable
 internal actual fun getColorScheme(
     isDark: Boolean,
     seedColor: Int,
     isDynamicColor: Boolean
 ): ColorScheme {
-    return if (currentPlatform().supportDynamicColor() && isDynamicColor) {
-        val accentColor by accentColor.collectAsState(initial = Color.Unspecified)
+    val accentColor by accentColor.collectAsState(initial = Color.Unspecified)
+    return if (currentPlatform().supportDynamicColor() && isDynamicColor && accentColor != Color.Unspecified) {
         rememberDynamicColorScheme(
             seedColor = accentColor, isDark = isDark, specVersion = ColorSpec.SpecVersion.SPEC_2025
         )

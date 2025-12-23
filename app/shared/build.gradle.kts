@@ -87,8 +87,6 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(libs.jna)
-            implementation(libs.jna.platform)
             implementation(libs.kotlinx.coroutines.swing)
         }
 
