@@ -1,23 +1,359 @@
-openapi: "3.0.3"
+openapi: 3.0.3
 info:
-  title: "Application API"
-  description: "Application API"
-  version: "1.0.0"
+  title: TimeFlow API
+  description: The RESTful API for the TimeFlow application, supporting cloud sync and data management.
+  version: 1.2.0
+
 servers:
-  - url: "http://0.0.0.0:8080"
-paths:
-  /:
-    get:
-      description: "Hello World!"
-      responses:
-        "200":
-          description: "OK"
-          content:
-            text/plain:
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Hello World!"
+  - url: /api/v1
+    description: API Version 1
+
+# Reusable components
 components:
-  schemas: { }
+  # Security scheme for protected endpoints
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # Data models (schemas)
+  schemas:
+    # Primitive Types
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: A human-readable error message.
+    Date:
+      type: object
+      properties:
+        year: { type: integer, format: int32 }
+        month: { type: integer, format: int32 }
+        day: { type: integer, format: int32 }
+    Time:
+      type: object
+      properties:
+        hour: { type: integer, format: int32 }
+        minute: { type: integer, format: int32 }
+    Range:
+      type: object
+      properties:
+        start: { type: integer, format: int32 }
+        end: { type: integer, format: int32 }
+    WeekList:
+      type: object
+      properties:
+        weeks:
+          type: array
+          items: { type: integer, format: int32 }
+    Weekday:
+      type: string
+      enum: [ MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY ]
+    ThemeMode:
+      type: string
+      enum: [ SYSTEM, LIGHT, DARK ]
+    Lesson:
+      type: object
+      properties:
+        start: { $ref: '#/components/schemas/Time' }
+        end: { $ref: '#/components/schemas/Time' }
+    LessonTimePeriodInfo:
+      type: object
+      properties:
+        morning: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+        afternoon: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+        evening: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+
+    # Core Data Models
+    Course:
+      type: object
+      properties:
+        name: { type: string }
+        teacher: { type: string }
+        classroom: { type: string }
+        time: { $ref: '#/components/schemas/Range' }
+        weekday: { $ref: '#/components/schemas/Weekday' }
+        week: { $ref: '#/components/schemas/WeekList' }
+        color: { type: integer, format: int32 }
+        note: { type: string }
+    Schedule:
+      type: object
+      properties:
+        id: { type: integer, description: "The unique ID of the schedule." }
+        name: { type: string }
+        deleted: { type: boolean }
+        courses:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Course'
+        termStartDate: { $ref: '#/components/schemas/Date' }
+        termEndDate: { $ref: '#/components/schemas/Date' }
+        lessonTimePeriodInfo: { $ref: '#/components/schemas/LessonTimePeriodInfo' }
+        displayWeekends: { type: boolean }
+    Settings:
+      type: object
+      properties:
+        themeMode: { $ref: '#/components/schemas/ThemeMode' }
+        themeDynamicColor: { type: boolean }
+        themeColor: { type: integer, format: int32 }
+        schedules:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Schedule'
+        selectedScheduleID: { type: integer }
+
+    # Auth Schemas
+    UserRegistration:
+      type: object
+      required: [ email, password ]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    UserLogin:
+      type: object
+      required: [ email, password ]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string, description: "JWT Access Token" }
+    UserInfo:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+
+    # Sync Schemas
+    SyncRequest:
+      type: object
+      properties:
+        lastSyncTimestamp: { type: string, format: date-time }
+        updates:
+          type: object
+          properties:
+            schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
+            settings: { $ref: '#/components/schemas/Settings' }
+        deletes:
+          type: object
+          properties:
+            schedules: { type: array, items: { type: integer } }
+    SyncResponse:
+      type: object
+      properties:
+        newSyncTimestamp: { type: string, format: date-time }
+        changes:
+          type: object
+          properties:
+            schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
+            settings: { $ref: '#/components/schemas/Settings' }
+
+# API Paths
+paths:
+  # Auth Endpoints
+  /auth/register:
+    post:
+      tags: [ Auth ]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UserRegistration' } }
+      responses:
+        '201': { description: User created successfully }
+        '400': { description: Invalid input or user already exists }
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Log in a user
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UserLogin' } }
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/LoginResponse' } }
+        '401': { description: Invalid credentials }
+  /users/me:
+    get:
+      tags: [ Users ]
+      summary: Get current user's profile
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/UserInfo' } }
+        '401': { description: Unauthorized }
+
+  # Schedules Endpoints
+  /schedules:
+    get:
+      tags: [ Schedules ]
+      summary: List all schedules for the current user
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: A list of schedule summaries
+          content:
+            application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Schedule' } } }
+        '401': { description: Unauthorized }
+    post:
+      tags: [ Schedules ]
+      summary: Create a new schedule
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+      responses:
+        '201':
+          description: Schedule created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+        '401': { description: Unauthorized }
+  /schedules/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [ Schedules ]
+      summary: Get a single schedule by ID
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The full schedule object
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule not found }
+    put:
+      tags: [ Schedules ]
+      summary: Update/replace an entire schedule
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+      responses:
+        '200':
+          description: Schedule updated
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule not found }
+    delete:
+      tags: [ Schedules ]
+      summary: Delete a schedule
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '204': { description: Schedule deleted successfully }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule not found }
+
+  # Courses Endpoints
+  /schedules/{scheduleId}/courses:
+    parameters:
+      - name: scheduleId
+        in: path
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [ Courses ]
+      summary: Add a new course to a schedule
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Course' } }
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Course' } }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule not found }
+  /schedules/{scheduleId}/courses/{courseId}:
+    parameters:
+      - name: scheduleId
+        in: path
+        required: true
+        schema: { type: integer }
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: integer }
+    put:
+      tags: [ Courses ]
+      summary: Update a specific course
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Course' } }
+      responses:
+        '200':
+          description: Course updated
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Course' } }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule or Course not found }
+    delete:
+      tags: [ Courses ]
+      summary: Delete a course from a schedule
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '204': { description: Course deleted successfully }
+        '401': { description: Unauthorized }
+        '404': { description: Schedule or Course not found }
+
+  # Settings Endpoints
+  /settings:
+    get:
+      tags: [ Settings ]
+      summary: Get user settings
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The user's settings object
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Settings' } }
+        '401': { description: Unauthorized }
+    put:
+      tags: [ Settings ]
+      summary: Update/replace user settings
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Settings' } }
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Settings' } }
+        '401': { description: Unauthorized }
+
+  # Sync Endpoint
+  /sync:
+    post:
+      tags: [ Sync ]
+      summary: Perform a sync operation
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/SyncRequest' } }
+      responses:
+        '200':
+          description: Sync successful
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/SyncResponse' } }
+        '401': { description: Unauthorized }
