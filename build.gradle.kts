@@ -31,6 +31,7 @@ plugins {
     alias(libs.plugins.hot.reload).apply(false)
     alias(libs.plugins.kotlinx.serialization).apply(false)
     alias(libs.plugins.ksp).apply(false)
+    alias(libs.plugins.ktor).apply(false)
 }
 
 val appVersionCode = app.versions.major.get().toInt() * 10000 +

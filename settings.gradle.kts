@@ -22,6 +22,7 @@ pluginManagement {
         gradlePluginPortal()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // Compose Multiplatform pre-release versions
+        maven("https://packages.confluent.io/maven/")
     }
 }
 
@@ -38,6 +39,7 @@ dependencyResolutionManagement {
         }
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // Compose Multiplatform pre-release versions
+        maven("https://packages.confluent.io/maven/")
     }
     versionCatalogs {
         create("app") {
@@ -58,4 +60,5 @@ include(":app:shared")
 include(":app:android")
 include(":app:ios")
 include(":app:desktop")
+include(":api:server")
 
