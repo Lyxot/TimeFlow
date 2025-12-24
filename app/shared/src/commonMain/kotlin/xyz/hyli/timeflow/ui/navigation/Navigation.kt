@@ -59,11 +59,11 @@ import kotlinx.serialization.decodeFromHexString
 import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.jetbrains.compose.resources.stringResource
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.page_schedule
-import timeflow.app.shared.generated.resources.page_settings
-import timeflow.app.shared.generated.resources.page_today
 import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.page_schedule
+import xyz.hyli.timeflow.shared.generated.resources.page_settings
+import xyz.hyli.timeflow.shared.generated.resources.page_today
 import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen

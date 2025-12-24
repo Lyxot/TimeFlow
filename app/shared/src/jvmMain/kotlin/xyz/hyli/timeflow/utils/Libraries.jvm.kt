@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import com.mikepenz.aboutlibraries.Libs
 import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
-import timeflow.app.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.Res
 
 @Composable
 internal actual fun getLibrariesState(): State<Libs?> {

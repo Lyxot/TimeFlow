@@ -19,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import org.jetbrains.compose.resources.stringResource
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.about_title_license_notice
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.about_title_license_notice
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.bottomPadding

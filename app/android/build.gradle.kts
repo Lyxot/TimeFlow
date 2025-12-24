@@ -35,7 +35,7 @@ android {
         targetSdk = app.versions.targetSdk.get().toInt()
 
         applicationId = "xyz.hyli.timeflow"
-        versionCode = rootProject.ext.get("appVersionCode").toString().toInt()
+        versionCode = rootProject.ext.get("appVersionCode") as Int
         versionName = app.versions.name.get()
     }
     signingConfigs {

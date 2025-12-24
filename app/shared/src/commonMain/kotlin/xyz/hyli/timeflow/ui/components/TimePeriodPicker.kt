@@ -26,11 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.cancel
-import timeflow.app.shared.generated.resources.confirm
-import timeflow.app.shared.generated.resources.dialog_title_time_period_picker
 import xyz.hyli.timeflow.data.Time
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.cancel
+import xyz.hyli.timeflow.shared.generated.resources.confirm
+import xyz.hyli.timeflow.shared.generated.resources.dialog_title_time_period_picker
 import xyz.hyli.timeflow.ui.theme.NotoSans
 
 enum class TimePeriodPickerStyle {

@@ -28,11 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.schedule_value_export_schedule_failed
-import timeflow.app.shared.generated.resources.schedule_value_export_schedule_success
-import timeflow.app.shared.generated.resources.schedule_value_import_schedule_failed
-import timeflow.app.shared.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
@@ -40,6 +35,11 @@ import xyz.hyli.timeflow.data.readScheduleFromByteArray
 import xyz.hyli.timeflow.data.toProtoBufByteArray
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.schedule_value_export_schedule_failed
+import xyz.hyli.timeflow.shared.generated.resources.schedule_value_export_schedule_success
+import xyz.hyli.timeflow.shared.generated.resources.schedule_value_import_schedule_failed
+import xyz.hyli.timeflow.shared.generated.resources.schedule_value_import_schedule_success
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMobile
 import kotlin.uuid.ExperimentalUuidApi

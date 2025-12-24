@@ -12,8 +12,8 @@ package xyz.hyli.timeflow.ui.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import org.jetbrains.compose.resources.Font
-import timeflow.app.shared.generated.resources.NotoSans
-import timeflow.app.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.NotoSans
+import xyz.hyli.timeflow.shared.generated.resources.Res
 
 @Suppress("ObjectPropertyName")
 private var _NotoSans: FontFamily? = null

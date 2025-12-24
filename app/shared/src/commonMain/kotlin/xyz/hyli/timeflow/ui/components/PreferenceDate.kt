@@ -32,10 +32,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.cancel
-import timeflow.app.shared.generated.resources.confirm
-import timeflow.app.shared.generated.resources.preference_date_dialog_title
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.cancel
+import xyz.hyli.timeflow.shared.generated.resources.confirm
+import xyz.hyli.timeflow.shared.generated.resources.preference_date_dialog_title
 
 // ==================== Preference Date ====================
 

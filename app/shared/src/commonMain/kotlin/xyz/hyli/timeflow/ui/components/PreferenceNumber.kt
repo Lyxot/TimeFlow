@@ -47,13 +47,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import timeflow.app.shared.generated.resources.Res
-import timeflow.app.shared.generated.resources.cancel
-import timeflow.app.shared.generated.resources.confirm
-import timeflow.app.shared.generated.resources.preference_number_dialog_label
-import timeflow.app.shared.generated.resources.preference_number_validation_invalid
-import timeflow.app.shared.generated.resources.preference_number_validation_range
-import timeflow.app.shared.generated.resources.preference_number_validation_step
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.cancel
+import xyz.hyli.timeflow.shared.generated.resources.confirm
+import xyz.hyli.timeflow.shared.generated.resources.preference_number_dialog_label
+import xyz.hyli.timeflow.shared.generated.resources.preference_number_validation_invalid
+import xyz.hyli.timeflow.shared.generated.resources.preference_number_validation_range
+import xyz.hyli.timeflow.shared.generated.resources.preference_number_validation_step
 
 // ==================== Preference Number ====================
 

@@ -33,25 +33,33 @@ plugins {
     alias(libs.plugins.ksp).apply(false)
 }
 
-ext {
-    val appVersionCode = app.versions.major.get().toInt() * 10000 +
-            try {
-                val githubToken = getenv("GITHUB_TOKEN")
-                val url =
-                    URI("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1").toURL()
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-                if (githubToken != null) {
-                    connection.setRequestProperty("Authorization", "Bearer $githubToken")
-                }
-                val linkHeader = connection.getHeaderField("Link") ?: ""
-                val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
-                val match = lastPagePattern.find(linkHeader)
-                match?.groupValues?.get(1)?.toInt() ?: 0
-            } catch (e: Exception) {
-                println("Error getting commit count from GitHub API: ${e.message}")
-                0
+val appVersionCode = app.versions.major.get().toInt() * 10000 +
+        try {
+            val githubToken = getenv("GITHUB_TOKEN")
+            val url =
+                URI("https://api.github.com/repos/Lyxot/TimeFlow/commits?sha=master&per_page=1").toURL()
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            if (githubToken != null) {
+                connection.setRequestProperty("Authorization", "Bearer $githubToken")
             }
+            val linkHeader = connection.getHeaderField("Link") ?: ""
+            val lastPagePattern = ".*page=(\\d+)>; rel=\"last\".*".toRegex()
+            val match = lastPagePattern.find(linkHeader)
+            match?.groupValues?.get(1)?.toInt() ?: 0
+        } catch (e: Exception) {
+            println("Error getting commit count from GitHub API: ${e.message}")
+            0
+        }
+
+val versionName: Any = app.versions.major.get()
+
+ext {
     set("appVersionCode", appVersionCode)
+}
+
+allprojects {
+    group = "xyz.hyli.timeflow"
+    version = versionName
 }

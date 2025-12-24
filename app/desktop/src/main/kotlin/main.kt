@@ -26,14 +26,14 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.utils.toPath
 import kotlinx.io.files.Path
 import org.jetbrains.compose.resources.painterResource
-import timeflow.app.desktop.generated.resources.Res
-import timeflow.app.desktop.generated.resources.icon_rounded_dark
-import timeflow.app.desktop.generated.resources.icon_rounded_light
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.AppContent
 import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.datastore.dataStoreFileName
 import xyz.hyli.timeflow.datastore.settingsFilePath
+import xyz.hyli.timeflow.desktop.generated.resources.Res
+import xyz.hyli.timeflow.desktop.generated.resources.icon_rounded_dark
+import xyz.hyli.timeflow.desktop.generated.resources.icon_rounded_light
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark

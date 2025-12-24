@@ -17,11 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
-import timeflow.app.desktop.generated.resources.Res
-import timeflow.app.desktop.generated.resources.ic_fluent_dismiss_48_regular
-import timeflow.app.desktop.generated.resources.ic_fluent_square_48_regular
-import timeflow.app.desktop.generated.resources.ic_fluent_square_multiple_48_regular
-import timeflow.app.desktop.generated.resources.ic_fluent_subtract_48_filled
+import xyz.hyli.timeflow.desktop.generated.resources.Res
+import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_dismiss_48_regular
+import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_square_48_regular
+import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_square_multiple_48_regular
+import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_subtract_48_filled
 
 @Composable
 internal fun WindowsSystemButtons(
