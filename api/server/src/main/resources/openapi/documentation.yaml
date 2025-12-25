@@ -105,27 +105,44 @@ components:
         selectedScheduleID: { type: integer }
 
     # Auth Schemas
-    UserRegistration:
+    VerificationCodeRequest:
+      type: object
+      required: [ email ]
+      properties:
+        email: { type: string, format: email }
+    UserRegistrationRequest:
+      type: object
+      required: [ email, password, code ]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        code: { type: string, description: "The 6-digit verification code sent to the user's email." }
+    UserLoginRequest:
       type: object
       required: [ email, password ]
       properties:
         email: { type: string, format: email }
         password: { type: string, format: password }
-    UserLogin:
-      type: object
-      required: [ email, password ]
-      properties:
-        email: { type: string, format: email }
-        password: { type: string, format: password }
-    LoginResponse:
+    TokenResponse:
       type: object
       properties:
-        token: { type: string, description: "JWT Access Token" }
-    UserInfo:
+        accessToken: { type: string, description: "Short-lived JWT Access Token" }
+        refreshToken: { type: string, description: "Long-lived token for refreshing the access token. Conditionally returned.", nullable: true }
+    RefreshTokenRequest:
+      type: object
+      required: [ refreshToken ]
+      properties:
+        refreshToken: { type: string }
+        rotate: { type: boolean, description: "If true, the server will return a new refresh token (rotation).", default: false }
+    UserInfoResponse:
       type: object
       properties:
         id: { type: string }
         email: { type: string, format: email }
+    CheckEmailResponse:
+      type: object
+      properties:
+        exists: { type: boolean }
 
     # Sync Schemas
     SyncRequest:
@@ -154,6 +171,34 @@ components:
 # API Paths
 paths:
   # Auth Endpoints
+  /auth/check-email:
+    get:
+      tags: [ Auth ]
+      summary: Check if an email is already registered
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        '200':
+          description: Returns whether the email exists
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/CheckEmailResponse' } }
+        '400': { description: Email parameter is missing or invalid }
+  /auth/send-verification-code:
+    post:
+      tags: [ Auth ]
+      summary: Send a registration verification code
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/VerificationCodeRequest' } }
+      responses:
+        '202': { description: Successfully accepted the request to send an email. }
+        '400': { description: The email format is invalid. }
+        '409': { description: The email address is already registered. }
+        '429': { description: Too many requests. Please try again later. }
   /auth/register:
     post:
       tags: [ Auth ]
@@ -161,10 +206,11 @@ paths:
       requestBody:
         required: true
         content:
-          application/json: { schema: { $ref: '#/components/schemas/UserRegistration' } }
+          application/json: { schema: { $ref: '#/components/schemas/UserRegistrationRequest' } }
       responses:
         '201': { description: User created successfully }
         '400': { description: Invalid input or user already exists }
+        '429': { description: Too many requests }
   /auth/login:
     post:
       tags: [ Auth ]
@@ -172,13 +218,32 @@ paths:
       requestBody:
         required: true
         content:
-          application/json: { schema: { $ref: '#/components/schemas/UserLogin' } }
+          application/json: { schema: { $ref: '#/components/schemas/UserLoginRequest' } }
       responses:
         '200':
-          description: Successful login
+          description: Successful login, returns access and refresh tokens
           content:
-            application/json: { schema: { $ref: '#/components/schemas/LoginResponse' } }
+            application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
         '401': { description: Invalid credentials }
+        '429': { description: Too many requests }
+  /auth/refresh:
+    post:
+      tags: [ Auth ]
+      summary: Refresh an access token
+      description: >
+        Provides a new access token in exchange for a valid refresh token.
+        The client can optionally request to rotate the refresh token as well by sending `rotate: true`.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/RefreshTokenRequest' } }
+      responses:
+        '200':
+          description: Successfully refreshed. The response will always contain a new `accessToken`. It will conditionally contain a new `refreshToken` if the client requested rotation.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
+        '401': { description: Invalid or expired refresh token }
+        '429': { description: Too many requests }
   /users/me:
     get:
       tags: [ Users ]
@@ -188,7 +253,7 @@ paths:
         '200':
           description: User profile
           content:
-            application/json: { schema: { $ref: '#/components/schemas/UserInfo' } }
+            application/json: { schema: { $ref: '#/components/schemas/UserInfoResponse' } }
         '401': { description: Unauthorized }
 
   # Schedules Endpoints
