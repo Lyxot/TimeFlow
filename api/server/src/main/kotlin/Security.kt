@@ -11,81 +11,81 @@ package xyz.hyli.timeflow
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.ktor.client.*
-import io.ktor.client.engine.apache.*
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
-import kotlinx.serialization.Serializable
+import java.util.*
 
 fun Application.configureSecurity() {
-    // Please read the jwt property from the config file if you are using EngineMain
-    val jwtAudience = "jwt-audience"
-    val jwtDomain = "https://jwt-provider-domain/"
-    val jwtRealm = "ktor sample app"
-    val jwtSecret = "secret"
-    authentication {
-        jwt {
+
+    val jwtSecret = environment.config.property("jwt.secret").getString()
+    val jwtIssuer = environment.config.property("jwt.issuer").getString()
+    val jwtAudience = environment.config.property("jwt.audience").getString()
+    val jwtRealm = environment.config.property("jwt.realm").getString()
+
+    install(Authentication) {
+        // Provider for validating Access Tokens
+        jwt("access-auth") {
             realm = jwtRealm
             verifier(
-                JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
+                JWT.require(Algorithm.HMAC256(jwtSecret))
                     .withAudience(jwtAudience)
-                    .withIssuer(jwtDomain)
+                    .withIssuer(jwtIssuer)
                     .build()
             )
             validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+                if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.ACCESS.name &&
+                    credential.payload.getClaim("userId").asString() != ""
+                ) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
             }
         }
-    }
-    authentication {
-        oauth("auth-oauth-google") {
-            urlProvider = { "http://localhost:8080/callback" }
-            providerLookup = {
-                OAuthServerSettings.OAuth2ServerSettings(
-                    name = "google",
-                    authorizeUrl = "https://accounts.google.com/o/oauth2/auth",
-                    accessTokenUrl = "https://accounts.google.com/o/oauth2/token",
-                    requestMethod = HttpMethod.Post,
-                    clientId = System.getenv("GOOGLE_CLIENT_ID"),
-                    clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
-                    defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile")
-                )
-            }
-            client = HttpClient(Apache)
-        }
-    }
-    install(Sessions) {
-        cookie<MySession>("MY_SESSION") {
-            cookie.extensions["SameSite"] = "lax"
-        }
-    }
-    routing {
-        authenticate("auth-oauth-google") {
-            get("login") {
-                call.respondRedirect("/callback")
-            }
 
-            get("/callback") {
-                val principal: OAuthAccessTokenResponse.OAuth2? = call.authentication.principal()
-                call.sessions.set(UserSession(principal?.accessToken.toString()))
-                call.respondRedirect("/hello")
+        // Provider for validating Refresh Tokens
+        jwt("refresh-auth") {
+            realm = jwtRealm
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withAudience(jwtAudience)
+                    .withIssuer(jwtIssuer)
+                    .build()
+            )
+            validate { credential ->
+                if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.REFRESH.name &&
+                    credential.payload.getClaim("userId").asString() != ""
+                ) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
             }
-        }
-        get("/session/increment") {
-            val session = call.sessions.get<MySession>() ?: MySession()
-            call.sessions.set(session.copy(count = session.count + 1))
-            call.respondText("Counter is ${session.count}. Refresh to increment.")
         }
     }
 }
 
-class UserSession(accessToken: String)
+class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
+    private val audience = config.property("jwt.audience").getString()
+    private val secret = config.property("jwt.secret").getString()
+    private val issuer = config.property("jwt.issuer").getString()
 
-@Serializable
-data class MySession(val count: Int = 0)
+    enum class TokenType(val validityInMs: Long) {
+        ACCESS(36_000_00 * 12), // 12 hours
+        REFRESH(36_000_00 * 24 * 21) // 21 days
+    }
+
+    /**
+     * Generates a JWT for the given user ID and token type.
+     */
+    fun generateToken(userId: String, type: TokenType): String {
+        return JWT.create()
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .withClaim("userId", userId)
+            .withClaim("type", type.name)
+            .withExpiresAt(Date(System.currentTimeMillis() + type.validityInMs))
+            .sign(Algorithm.HMAC256(secret))
+    }
+}

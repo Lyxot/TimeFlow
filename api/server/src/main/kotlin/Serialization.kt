@@ -9,14 +9,17 @@
 
 package xyz.hyli.timeflow
 
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.plugins.contentnegotiation.*
+import kotlinx.serialization.json.Json
 
 fun Application.configureSerialization() {
-    routing {
-        get("/json/kotlinx-serialization") {
-            call.respond(mapOf("hello" to "world"))
-        }
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true // This is a good practice for API robustness
+        })
     }
 }

@@ -9,27 +9,18 @@
 
 package xyz.hyli.timeflow
 
-import io.ktor.resources.*
 import io.ktor.server.application.*
 import io.ktor.server.resources.*
-import io.ktor.server.resources.Resources
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
+import xyz.hyli.timeflow.routes.authRoutes
+import xyz.hyli.timeflow.routes.usersRoutes
 
 fun Application.configureRouting() {
     install(Resources)
+    val tokenManager = TokenManager(environment.config)
+
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-        get<Articles> { article ->
-            // Get all articles ...
-            call.respond("List of articles sorted starting from ${article.sort}")
-        }
+        authRoutes(tokenManager)
+        usersRoutes()
     }
 }
-
-@Serializable
-@Resource("/articles")
-class Articles(val sort: String? = "new")

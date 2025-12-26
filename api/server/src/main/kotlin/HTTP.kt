@@ -9,8 +9,6 @@
 
 package xyz.hyli.timeflow
 
-import com.asyncapi.kotlinasyncapi.context.service.AsyncApiExtension
-import com.asyncapi.kotlinasyncapi.ktor.AsyncApiPlugin
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -19,18 +17,16 @@ import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.conditionalheaders.*
 import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.forwardedheaders.*
-import io.ktor.server.plugins.openapi.*
-import io.ktor.server.routing.*
 
 fun Application.configureHTTP() {
-    install(AsyncApiPlugin) {
-        extension = AsyncApiExtension.builder {
-            info {
-                title("Sample API")
-                version("1.0.0")
-            }
-        }
-    }
+//    install(AsyncApiPlugin) {
+//        extension = AsyncApiExtension.builder {
+//            info {
+//                title("Sample API")
+//                version("1.0.0")
+//            }
+//        }
+//    }
     install(CachingHeaders) {
         options { call, outgoingContent ->
             when (outgoingContent.contentType?.withoutParameters()) {
@@ -39,7 +35,10 @@ fun Application.configureHTTP() {
             }
         }
     }
-    install(Compression)
+    install(Compression) {
+        gzip()
+        deflate()
+    }
     install(ConditionalHeaders)
     install(DefaultHeaders) {
         header("X-Engine", "Ktor") // will send this header with each response
@@ -65,7 +64,7 @@ fun Application.configureHTTP() {
 //        // 301 Moved Permanently, or 302 Found redirect.
 //        permanentRedirect = true
 //    }
-    routing {
-        openAPI(path = "openapi")
-    }
+//    routing {
+//        openAPI(path = "openapi")
+//    }
 }

@@ -18,6 +18,7 @@ application {
 }
 
 dependencies {
+    api(project(":data"))
     implementation(libs.asyncapi.ktor)
     implementation(libs.h2)
     implementation(libs.koog.ktor)

@@ -127,12 +127,10 @@ components:
       type: object
       properties:
         accessToken: { type: string, description: "Short-lived JWT Access Token" }
-        refreshToken: { type: string, description: "Long-lived token for refreshing the access token. Conditionally returned.", nullable: true }
+        refreshToken: { type: string, description: "Long-lived JWT Refresh Token. Conditionally returned.", nullable: true }
     RefreshTokenRequest:
       type: object
-      required: [ refreshToken ]
       properties:
-        refreshToken: { type: string }
         rotate: { type: boolean, description: "If true, the server will return a new refresh token (rotation).", default: false }
     UserInfoResponse:
       type: object
@@ -230,16 +228,17 @@ paths:
     post:
       tags: [ Auth ]
       summary: Refresh an access token
+      security: [ { bearerAuth: [ ] } ]
       description: >
-        Provides a new access token in exchange for a valid refresh token.
-        The client can optionally request to rotate the refresh token as well by sending `rotate: true`.
+        Provides a new access token by validating a JWT of type 'REFRESH' sent in the Authorization header.
+        The client can optionally request to rotate the refresh token as well by sending `rotate: true` in the body.
       requestBody:
-        required: true
+        required: false
         content:
           application/json: { schema: { $ref: '#/components/schemas/RefreshTokenRequest' } }
       responses:
         '200':
-          description: Successfully refreshed. The response will always contain a new `accessToken`. It will conditionally contain a new `refreshToken` if the client requested rotation.
+          description: Successfully refreshed. The response will always contain a new `accessToken`. It will conditionally contain a new `refreshToken` if rotation was requested.
           content:
             application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
         '401': { description: Invalid or expired refresh token }
