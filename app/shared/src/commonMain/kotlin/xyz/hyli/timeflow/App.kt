@@ -10,12 +10,12 @@
 package xyz.hyli.timeflow
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -34,10 +34,10 @@ internal val LocalNavSuiteType = compositionLocalOf { mutableStateOf(NavigationS
 @Composable
 fun App(
     viewModel: TimeFlowViewModel,
-    fontFamily: FontFamily? = null
+    typography: Typography? = null
 ) = AppTheme(
     viewModel = viewModel,
-    fontFamily = fontFamily,
+    typography = typography,
     content = AppContent(viewModel)
 )
 

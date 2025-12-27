@@ -9,15 +9,12 @@
 
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
-import org.jetbrains.compose.resources.Font
 import xyz.hyli.timeflow.App
 import xyz.hyli.timeflow.di.AppContainer
+import xyz.hyli.timeflow.ui.theme.webTypography
 import xyz.hyli.timeflow.ui.viewmodel.ViewModelOwner
-import xyz.hyli.timeflow.web.generated.resources.MiSansVF
-import xyz.hyli.timeflow.web.generated.resources.Res
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -27,7 +24,7 @@ fun main() {
         val viewModelOwner = remember { ViewModelOwner(appContainer) }
         App(
             viewModelOwner.timeFlowViewModel,
-            FontFamily(Font(Res.font.MiSansVF))
+            webTypography
         )
     }
 }

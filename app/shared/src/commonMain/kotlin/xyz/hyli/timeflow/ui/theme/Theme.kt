@@ -12,7 +12,6 @@ package xyz.hyli.timeflow.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.text.font.FontFamily
 import com.materialkolor.ktx.animateColorScheme
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -23,7 +22,7 @@ val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 @Composable
 fun AppTheme(
     viewModel: TimeFlowViewModel,
-    fontFamily: FontFamily? = null,
+    typography: Typography? = null,
     content: @Composable () -> Unit
 ) {
     val systemIsDark = isSystemInDarkTheme()
@@ -43,27 +42,7 @@ fun AppTheme(
             colorScheme = animateColorScheme(
                 colorScheme
             ),
-            typography = fontFamily?.let { fontFamily ->
-                MaterialTheme.typography.let {
-                    it.copy(
-                        displayLarge = it.displayLarge.copy(fontFamily = fontFamily),
-                        displayMedium = it.displayMedium.copy(fontFamily = fontFamily),
-                        displaySmall = it.displaySmall.copy(fontFamily = fontFamily),
-                        headlineLarge = it.headlineLarge.copy(fontFamily = fontFamily),
-                        headlineMedium = it.headlineMedium.copy(fontFamily = fontFamily),
-                        headlineSmall = it.headlineSmall.copy(fontFamily = fontFamily),
-                        titleLarge = it.titleLarge.copy(fontFamily = fontFamily),
-                        titleMedium = it.titleMedium.copy(fontFamily = fontFamily),
-                        titleSmall = it.titleSmall.copy(fontFamily = fontFamily),
-                        bodyLarge = it.bodyLarge.copy(fontFamily = fontFamily),
-                        bodyMedium = it.bodyMedium.copy(fontFamily = fontFamily),
-                        bodySmall = it.bodySmall.copy(fontFamily = fontFamily),
-                        labelLarge = it.labelLarge.copy(fontFamily = fontFamily),
-                        labelMedium = it.labelMedium.copy(fontFamily = fontFamily),
-                        labelSmall = it.labelSmall.copy(fontFamily = fontFamily),
-                    )
-                }
-            },
+            typography = typography,
             content = {
                 Surface {
                     content()
