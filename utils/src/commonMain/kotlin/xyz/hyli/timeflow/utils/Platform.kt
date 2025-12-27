@@ -52,10 +52,20 @@ sealed class Platform {
 
     class Linux : Desktop("Linux")
 
-    data class Wasm(
-        val userAgent: String,
-    ) : Platform() {
-        override val name: String get() = "Wasm"
+    sealed class Web(
+        open val userAgent: String
+    ) : Platform()
+
+    data class WasmJS(
+        override val userAgent: String
+    ) : Web(userAgent) {
+        override val name: String get() = "WasmJS"
+    }
+
+    data class JS(
+        override val userAgent: String,
+    ) : Web(userAgent) {
+        override val name: String get() = "JS"
     }
 }
 
@@ -117,9 +127,9 @@ inline fun Platform.isAndroid(): Boolean {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun Platform.isWasm(): Boolean {
-    contract { returns(true) implies (this@isWasm is Platform.Wasm) }
-    return this is Platform.Wasm
+inline fun Platform.isWeb(): Boolean {
+    contract { returns(true) implies (this@isWeb is Platform.Web) }
+    return this is Platform.Web
 }
 
 inline fun Platform.supportDynamicColor(): Boolean {

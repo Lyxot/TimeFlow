@@ -27,6 +27,10 @@ kotlin {
     iosArm64 { }
     iosSimulatorArm64 { }
     jvm { }
+    js {
+        browser()
+        binaries.executable()
+    }
     wasmJs {
         browser()
         binaries.executable()
@@ -34,9 +38,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.filekit.core)
             implementation(libs.korlibs.compression)
         }
-        wasmJsMain.dependencies {
+        webMain.dependencies {
             implementation(libs.kotlinx.browser)
         }
     }

@@ -9,77 +9,33 @@
 
 package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconToggleButton
-import androidx.compose.material3.HorizontalFloatingToolbar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_all_schedules
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_deleted_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_other_schedules
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_recycle_bin
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_restore_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_selected_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_update_selected_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_deleted_schedule_permanently_success
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_deleted_schedule_success
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_recycle_bin_empty
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_restore_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_update_selected_schedule
-import xyz.hyli.timeflow.shared.generated.resources.undo
-import xyz.hyli.timeflow.ui.components.BasePreference
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.Dependency
-import xyz.hyli.timeflow.ui.components.DialogStateNoData
-import xyz.hyli.timeflow.ui.components.NavigationBackIcon
-import xyz.hyli.timeflow.ui.components.PreferenceDivider
-import xyz.hyli.timeflow.ui.components.PreferenceScreen
-import xyz.hyli.timeflow.ui.components.PreferenceSection
-import xyz.hyli.timeflow.ui.components.bottomPadding
-import xyz.hyli.timeflow.ui.components.rememberDialogState
+import xyz.hyli.timeflow.data.toProtoBufByteArray
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmActionDialog
 import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isWeb
+import xyz.hyli.timeflow.utils.writeBytesToFile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -353,6 +309,8 @@ fun ScheduleListScreen(
                 visible = selectedSchedules.size == 1 && multipleSelectionMode && !recycleBinMode,
             ) {
                 val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
+
+                @Suppress("DEPRECATION")
                 val saver = rememberFileSaverLauncher { file ->
                     if (file != null) {
                         viewModel.exportScheduleToFile(
@@ -369,7 +327,17 @@ fun ScheduleListScreen(
                 }
                 IconButton(
                     onClick = {
-                        saver.launch(settings.schedules[id]!!.name, "pb")
+                        if (currentPlatform().isWeb()) {
+                            viewModel.viewModelScope.launch {
+                                writeBytesToFile(
+                                    settings.schedules[id]!!.toProtoBufByteArray(),
+                                    file = null,
+                                    filename = settings.schedules[id]!!.name + ".pb"
+                                )
+                            }
+                        } else {
+                            saver.launch(settings.schedules[id]!!.name, "pb")
+                        }
                     }
                 ) {
                     Icon(

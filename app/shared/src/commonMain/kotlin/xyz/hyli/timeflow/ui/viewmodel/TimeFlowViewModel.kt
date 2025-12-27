@@ -18,9 +18,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
-import io.github.vinceglb.filekit.path
 import io.github.vinceglb.filekit.readBytes
-import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -28,20 +26,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.Settings
-import xyz.hyli.timeflow.data.ThemeMode
-import xyz.hyli.timeflow.data.readScheduleFromByteArray
-import xyz.hyli.timeflow.data.toProtoBufByteArray
+import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_export_schedule_failed
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_export_schedule_success
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_import_schedule_failed
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_import_schedule_success
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMobile
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.utils.writeBytesToFile
 import kotlin.uuid.ExperimentalUuidApi
 
 class TimeFlowViewModel(
@@ -132,11 +121,11 @@ class TimeFlowViewModel(
                 return@launch
             }
             try {
-                file.write(schedule.toProtoBufByteArray())
+                writeBytesToFile(schedule.toProtoBufByteArray(), file)
                 showMessage(
                     getString(
                         Res.string.schedule_value_export_schedule_success,
-                        if (currentPlatform().isMobile()) file.name else file.path
+                        file.name
                     )
                 )
             } catch (e: Exception) {

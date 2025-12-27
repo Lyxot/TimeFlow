@@ -9,8 +9,13 @@
 
 package xyz.hyli.timeflow.utils
 
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+
 
 object Files {
     var settingsFilePath: String? = null
     var showFileInFileManager: ((String) -> Unit)? = null
 }
+
+expect suspend fun writeBytesToFile(bytes: ByteArray, file: PlatformFile?, filename: String = file?.name ?: "file")

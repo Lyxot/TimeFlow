@@ -43,11 +43,15 @@ kotlin {
 
     jvm { }
 
-//    wasmJs {
-//        browser()
-//        binaries.executable()
-//    }
+    js {
+        browser()
+        binaries.executable()
+    }
 
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
 
     iosX64()
     iosArm64()
@@ -94,9 +98,9 @@ kotlin {
             api(project(":app:app-datastore"))
         }
 
-//        wasmJsMain.dependencies {
-//
-//        }
+        webMain.dependencies {
+
+        }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -200,7 +204,7 @@ dependencies {
     with(libs.kotlin.inject.ksp) {
         add("kspAndroid", this)
         add("kspJvm", this)
-//        add("kspWasmJs", this)
+        add("kspWasmJs", this)
         add("kspIosX64", this)
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)
