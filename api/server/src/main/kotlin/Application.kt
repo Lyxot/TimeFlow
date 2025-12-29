@@ -10,7 +10,7 @@
 package xyz.hyli.timeflow
 
 import io.ktor.server.application.*
-import io.ktor.server.cio.*
+import io.ktor.server.netty.*
 import xyz.hyli.timeflow.server.*
 
 fun main(args: Array<String>) {

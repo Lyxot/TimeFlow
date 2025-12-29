@@ -18,7 +18,7 @@ kotlin {
 }
 
 application {
-    mainClass = "io.ktor.server.cio.EngineMain"
+    mainClass = "io.ktor.server.netty.EngineMain"
     applicationDefaultJvmArgs += listOf(
         "-XX:+UseZGC",
 //            "-XX:+ZGenerational",
@@ -39,7 +39,6 @@ dependencies {
     implementation(ktorLibs.server.auth.jwt)
     implementation(ktorLibs.server.cachingHeaders)
     implementation(ktorLibs.server.callLogging)
-    implementation(ktorLibs.server.cio)
     implementation(ktorLibs.server.compression)
     implementation(ktorLibs.server.conditionalHeaders)
     implementation(ktorLibs.server.config.yaml)
@@ -50,6 +49,7 @@ dependencies {
     implementation(ktorLibs.server.forwardedHeader)
     implementation(ktorLibs.server.hsts)
     implementation(ktorLibs.server.httpRedirect)
+    implementation(ktorLibs.server.netty)
     implementation(ktorLibs.server.openapi)
     implementation(ktorLibs.server.rateLimit)
     implementation(ktorLibs.server.resources)
