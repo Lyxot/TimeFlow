@@ -15,7 +15,6 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.multiplatform.android)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.ktor)
 }
 
 kotlin {
@@ -36,7 +35,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":data"))
             implementation(libs.kotlinx.serialization.core)
-            implementation(libs.ktor.resources)
+            implementation(ktorLibs.resources)
         }
     }
 }

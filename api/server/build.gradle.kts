@@ -10,11 +10,20 @@
 plugins {
     kotlin("jvm")
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.ktor)
+    alias(ktorLibs.plugins.ktor)
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 application {
     mainClass = "io.ktor.server.cio.EngineMain"
+    applicationDefaultJvmArgs += listOf(
+        "-XX:+UseZGC",
+//            "-XX:+ZGenerational",
+        "-XX:SoftMaxHeapSize=512m",
+    )
 }
 
 dependencies {
@@ -23,29 +32,29 @@ dependencies {
     implementation(libs.h2)
     implementation(libs.koog.ktor)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.auth.jwt)
-    implementation(libs.ktor.server.caching.headers)
-    implementation(libs.ktor.server.call.logging)
-    implementation(libs.ktor.server.cio)
-    implementation(libs.ktor.server.compression)
-    implementation(libs.ktor.server.conditional.headers)
-    implementation(libs.ktor.server.config.yaml)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.cors)
-    implementation(libs.ktor.server.default.headers)
-    implementation(libs.ktor.server.forwarded.header)
-    implementation(libs.ktor.server.hsts)
-    implementation(libs.ktor.server.http.redirect)
-    implementation(libs.ktor.server.openapi)
-    implementation(libs.ktor.server.rate.limiting)
-    implementation(libs.ktor.server.resources)
-    implementation(libs.ktor.server.sessions)
     implementation(libs.logback.classic)
     implementation(libs.postgresql)
+    implementation(ktorLibs.serialization.kotlinx.json)
+    implementation(ktorLibs.server.auth)
+    implementation(ktorLibs.server.auth.jwt)
+    implementation(ktorLibs.server.cachingHeaders)
+    implementation(ktorLibs.server.callLogging)
+    implementation(ktorLibs.server.cio)
+    implementation(ktorLibs.server.compression)
+    implementation(ktorLibs.server.conditionalHeaders)
+    implementation(ktorLibs.server.config.yaml)
+    implementation(ktorLibs.server.contentNegotiation)
+    implementation(ktorLibs.server.core)
+    implementation(ktorLibs.server.cors)
+    implementation(ktorLibs.server.defaultHeaders)
+    implementation(ktorLibs.server.forwardedHeader)
+    implementation(ktorLibs.server.hsts)
+    implementation(ktorLibs.server.httpRedirect)
+    implementation(ktorLibs.server.openapi)
+    implementation(ktorLibs.server.rateLimit)
+    implementation(ktorLibs.server.resources)
+    implementation(ktorLibs.server.sessions)
 
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(libs.ktor.server.test.host)
+    testImplementation(ktorLibs.server.testHost)
 }

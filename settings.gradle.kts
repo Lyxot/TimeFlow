@@ -9,6 +9,8 @@
 
 rootProject.name = "TimeFlow"
 
+val ktorVersion = "3.3.3"
+
 pluginManagement {
     repositories {
         google {
@@ -42,6 +44,9 @@ dependencyResolutionManagement {
         maven("https://packages.confluent.io/maven/")
     }
     versionCatalogs {
+        create("ktorLibs") {
+            from("io.ktor:ktor-version-catalog:$ktorVersion")
+        }
         create("app") {
             from(files("gradle/app.versions.toml"))
         }
@@ -62,4 +67,5 @@ include(":app:ios")
 include(":app:desktop")
 include(":api:models")
 include(":api:server")
+include(":api:client")
 

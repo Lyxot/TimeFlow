@@ -9,20 +9,26 @@
 
 package xyz.hyli.timeflow.server
 
-import io.github.flaxoos.ktor.server.plugins.ratelimiter.RateLimiting
-import io.github.flaxoos.ktor.server.plugins.ratelimiter.implementations.TokenBucket
 import io.ktor.server.application.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.routing.*
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureAdministration() {
     routing {
         route("/") {
-            install(RateLimiting) {
-                rateLimiter {
-                    type = TokenBucket::class
-                    capacity = 100
-                    rate = 10.seconds
+            install(RateLimit) {
+                global {
+                    rateLimiter(limit = 100, refillPeriod = 10.seconds)
+                }
+                // limiter for login/register
+                register(RateLimitName("login")) {
+                    rateLimiter(limit = 6, refillPeriod = 1.minutes)
+                }
+                // limiter for email verification code sending
+                register(RateLimitName("send_verification_code")) {
+                    rateLimiter(limit = 1, refillPeriod = 1.minutes)
                 }
             }
         }
