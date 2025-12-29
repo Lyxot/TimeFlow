@@ -74,15 +74,17 @@ kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-io-okio = { module = "org.jetbrains.kotlinx:kotlinx-io-okio", version.ref = "kotlinx-io" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
-ktor-client-apache = { module = "io.ktor:ktor-client-apache" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
-ktor-ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging" }
-ktor-ktor-server-resources = { module = "io.ktor:ktor-server-resources" }
+ktor-client-resources = { module = "io.ktor:ktor-client-resources" }
+ktor-resources = { module = "io.ktor:ktor-resources" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
 ktor-server-auth = { module = "io.ktor:ktor-server-auth" }
 ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
 ktor-server-compression = { module = "io.ktor:ktor-server-compression" }
 ktor-server-conditional-headers = { module = "io.ktor:ktor-server-conditional-headers" }
@@ -96,6 +98,7 @@ ktor-server-hsts = { module = "io.ktor:ktor-server-hsts" }
 ktor-server-http-redirect = { module = "io.ktor:ktor-server-http-redirect" }
 ktor-server-openapi = { module = "io.ktor:ktor-server-openapi" }
 ktor-server-rate-limiting = { module = "io.github.flaxoos:ktor-server-rate-limiting", version.ref = "ktor-server-rate-limiting" }
+ktor-server-resources = { module = "io.ktor:ktor-server-resources" }
 ktor-server-sessions = { module = "io.ktor:ktor-server-sessions" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-classic" }

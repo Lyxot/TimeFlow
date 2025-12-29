@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.models
+package xyz.hyli.timeflow.api.models
 
 import io.ktor.resources.*
 import kotlinx.serialization.Serializable

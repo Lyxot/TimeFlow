@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow
+package xyz.hyli.timeflow.server
 
 import io.github.flaxoos.ktor.server.plugins.ratelimiter.RateLimiting
 import io.github.flaxoos.ktor.server.plugins.ratelimiter.implementations.TokenBucket

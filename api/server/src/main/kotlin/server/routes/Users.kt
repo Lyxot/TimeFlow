@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.routes
+package xyz.hyli.timeflow.server.routes
 
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -15,8 +15,8 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import xyz.hyli.timeflow.models.ApiV1
-import xyz.hyli.timeflow.models.UserInfoResponse
+import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.api.models.UserInfoResponse
 
 fun Route.usersRoutes() {
     // Routes protected by ACCESS token validation

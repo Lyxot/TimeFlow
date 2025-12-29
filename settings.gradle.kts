@@ -60,5 +60,6 @@ include(":app:shared")
 include(":app:android")
 include(":app:ios")
 include(":app:desktop")
+include(":api:models")
 include(":api:server")
 

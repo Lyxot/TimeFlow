@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.routes
+package xyz.hyli.timeflow.server.routes
 
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -16,10 +16,10 @@ import io.ktor.server.resources.*
 import io.ktor.server.resources.post
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
-import xyz.hyli.timeflow.TokenManager
-import xyz.hyli.timeflow.models.ApiV1
-import xyz.hyli.timeflow.models.CheckEmailResponse
-import xyz.hyli.timeflow.models.TokenResponse
+import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.api.models.CheckEmailResponse
+import xyz.hyli.timeflow.api.models.TokenResponse
+import xyz.hyli.timeflow.server.TokenManager
 
 fun Route.authRoutes(tokenManager: TokenManager) {
 

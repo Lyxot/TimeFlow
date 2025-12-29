@@ -7,16 +7,20 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow
+package xyz.hyli.timeflow.server
 
 import io.ktor.server.application.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.request.*
-import org.slf4j.event.Level
+import io.ktor.server.resources.*
+import io.ktor.server.routing.*
+import xyz.hyli.timeflow.server.routes.authRoutes
+import xyz.hyli.timeflow.server.routes.usersRoutes
 
-fun Application.configureMonitoring() {
-    install(CallLogging) {
-        level = Level.INFO
-        filter { call -> call.request.path().startsWith("/") }
+fun Application.configureRouting() {
+    install(Resources)
+    val tokenManager = TokenManager(environment.config)
+
+    routing {
+        authRoutes(tokenManager)
+        usersRoutes()
     }
 }

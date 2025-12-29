@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow
+package xyz.hyli.timeflow.server
 
 import io.ktor.http.*
 import io.ktor.http.content.*
