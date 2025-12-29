@@ -38,6 +38,7 @@ dependencies {
     implementation(ktorLibs.server.auth)
     implementation(ktorLibs.server.auth.jwt)
     implementation(ktorLibs.server.cachingHeaders)
+    implementation(ktorLibs.server.callId)
     implementation(ktorLibs.server.callLogging)
     implementation(ktorLibs.server.compression)
     implementation(ktorLibs.server.conditionalHeaders)
