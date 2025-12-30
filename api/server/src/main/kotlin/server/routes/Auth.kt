@@ -13,20 +13,20 @@ import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.ratelimit.*
+import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.resources.post
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
-import xyz.hyli.timeflow.api.models.CheckEmailResponse
-import xyz.hyli.timeflow.api.models.TokenResponse
 import xyz.hyli.timeflow.server.TokenManager
 
 fun Route.authRoutes(tokenManager: TokenManager) {
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email
-        get<ApiV1.Auth.CheckEmail> { resource ->
-            val email = resource.email
+        get<ApiV1.Auth.CheckEmail> { _ ->
+            val payload = call.receive<ApiV1.Auth.CheckEmail.Payload>()
+            val email = payload.email
             if (email.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email parameter cannot be blank"))
                 return@get
@@ -35,11 +35,12 @@ fun Route.authRoutes(tokenManager: TokenManager) {
             // TODO: Replace with a real database lookup.
             val exists = (email == "test@test.com")
 
-            call.respond(HttpStatusCode.OK, CheckEmailResponse(exists = exists))
+            call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = exists))
         }
 
         // POST /api/v1/auth/register
-        post<ApiV1.Auth.Register> { request ->
+        post<ApiV1.Auth.Register> { _ ->
+            val payload = call.receive<ApiV1.Auth.Register.Payload>()
 
             // TODO: 1. Validate the verification code `request.code`.
             // TODO: 2. Check if user with this email already exists in the database.
@@ -50,9 +51,10 @@ fun Route.authRoutes(tokenManager: TokenManager) {
         }
 
         // POST /api/v1/auth/login
-        post<ApiV1.Auth.Login> { request ->
+        post<ApiV1.Auth.Login> { _ ->
+            val payload = call.receive<ApiV1.Auth.Login.Payload>()
             // TODO: Replace this with a real user lookup and password check from your database.
-            val isCredentialsValid = request.email == "test@test.com" && request.password == "password"
+            val isCredentialsValid = payload.email == "test@test.com" && payload.password == "password"
 
             if (isCredentialsValid) {
                 val userId = "user-id-123" // In a real app, you would fetch this from the database.
@@ -63,44 +65,47 @@ fun Route.authRoutes(tokenManager: TokenManager) {
 
                 // TODO: Save the hash of the refreshToken to the database to allow for revocation.
 
-                call.respond(HttpStatusCode.OK, TokenResponse(accessToken = accessToken, refreshToken = refreshToken))
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiV1.Auth.Login.Response(accessToken = accessToken, refreshToken = refreshToken)
+                )
             } else {
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid credentials"))
+            }
+        }
+
+        // Route protected by REFRESH token validation
+        authenticate("refresh-auth") {
+            // POST /api/v1/auth/refresh
+            post<ApiV1.Auth.Refresh> { request ->
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asString()
+
+                // TODO: Add a DB check to see if this refresh token (e.g., its JTI) has been revoked.
+
+                val newAccessToken = tokenManager.generateToken(userId, TokenManager.TokenType.ACCESS)
+                val newRefreshToken = if (request.rotate == true) {
+                    // TODO: Invalidate old refresh token and save the new one in the DB.
+                    tokenManager.generateToken(userId, TokenManager.TokenType.REFRESH)
+                } else {
+                    null
+                }
+                val response = ApiV1.Auth.Refresh.Response(accessToken = newAccessToken, refreshToken = newRefreshToken)
+                call.respond(HttpStatusCode.OK, response)
             }
         }
     }
 
     // POST /api/v1/auth/send-verification-code
     rateLimit(RateLimitName("send_verification_code")) {
-        post<ApiV1.Auth.SendVerificationCode> { request ->
+        post<ApiV1.Auth.SendVerificationCode> { _ ->
+            val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
             // TODO: Implement rate limiting and email sending logic.
-            if (request.email == "test@test.com") {
+            if (payload.email == "test@test.com") {
                 call.respond(HttpStatusCode.Conflict, mapOf("error" to "Email already exists"))
                 return@post
             }
             call.respond(HttpStatusCode.Accepted)
-        }
-    }
-
-    // Route protected by REFRESH token validation
-    authenticate("refresh-auth") {
-        // POST /api/v1/auth/refresh
-        post<ApiV1.Auth.Refresh> { request ->
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal!!.payload.getClaim("userId").asString()
-
-            // TODO: Add a DB check to see if this refresh token (e.g., its JTI) has been revoked.
-
-            val newAccessToken = tokenManager.generateToken(userId, TokenManager.TokenType.ACCESS)
-
-            val response = if (request.rotate == true) {
-                // TODO: Invalidate old refresh token and save the new one in the DB.
-                val newRefreshToken = tokenManager.generateToken(userId, TokenManager.TokenType.REFRESH)
-                TokenResponse(accessToken = newAccessToken, refreshToken = newRefreshToken)
-            } else {
-                TokenResponse(accessToken = newAccessToken, refreshToken = null)
-            }
-            call.respond(HttpStatusCode.OK, response)
         }
     }
 }

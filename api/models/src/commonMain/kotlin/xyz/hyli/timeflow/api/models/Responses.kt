@@ -9,17 +9,7 @@
 
 package xyz.hyli.timeflow.api.models
 
-import io.ktor.resources.*
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class TokenResponse(val accessToken: String, val refreshToken: String? = null)
-
-@Serializable
-data class UserInfoResponse(val id: String, val email: String)
-
-@Serializable
-data class CheckEmailResponse(val exists: Boolean)
-
-@Resource("/users/{id}")
-data class UserById(val id: Long, val properties: List<String>)

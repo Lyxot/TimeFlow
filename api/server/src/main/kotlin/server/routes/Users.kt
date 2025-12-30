@@ -16,7 +16,6 @@ import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.api.models.ApiV1
-import xyz.hyli.timeflow.api.models.UserInfoResponse
 
 fun Route.usersRoutes() {
     // Routes protected by ACCESS token validation
@@ -29,7 +28,7 @@ fun Route.usersRoutes() {
             // TODO: Fetch the user's full profile from the database using the userId.
             val userEmail = "test@test.com"
 
-            call.respond(HttpStatusCode.OK, UserInfoResponse(id = userId, email = userEmail))
+            call.respond(HttpStatusCode.OK, ApiV1.Users.Me.Response(id = userId, email = userEmail))
         }
     }
 }
