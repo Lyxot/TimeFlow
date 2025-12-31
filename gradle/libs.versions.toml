@@ -15,6 +15,7 @@ h2 = "2.4.240"
 hot-reload = "1.0.0"
 jbr-api = "1.9.0"
 jna = "5.18.1"
+kermit = "2.0.8"
 koog = "0.6.0"
 korlibs = "6.0.0"
 kotlin = "2.3.0"
@@ -60,6 +61,7 @@ h2 = { module = "com.h2database:h2", version.ref = "h2" }
 jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jbr-api" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 koog-ktor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
 korlibs-compression = { module = "com.soywiz:korlibs-compression", version.ref = "korlibs" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }

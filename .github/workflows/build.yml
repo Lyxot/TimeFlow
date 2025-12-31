@@ -6,8 +6,16 @@ on:
 
 jobs:
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: shared UI
+            task: ./gradlew :app:shared:jvmTest
+          - name: API server
+            task: ./gradlew :api:server:test
     runs-on: ubuntu-latest
-    name: Run tests
+    name: Test ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -25,8 +33,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Run tests
-        run: ./gradlew jvmTest
+      - name: Run ${{ matrix.name }} tests
+        run: ${{ matrix.task }}
 
   build-desktop:
     strategy:
@@ -35,29 +43,29 @@ jobs:
         include:
           - name: macos-aarch64
             runner: macos-latest
-            task: ./gradlew packageReleaseDmg
+            task: ./gradlew :app:desktop:packageReleaseDmg
 
           - name: macos-x86_64
             runner: macos-15-intel
-            task: ./gradlew packageReleaseDmg
+            task: ./gradlew :app:desktop:packageReleaseDmg
 
           - name: linux-x86_64
             runner: ubuntu-latest
-            task: ./gradlew createReleaseDistributable packageReleaseDeb packageReleaseRpm
+            task: ./gradlew :app:desktop:createReleaseDistributable :app:desktop:packageReleaseDeb :app:desktop:packageReleaseRpm
 
           - name: linux-aarch64
             runner: ubuntu-24.04-arm
-            task: ./gradlew createReleaseDistributable packageReleaseDeb packageReleaseRpm
+            task: ./gradlew :app:desktop:createReleaseDistributable :app:desktop:packageReleaseDeb :app:desktop:packageReleaseRpm
 
           - name: windows-x86_64
             runner: windows-latest
             task: |
-              ./gradlew.bat packageReleaseMsi packageReleaseExe && ./gradlew.bat createReleaseDistributable -Pportable=true
+              ./gradlew.bat :app:desktop:packageReleaseMsi :app:desktop:packageReleaseExe && ./gradlew.bat :app:desktop:createReleaseDistributable -Pportable=true
 
           - name: windows-arm64
             runner: windows-11-arm
             task: |
-              ./gradlew.bat packageReleaseMsi packageReleaseExe && ./gradlew.bat createReleaseDistributable -Pportable=true
+              ./gradlew.bat :app:desktop:packageReleaseMsi :app:desktop:packageReleaseExe && ./gradlew.bat :app:desktop:createReleaseDistributable -Pportable=true
 
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
@@ -97,11 +105,11 @@ jobs:
         include:
           - name: ios
             runner: macos-latest
-            task: ./gradlew buildReleaseIpa
+            task: ./gradlew :app:ios:buildReleaseIpa
             path: app/ios/build/archives/release/*.ipa
           - name: android
             runner: ubuntu-latest
-            task: ./gradlew assembleRelease
+            task: ./gradlew :app:android:assembleRelease
             path: app/android/build/outputs/apk/release/*.apk
 
     runs-on: ${{ matrix.runner }}

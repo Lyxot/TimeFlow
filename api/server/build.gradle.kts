@@ -58,4 +58,5 @@ dependencies {
 
     testImplementation(libs.kotlin.test.junit)
     testImplementation(ktorLibs.server.testHost)
+    testImplementation(project(":api:client"))
 }
