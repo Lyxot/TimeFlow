@@ -6,7 +6,7 @@
 
 - **版本控制:** 大部分业务端点都以 `/api/v1` 作为前缀。
 - **身份认证:** 受保护的端点需要在 `Authorization` 请求头中提供 JWT Bearer 令牌。
-- **数据格式:** 所有请求和响应体均使用 `application/json`。
+- **数据格式:** TimeFlow 客户端的请求和响应体优先采用 `application/protobuf` 格式；如不支持，则回退为 `application/json`。
 
 ---
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -26,7 +26,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.serialization.kotlinx.protobuf.*
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.Ping
 import xyz.hyli.timeflow.api.models.Version
@@ -65,12 +65,13 @@ abstract class ApiClient(
             deflate()
         }
         install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
-            protobuf()
+            // highest priority for protobuf
+            protobuf(
+                ProtoBuf {
+                    encodeDefaults = false
+                }
+            )
+            json()
         }
         defaultRequest {
             endpoint?.let { url(it) }
@@ -96,6 +97,7 @@ abstract class ApiClient(
             }
         }
 
+    private var contentType = ContentType.Application.Json
 
     typealias Version = Version.Response
 
@@ -108,6 +110,13 @@ abstract class ApiClient(
 
     suspend fun ping() =
         httpClient.get(Ping())
+            .apply {
+                contentType()?.let {
+                    if (it.match(ContentType.Application.ProtoBuf)) {
+                        contentType = ContentType.Application.ProtoBuf
+                    }
+                }
+            }
 
     suspend fun version() =
         httpClient.get(Version())
@@ -155,13 +164,13 @@ abstract class ApiClient(
                 }
             }
 
-    private suspend fun setTokens(tokens: BearerTokens) {
+    private fun setTokens(tokens: BearerTokens) {
         tokenManager.setAccessToken(tokens.accessToken)
         tokens.refreshToken?.let { tokenManager.setRefreshToken(it) }
     }
 
     private inline fun <reified T> payloadBuilder(payload: T): HttpRequestBuilder.() -> Unit = {
-        contentType(ContentType.Application.Json)
+        contentType(contentType)
         setBody(payload)
     }
 
