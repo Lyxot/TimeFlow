@@ -28,6 +28,7 @@ application {
 
 dependencies {
     api(project(":api:models"))
+    implementation(project(":utils"))
     implementation(libs.asyncapi.ktor)
     implementation(libs.h2)
     implementation(libs.koog.ktor)

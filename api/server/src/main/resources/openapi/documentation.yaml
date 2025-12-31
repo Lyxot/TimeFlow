@@ -26,6 +26,15 @@ components:
         message:
           type: string
           description: A human-readable error message.
+    PingResponse:
+      type: object
+      properties:
+        status: { type: string, example: "ok" }
+    VersionResponse:
+      type: object
+      properties:
+        version: { type: string, description: "Application version" }
+        buildTime: { type: string, description: "The timestamp when the application was built" }
     Date:
       type: object
       properties:
@@ -168,6 +177,24 @@ components:
 
 # API Paths
 paths:
+  /ping:
+    get:
+      tags: [ Health ]
+      summary: Check service status
+      responses:
+        '200':
+          description: Service is running and healthy
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/PingResponse' } }
+  /version:
+    get:
+      tags: [ Health ]
+      summary: Get application build information
+      responses:
+        '200':
+          description: Build version and time information
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/VersionResponse' } }
   # Auth Endpoints
   /auth/check-email:
     get:

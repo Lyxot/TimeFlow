@@ -14,6 +14,8 @@ import io.ktor.http.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.api.models.Ping
+import xyz.hyli.timeflow.api.models.Version
 import xyz.hyli.timeflow.client.ApiClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +34,20 @@ class ApplicationTest {
         ) {}
 
         apiClient.use { client ->
+            client.ping().apply {
+                assertEquals(HttpStatusCode.OK, status)
+                assertEquals(Ping.Response(), body<Ping.Response>())
+            }
+            client.version().apply {
+                assertEquals(HttpStatusCode.OK, status)
+                assertEquals(
+                    Version.Response(
+                        version = BuildConfig.APP_VERSION_NAME,
+                        buildTime = BuildConfig.BUILD_TIME,
+                        commitHash = BuildConfig.GIT_COMMIT_HASH
+                    ), body<Version.Response>()
+                )
+            }
             client.checkEmail(
                 ApiV1.Auth.CheckEmail.Payload(
                     email = "test@test.com"

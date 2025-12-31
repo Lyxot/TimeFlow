@@ -21,15 +21,12 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.multiplatform.android)
     alias(libs.plugins.aboutLibraries)
-    alias(libs.plugins.build.config)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hot.reload)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
 }
-
-val portable = providers.gradleProperty("portable").map { it.toBoolean() }.getOrElse(false)
 
 kotlin {
     androidLibrary {
@@ -181,19 +178,6 @@ tasks.matching {
             it.name.matches(Regex(".*processIos.*Resources"))
 }.configureEach {
     dependsOn(exportLibraryDefinitionsIos)
-}
-
-buildConfig {
-    // BuildConfig configuration here.
-    // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
-    packageName = "xyz.hyli.timeflow"
-    useKotlinOutput { internalVisibility = false }
-    buildConfigField("APP_NAME", "TimeFlow")
-    buildConfigField("APP_VERSION_NAME", app.versions.name.get())
-    buildConfigField("APP_VERSION_CODE", rootProject.ext.get("appVersionCode").toString().toInt())
-    buildConfigField("BUILD_TIME", System.currentTimeMillis())
-    buildConfigField("AUTHOR", "Lyxot")
-    buildConfigField("PORTABLE", portable)
 }
 
 dependencies {

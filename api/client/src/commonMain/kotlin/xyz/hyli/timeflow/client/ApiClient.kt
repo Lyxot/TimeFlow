@@ -28,6 +28,8 @@ import io.ktor.serialization.kotlinx.protobuf.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.api.models.Ping
+import xyz.hyli.timeflow.api.models.Version
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -94,10 +96,25 @@ abstract class ApiClient(
             }
         }
 
+
+    typealias Version = Version.Response
+
+    lateinit var apiVersion: Version
+
     override fun close() {
         httpClient.close()
         authenticatedClient.close()
     }
+
+    suspend fun ping() =
+        httpClient.get(Ping())
+
+    suspend fun version() =
+        httpClient.get(Version())
+            .apply {
+                val response = body<Version.Response>()
+                apiVersion = response
+            }
 
     suspend fun login(payload: ApiV1.Auth.Login.Payload) =
         httpClient.post(ApiV1.Auth.Login(), payloadBuilder(payload))
