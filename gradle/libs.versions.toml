@@ -6,12 +6,15 @@ androidx-core-ktx = "1.17.0"
 androidx-datastore = "1.2.0"
 androidx-lifecycle = "2.9.6"
 androidx-navigation = "2.9.1"
+argon2 = "2.12"
 asyncapi = "3.1.3"
 build-config = "6.0.6"
 compose = "1.11.0-alpha01"
 composables = "1.49.3"
+exposed = "1.0.0-rc-4"
 filekitCore = "0.12.0"
 h2 = "2.4.240"
+hikaricp = "7.0.2"
 hot-reload = "1.0.0"
 jbr-api = "1.9.0"
 jna = "5.18.1"
@@ -43,6 +46,7 @@ androidx-datastore = { group = "androidx.datastore", name = "datastore-preferenc
 androidx-lifecycle-runtime = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
+argon2 = { module = "de.mkammerer:argon2-jvm", version.ref = "argon2" }
 asyncapi-ktor = { module = "org.openfolder:kotlin-asyncapi-ktor", version.ref = "asyncapi" }
 composables-core = { module = "com.composables:core", version.ref = "composables" }
 compose-animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "compose" }
@@ -54,10 +58,16 @@ compose-material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.m
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekitCore" }
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekitCore" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekitCore" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jbr-api" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }

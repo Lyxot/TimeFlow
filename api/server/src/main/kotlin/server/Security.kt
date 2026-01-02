@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -14,9 +14,13 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import xyz.hyli.timeflow.server.database.DataRepository
+import java.time.Instant
 import java.util.*
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-fun Application.configureSecurity() {
+fun Application.configureSecurity(repository: DataRepository) {
 
     val jwtSecret = environment.config.property("jwt.secret").getString()
     val jwtIssuer = environment.config.property("jwt.issuer").getString()
@@ -35,7 +39,7 @@ fun Application.configureSecurity() {
             )
             validate { credential ->
                 if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.ACCESS.name &&
-                    credential.payload.getClaim("userId").asString() != ""
+                    credential.payload.getClaim("authId").asString() != ""
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -54,8 +58,14 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
+                val authId = credential.payload.getClaim("authId").asString()
+                val jti = credential.jwtId
+                val user = repository.findUserByAuthId(authId)
+                val isJtiValid = jti != null && repository.isRefreshTokenValid(jti)
                 if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.REFRESH.name &&
-                    credential.payload.getClaim("userId").asString() != ""
+                    credential.payload.getClaim("authId").asString() != "" &&
+                    user != null &&
+                    isJtiValid
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -79,13 +89,18 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
     /**
      * Generates a JWT for the given user ID and token type.
      */
-    fun generateToken(userId: String, type: TokenType): String {
-        return JWT.create()
+    @OptIn(ExperimentalUuidApi::class)
+    fun generateToken(authId: String, type: TokenType): Triple<String, String, Instant> {
+        val jti = Uuid.generateV7().toString()
+        val expiresAt = Date(System.currentTimeMillis() + type.validityInMs).toInstant()
+        val token = JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
-            .withClaim("userId", userId)
+            .withJWTId(jti)
+            .withClaim("authId", authId)
             .withClaim("type", type.name)
-            .withExpiresAt(Date(System.currentTimeMillis() + type.validityInMs))
+            .withExpiresAt(expiresAt)
             .sign(Algorithm.HMAC256(secret))
+        return Triple(token, jti, expiresAt)
     }
 }

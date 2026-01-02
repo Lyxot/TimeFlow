@@ -121,8 +121,9 @@ components:
         email: { type: string, format: email }
     UserRegistrationRequest:
       type: object
-      required: [ email, password, code ]
+      required: [ username, email, password, code ]
       properties:
+        username: { type: string }
         email: { type: string, format: email }
         password: { type: string, format: password }
         code: { type: string, description: "The 6-digit verification code sent to the user's email." }
@@ -144,7 +145,9 @@ components:
     UserInfoResponse:
       type: object
       properties:
-        id: { type: string }
+        id: { type: integer }
+        authId: { type: string }
+        username: { type: string }
         email: { type: string, format: email }
     CheckEmailResponse:
       type: object

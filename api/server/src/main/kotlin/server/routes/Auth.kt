@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,6 +9,7 @@
 
 package xyz.hyli.timeflow.server.routes
 
+import de.mkammerer.argon2.Argon2Factory
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -20,8 +21,14 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.TokenManager
+import xyz.hyli.timeflow.server.database.DataRepository
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-fun Route.authRoutes(tokenManager: TokenManager) {
+@OptIn(ExperimentalUuidApi::class)
+fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
+    val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
+
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email
         get<ApiV1.Auth.CheckEmail> { _ ->
@@ -32,20 +39,28 @@ fun Route.authRoutes(tokenManager: TokenManager) {
                 return@get
             }
 
-            // TODO: Replace with a real database lookup.
-            val exists = (email == "test@test.com")
-
-            call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = exists))
+            val user = repository.findUserByEmail(email)
+            call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = user != null))
         }
 
         // POST /api/v1/auth/register
         post<ApiV1.Auth.Register> { _ ->
             val payload = call.receive<ApiV1.Auth.Register.Payload>()
 
-            // TODO: 1. Validate the verification code `request.code`.
-            // TODO: 2. Check if user with this email already exists in the database.
-            // TODO: 3. Use a secure hashing algorithm (like bcrypt) to hash the password before saving.
-            // TODO: 4. Save the new user to the database.
+            // 1. Check if user with this email already exists
+            if (repository.findUserByEmail(payload.email) != null) {
+                call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
+                return@post
+            }
+
+            // TODO: 2. Validate the verification code `payload.code`.
+
+            // 3. Hash the password with Argon2
+            val passwordHash = argon2.hash(10, 65536, 1, payload.password.toCharArray())
+
+            // 4. Create a unique authId and save the new user
+            val authId = Uuid.generateV7().toString()
+            repository.createUser(authId, payload.username, payload.email, passwordHash)
 
             call.respond(HttpStatusCode.Created, mapOf("message" to "User created successfully"))
         }
@@ -53,24 +68,34 @@ fun Route.authRoutes(tokenManager: TokenManager) {
         // POST /api/v1/auth/login
         post<ApiV1.Auth.Login> { _ ->
             val payload = call.receive<ApiV1.Auth.Login.Payload>()
-            // TODO: Replace this with a real user lookup and password check from your database.
-            val isCredentialsValid = payload.email == "test@test.com" && payload.password == "password"
 
-            if (isCredentialsValid) {
-                val userId = "user-id-123" // In a real app, you would fetch this from the database.
+            val (storedHash, user) = repository.findPasswordHashByEmail(payload.email).let {
+                it ?: (null to null)
+            }
+            if (storedHash == null || user == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
+                return@post
+            }
 
-                // Generate two types of JWTs
-                val accessToken = tokenManager.generateToken(userId, TokenManager.TokenType.ACCESS)
-                val refreshToken = tokenManager.generateToken(userId, TokenManager.TokenType.REFRESH)
+            // Verify password using Argon2
+            if (argon2.verify(storedHash, payload.password.toCharArray())) {
+                // Password is correct, generate tokens
+                val (accessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
+                val (refreshToken, jti, expiresAt) = tokenManager.generateToken(
+                    user.authId,
+                    TokenManager.TokenType.REFRESH
+                )
 
-                // TODO: Save the hash of the refreshToken to the database to allow for revocation.
+                // Save the refresh token's JTI to the database
+                repository.addRefreshToken(user.id, jti, expiresAt)
 
                 call.respond(
                     HttpStatusCode.OK,
                     ApiV1.Auth.Login.Response(accessToken = accessToken, refreshToken = refreshToken)
                 )
             } else {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid credentials"))
+                // Password is incorrect
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
             }
         }
 
@@ -79,17 +104,24 @@ fun Route.authRoutes(tokenManager: TokenManager) {
             // POST /api/v1/auth/refresh
             post<ApiV1.Auth.Refresh> { request ->
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal!!.payload.getClaim("userId").asString()
+                val authId = principal!!.payload.getClaim("authId").asString()
+                val user = repository.findUserByAuthId(authId)!!
+                val jti = principal.jwtId!!
 
-                // TODO: Add a DB check to see if this refresh token (e.g., its JTI) has been revoked.
-
-                val newAccessToken = tokenManager.generateToken(userId, TokenManager.TokenType.ACCESS)
+                val (newAccessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
                 val newRefreshToken = if (request.rotate == true) {
-                    // TODO: Invalidate old refresh token and save the new one in the DB.
-                    tokenManager.generateToken(userId, TokenManager.TokenType.REFRESH)
+                    // Generate new one and save it
+                    val (newRefreshTokenString, newJti, expiresAt) = tokenManager.generateToken(
+                        authId,
+                        TokenManager.TokenType.REFRESH
+                    )
+                    repository.addRefreshToken(user.id, newJti, expiresAt)
+                    repository.revokeRefreshToken(jti)
+                    newRefreshTokenString
                 } else {
                     null
                 }
+
                 val response = ApiV1.Auth.Refresh.Response(accessToken = newAccessToken, refreshToken = newRefreshToken)
                 call.respond(HttpStatusCode.OK, response)
             }
@@ -100,9 +132,9 @@ fun Route.authRoutes(tokenManager: TokenManager) {
     rateLimit(RateLimitName("send_verification_code")) {
         post<ApiV1.Auth.SendVerificationCode> { _ ->
             val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
-            // TODO: Implement rate limiting and email sending logic.
-            if (payload.email == "test@test.com") {
-                call.respond(HttpStatusCode.Conflict, mapOf("error" to "Email already exists"))
+            // TODO: Implement real email sending logic.
+            if (repository.findUserByEmail(payload.email) != null) {
+                call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
                 return@post
             }
             call.respond(HttpStatusCode.Accepted)

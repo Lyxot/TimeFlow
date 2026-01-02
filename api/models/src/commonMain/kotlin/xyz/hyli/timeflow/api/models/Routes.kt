@@ -43,7 +43,7 @@ class ApiV1 {
         @Resource("register")
         class Register(val parent: Auth = Auth()) {
             @Serializable
-            data class Payload(val email: String, val password: String, val code: String)
+            data class Payload(val username: String, val email: String, val password: String, val code: String)
         }
 
         @Serializable
@@ -77,8 +77,7 @@ class ApiV1 {
         @Serializable
         @Resource("me")
         class Me(val parent: Users = Users()) {
-            @Serializable
-            data class Response(val id: String, val email: String)
+            typealias Response = User
         }
     }
 }

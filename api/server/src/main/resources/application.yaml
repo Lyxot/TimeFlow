@@ -11,6 +11,7 @@ jwt:
   secret: "jwt-secret"
   issuer: "jwt-issuer"
 postgres:
+  embedded: true
   url: "jdbc:postgresql://localhost/default"
   user: username
   password: password

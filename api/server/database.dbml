@@ -1,0 +1,57 @@
+//// ---------------------------------
+//// DBML for TimeFlow Application (v3)
+//// ---------------------------------
+
+Project TimeFlow {
+  database_type: 'PostgreSQL'
+  Note: 'Database schema for the TimeFlow application. Course weeks are denormalized into an array.'
+}
+
+Table Users as U {
+  id int [pk, increment, note: 'Surrogate primary key']
+  auth_id varchar(255) [unique, not null, note: 'ID from the external authentication provider (e.g., JWT sub)']
+  username varchar(50) [not null]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+}
+
+Table RefreshTokens as RT {
+  id long [pk, increment]
+  user_id int [ref: > U.id, not null]
+  jti varchar(255) [unique, not null, note: 'The unique ID (JWT ID) of the refresh token']
+  expires_at timestamp [not null]
+}
+
+Table Schedules as S {
+  id long [pk, increment, note: 'Surrogate primary key for internal relationships']
+  user_id int [ref: > U.id, not null]
+  local_id short [not null, note: 'Client-side ID, unique per user']
+  name varchar(255) [not null]
+  term_start_date date [not null]
+  term_end_date date [not null]
+  display_weekends bool [not null]
+  lesson_time_period_info jsonb [not null, note: 'Serialized LessonTimePeriodInfo object']
+  deleted bool [not null, default: false]
+  
+  indexes {
+    (user_id, local_id) [unique]
+  }
+}
+
+Table Courses as C {
+  id long [pk, increment, note: 'Surrogate primary key']
+  schedule_id long [ref: > S.id, not null]
+  local_id short [not null, note: 'Client-side ID, unique per schedule']
+  name varchar(255) [not null]
+  teacher varchar(128)
+  classroom varchar(128)
+  time jsonb [not null, note: 'Serialized Range object']
+  weekday int [not null, note: 'Stores ordinal of Weekday enum, as requested']
+  color int [not null]
+  weeks integer[] [not null, note: 'List of week numbers for the course']
+  note text
+  
+  indexes {
+    (schedule_id, local_id) [unique]
+  }
+}
