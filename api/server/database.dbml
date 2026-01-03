@@ -1,15 +1,15 @@
 //// ---------------------------------
-//// DBML for TimeFlow Application (v3)
+//// DBML for TimeFlow Application
 //// ---------------------------------
 
 Project TimeFlow {
   database_type: 'PostgreSQL'
-  Note: 'Database schema for the TimeFlow application. Course weeks are denormalized into an array.'
+  Note: 'Database schema for the TimeFlow application.'
 }
 
 Table Users as U {
   id int [pk, increment, note: 'Surrogate primary key']
-  auth_id varchar(255) [unique, not null, note: 'ID from the external authentication provider (e.g., JWT sub)']
+  auth_id uuid [unique, not null, note: 'ID from the external authentication provider']
   username varchar(50) [not null]
   email varchar(255) [unique, not null]
   password_hash varchar(255) [not null]
@@ -17,14 +17,14 @@ Table Users as U {
 
 Table RefreshTokens as RT {
   id long [pk, increment]
-  user_id int [ref: > U.id, not null]
-  jti varchar(255) [unique, not null, note: 'The unique ID (JWT ID) of the refresh token']
+  user_id int [not null]
+  jti uuid [unique, not null, note: 'The unique ID (JWT ID) of the refresh token']
   expires_at timestamp [not null]
 }
 
 Table Schedules as S {
   id long [pk, increment, note: 'Surrogate primary key for internal relationships']
-  user_id int [ref: > U.id, not null]
+  user_id int [not null]
   local_id short [not null, note: 'Client-side ID, unique per user']
   name varchar(255) [not null]
   term_start_date date [not null]
@@ -40,7 +40,7 @@ Table Schedules as S {
 
 Table Courses as C {
   id long [pk, increment, note: 'Surrogate primary key']
-  schedule_id long [ref: > S.id, not null]
+  schedule_id long [not null]
   local_id short [not null, note: 'Client-side ID, unique per schedule']
   name varchar(255) [not null]
   teacher varchar(128)
@@ -54,4 +54,18 @@ Table Courses as C {
   indexes {
     (schedule_id, local_id) [unique]
   }
+}
+
+// --- Relationship Definitions ---
+
+Ref fk_Users_id_RefreshTokens {
+  Users.id < RefreshTokens.user_id [delete: cascade]
+}
+
+Ref fk_Users_id_Schedules {
+  Users.id < Schedules.user_id [delete: cascade]
+}
+
+Ref fk_Schedules_id_Courses {
+  Schedules.id < Courses.schedule_id [delete: cascade]
 }
