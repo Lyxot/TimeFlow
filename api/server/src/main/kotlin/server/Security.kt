@@ -15,6 +15,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import xyz.hyli.timeflow.server.database.DataRepository
+import xyz.hyli.timeflow.utils.toUuid
 import java.time.Instant
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
@@ -59,8 +60,8 @@ fun Application.configureSecurity(repository: DataRepository) {
                     .build()
             )
             validate { credential ->
-                val authId = Uuid.parse(credential.payload.getClaim("authId").asString())
-                val jti = credential.jwtId?.let { Uuid.parse(it) }
+                val authId = credential.payload.getClaim("authId").asString().toUuid()
+                val jti = credential.jwtId?.toUuid()
                 val user = repository.findUserByAuthId(authId)
                 if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.REFRESH.name &&
                     user != null && jti != null && repository.isRefreshTokenValid(user.id, jti)

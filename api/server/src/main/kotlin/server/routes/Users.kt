@@ -11,30 +11,16 @@ package xyz.hyli.timeflow.server.routes
 
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.database.DataRepository
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+import xyz.hyli.timeflow.server.utils.authedGet
 
-@OptIn(ExperimentalUuidApi::class)
 fun Route.usersRoutes(repository: DataRepository) {
     authenticate("access-auth") {
-        get<ApiV1.Users.Me> {
-            val principal = call.principal<JWTPrincipal>()
-            val authId = Uuid.parse(principal!!.payload.getClaim("authId").asString())
-
-            val user = repository.findUserByAuthId(authId)
-
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
-            } else {
-                // This case should ideally not happen if the token is valid and the user hasn't been deleted.
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
-            }
+        authedGet<ApiV1.Users.Me>(repository) { _, user ->
+            call.respond(HttpStatusCode.OK, user)
         }
     }
 }

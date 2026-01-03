@@ -22,6 +22,7 @@ import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.database.DataRepository
+import xyz.hyli.timeflow.utils.toUuid
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -69,16 +70,13 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
         post<ApiV1.Auth.Login> { _ ->
             val payload = call.receive<ApiV1.Auth.Login.Payload>()
 
-            val (storedHash, user) = repository.findPasswordHashByEmail(payload.email).let {
-                it ?: (null to null)
-            }
-            if (storedHash == null || user == null) {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
-                return@post
-            }
+            val (storedHash, user) = repository.findPasswordHashByEmail(payload.email)
+                ?: (null to null)
 
             // Verify password using Argon2
-            if (argon2.verify(storedHash, payload.password.toCharArray())) {
+            if (storedHash != null && user != null &&
+                argon2.verify(storedHash, payload.password.toCharArray())
+            ) {
                 // Password is correct, generate tokens
                 val (accessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
                 val (refreshToken, jti, expiresAt) = tokenManager.generateToken(
@@ -104,9 +102,9 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             // POST /api/v1/auth/refresh
             post<ApiV1.Auth.Refresh> { request ->
                 val principal = call.principal<JWTPrincipal>()
-                val authId = Uuid.parse(principal!!.payload.getClaim("authId").asString())
+                val authId = principal!!.payload.getClaim("authId").asString().toUuid()
                 val user = repository.findUserByAuthId(authId)!!
-                val jti = Uuid.parse(principal.jwtId!!)
+                val jti = principal.jwtId!!.toUuid()
 
                 val (newAccessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
                 val newRefreshToken = if (request.rotate == true) {
@@ -135,9 +133,9 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             // TODO: Implement real email sending logic.
             if (repository.findUserByEmail(payload.email) != null) {
                 call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
-                return@post
+            } else {
+                call.respond(HttpStatusCode.Accepted)
             }
-            call.respond(HttpStatusCode.Accepted)
         }
     }
 }
