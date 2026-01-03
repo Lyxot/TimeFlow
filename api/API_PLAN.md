@@ -40,25 +40,25 @@
 
 管理用户的课程表集合。
 
-| 方法       | 端点                | 描述                   | 认证       |
-|:---------|:------------------|:---------------------|:---------|
-| `GET`    | `/schedules`      | 获取当前用户的所有课程表列表。      | &#10004; |
-| `POST`   | `/schedules`      | 创建一个新的课程表。           | &#10004; |
-| `GET`    | `/schedules/{id}` | 获取指定 ID 的单个课程表的完整信息。 | &#10004; |
-| `PUT`    | `/schedules/{id}` | 完整更新一个指定的课程表。        | &#10004; |
-| `DELETE` | `/schedules/{id}` | 删除一个指定的课程表。          | &#10004; |
+| 方法       | 端点                        | 描述                   | 认证       |
+|:---------|:--------------------------|:---------------------|:---------|
+| `GET`    | `/schedules`              | 获取当前用户的所有课程表概要列表。    | &#10004; |
+| `GET`    | `/schedules/{scheduleId}` | 获取指定 ID 的单个课程表的完整信息。 | &#10004; |
+| `PUT`    | `/schedules/{scheduleId}` | 创建或完整更新指定 ID 的课程表。   | &#10004; |
+| `DELETE` | `/schedules/{scheduleId}` | 删除指定 ID 的课程表。        | &#10004; |
 
 ---
 
 ## 3. 课程 API (`/schedules/{scheduleId}/courses`)
 
-管理特定课程表内的课程。注意：这些操作也可以通过更新父级 `Schedule` 对象（通过 `PUT /schedules/{id}`）来间接实现。
+管理特定课程表内的课程。注意：这些操作也可以通过更新父级 `Schedule` 对象（通过 `PUT /schedules/{scheduleId}`）来间接实现。
 
-| 方法       | 端点                                           | 描述               | 认证       |
-|:---------|:---------------------------------------------|:-----------------|:---------|
-| `POST`   | `/schedules/{scheduleId}/courses`            | 在指定课程表中添加一门新课程。  | &#10004; |
-| `PUT`    | `/schedules/{scheduleId}/courses/{courseId}` | 更新指定课程表中的一门特定课程。 | &#10004; |
-| `DELETE` | `/schedules/{scheduleId}/courses/{courseId}` | 从指定课程表中删除一门课程。   | &#10004; |
+| 方法       | 端点                                           | 描述                     | 认证       |
+|:---------|:---------------------------------------------|:-----------------------|:---------|
+| `GET`    | `/schedules/{scheduleId}/courses`            | 获取指定课程表下的所有课程概要列表。     | &#10004; |
+| `GET`    | `/schedules/{scheduleId}/courses/{courseId}` | 获取指定 ID 的单个课程的完整信息。    | &#10004; |
+| `PUT`    | `/schedules/{scheduleId}/courses/{courseId}` | 创建或更新指定课程表中的指定 ID 的课程。 | &#10004; |
+| `DELETE` | `/schedules/{scheduleId}/courses/{courseId}` | 从指定课程表中删除指定 ID 的课程。    | &#10004; |
 
 ---
 

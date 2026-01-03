@@ -10,6 +10,9 @@
 package xyz.hyli.timeflow.server.database
 
 import xyz.hyli.timeflow.api.models.User
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.ScheduleSummary
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -69,4 +72,47 @@ interface DataRepository {
      * @param jti The JTI of the token to revoke.
      */
     suspend fun revokeRefreshToken(jti: Uuid, delete: Boolean = false)
+
+    /**
+     * Retrieves all schedules for a given user.
+     * @param userId The ID of the user.
+     * @return A map of local schedule IDs to [ScheduleSummary] objects.
+     */
+    suspend fun getSchedules(userId: Int): Map<Short, ScheduleSummary>
+
+    /**
+     * Retrieves a single, full schedule for a given user by its local ID.
+     * @param userId The ID of the user.
+     * @param localId The local ID of the schedule.
+     * @return The full [Schedule] object if found, otherwise null.
+     */
+    suspend fun getSchedule(userId: Int, localId: Short): Schedule?
+
+    /**
+     * Creates or updates a schedule for a given user.
+     * @param userId The ID of the user.
+     * @param localId The local ID of the schedule to upsert.
+     * @param schedule The full schedule object to create or update.
+     * @return True if a new schedule was created, false if an existing one was updated.
+     */
+    suspend fun upsertSchedule(userId: Int, localId: Short, schedule: Schedule): Boolean
+
+    /**
+     * Deletes a schedule for a given user by its local ID.
+     * @param userId The ID of the user.
+     * @param localId The local ID of the schedule to delete.
+     * @param permanent If true, permanently delete the record; otherwise, performs a soft delete.
+     * @return True if a schedule was found and deleted (soft or hard), false otherwise.
+     */
+    suspend fun deleteSchedule(userId: Int, localId: Short, permanent: Boolean = false): Boolean
+
+    /**
+     * Creates or updates a course within a given schedule. This is the public-facing method.
+     * @param userId The ID of the user performing the action.
+     * @param scheduleLocalId The local ID of the parent schedule.
+     * @param courseLocalId The local ID of the course to upsert.
+     * @param course The full course object.
+     * @return True if a new course was created, false if updated, or null if the parent schedule was not found.
+     */
+    suspend fun upsertCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short, course: Course): Boolean?
 }

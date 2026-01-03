@@ -94,7 +94,7 @@ class ScheduleEntity(id: EntityID<Long>) : LongEntity(id) {
 class CourseEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<CourseEntity>(CoursesTable)
 
-    var scheduleId by ScheduleEntity referencedOn CoursesTable.scheduleId
+    var schedule by ScheduleEntity referencedOn CoursesTable.scheduleId
     var localId by CoursesTable.localId
     var name by CoursesTable.name
     var teacher by CoursesTable.teacher

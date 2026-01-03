@@ -11,6 +11,10 @@ package xyz.hyli.timeflow.api.models
 
 import io.ktor.resources.*
 import kotlinx.serialization.Serializable
+import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.CourseSummary
+import xyz.hyli.timeflow.data.Schedule
+import xyz.hyli.timeflow.data.ScheduleSummary
 
 @Serializable
 @Resource("/ping")
@@ -78,6 +82,37 @@ class ApiV1 {
         @Resource("me")
         class Me(val parent: Users = Users()) {
             typealias Response = User
+        }
+    }
+
+    @Serializable
+    @Resource("schedules")
+    class Schedules(val parent: ApiV1 = ApiV1()) {
+        // GET /schedules
+        typealias Response = Map<Short, ScheduleSummary>
+
+        @Serializable
+        @Resource("{scheduleId}")
+        class ScheduleId(val parent: Schedules = Schedules(), val scheduleId: Short, val permanent: Boolean? = null) {
+            // GET /schedules/{scheduleId}
+            typealias Response = Schedule
+
+            // PUT /schedules/{scheduleId}
+            typealias Payload = Schedule
+
+            @Serializable
+            @Resource("courses")
+            class Courses(val parent: ScheduleId) {
+                // GET /schedules/{scheduleId}/courses
+                typealias Response = Map<Short, CourseSummary>
+
+                @Serializable
+                @Resource("{courseId}")
+                class CourseId(val parent: Courses, val courseId: Short) {
+                    // GET /schedules/{scheduleId}/courses/{courseId}
+                    typealias Response = Course
+                }
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,14 +9,7 @@
 
 package xyz.hyli.timeflow.data.v2
 
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.number
-import kotlinx.datetime.plus
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
@@ -68,6 +61,16 @@ data class Schedule(
          */
         fun defaultTermEndDate(): Date = defaultTermStartDate().addWeeks(16)
     }
+
+    /**
+     * 课程表的摘要信息。
+     */
+    val summary = ScheduleSummary(
+        name = this.name,
+        deleted = this.deleted,
+        termStartDate = this.termStartDate,
+        termEndDate = this.termEndDate
+    )
 
     /**
      * 根据学期起止日期计算总教学周数。

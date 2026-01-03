@@ -14,6 +14,7 @@ import io.ktor.server.resources.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.routes.authRoutes
+import xyz.hyli.timeflow.server.routes.schedulesRoutes
 import xyz.hyli.timeflow.server.routes.usersRoutes
 import xyz.hyli.timeflow.server.routes.utilRoutes
 
@@ -25,5 +26,6 @@ fun Application.configureRouting(repository: DataRepository) {
         utilRoutes()
         authRoutes(tokenManager, repository)
         usersRoutes(repository)
+        schedulesRoutes(repository)
     }
 }

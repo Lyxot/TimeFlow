@@ -42,8 +42,8 @@ object RefreshTokensTable : LongIdTable("refresh_tokens") {
  * 课程表主表
  */
 object SchedulesTable : LongIdTable("schedules") {
-    val userId = reference("user_id", UsersTable.id)
-    val localId = short("local_id")
+    val userId = reference("user_id", UsersTable.id).index()
+    val localId = short("local_id").index()
     val name = varchar("name", 255)
     val termStartDate = date("term_start_date")
     val termEndDate = date("term_end_date")
@@ -60,8 +60,8 @@ object SchedulesTable : LongIdTable("schedules") {
  * 课程信息表
  */
 object CoursesTable : LongIdTable("courses") {
-    val scheduleId = reference("schedule_id", SchedulesTable.id)
-    val localId = short("local_id")
+    val scheduleId = reference("schedule_id", SchedulesTable.id).index()
+    val localId = short("local_id").index()
     val name = varchar("name", 255)
     val teacher = varchar("teacher", 128).nullable()
     val classroom = varchar("classroom", 128).nullable()

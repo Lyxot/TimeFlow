@@ -143,7 +143,7 @@ abstract class ApiClient(
     suspend fun sendVerificationCode(payload: ApiV1.Auth.SendVerificationCode.Payload) =
         httpClient.post(ApiV1.Auth.SendVerificationCode(), payloadBuilder(payload))
 
-    suspend fun refresh(rotate: Boolean?) =
+    suspend fun refresh(rotate: Boolean) =
         httpClient.config {
             install(Auth) {
                 bearer {
@@ -156,7 +156,7 @@ abstract class ApiClient(
                 }
             }
         }
-            .post(ApiV1.Auth.Refresh(rotate = rotate))
+            .post(ApiV1.Auth.Refresh(rotate = rotate.takeIf { it }))
             .apply {
                 if (status == HttpStatusCode.OK) {
                     val response = body<ApiV1.Auth.Refresh.Response>()
@@ -182,4 +182,23 @@ abstract class ApiClient(
     }
 
     suspend fun me() = authenticatedClient.get(ApiV1.Users.Me())
+
+    suspend fun schedules() = authenticatedClient.get(ApiV1.Schedules())
+
+    suspend fun getSchedule(scheduleId: Short) =
+        authenticatedClient.get(ApiV1.Schedules.ScheduleId(scheduleId = scheduleId))
+
+    suspend fun upsertSchedule(scheduleId: Short, payload: ApiV1.Schedules.ScheduleId.Payload) =
+        authenticatedClient.put(
+            ApiV1.Schedules.ScheduleId(scheduleId = scheduleId),
+            payloadBuilder(payload)
+        )
+
+    suspend fun deleteSchedule(scheduleId: Short, permanent: Boolean = false) =
+        authenticatedClient.delete(
+            ApiV1.Schedules.ScheduleId(
+                scheduleId = scheduleId,
+                permanent = permanent.takeIf { it }
+            )
+        )
 }
