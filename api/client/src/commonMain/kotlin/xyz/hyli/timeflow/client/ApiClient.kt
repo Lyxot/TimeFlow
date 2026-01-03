@@ -33,7 +33,7 @@ import xyz.hyli.timeflow.api.models.Version
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-abstract class ApiClient(
+class ApiClient(
     private val tokenManager: TokenManager,
     val endpoint: String? = null,
     client: HttpClient? = null,
