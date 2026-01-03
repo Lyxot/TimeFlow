@@ -71,7 +71,7 @@ interface DataRepository {
      * Revokes a refresh token by deleting its JTI from the database.
      * @param jti The JTI of the token to revoke.
      */
-    suspend fun revokeRefreshToken(jti: Uuid, delete: Boolean = false)
+    suspend fun revokeRefreshToken(jti: Uuid)
 
     /**
      * Retrieves all schedules for a given user.

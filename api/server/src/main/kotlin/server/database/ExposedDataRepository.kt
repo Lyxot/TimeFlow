@@ -17,7 +17,6 @@ import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
 import xyz.hyli.timeflow.server.database.DatabaseFactory.dbQuery
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -80,31 +79,21 @@ class ExposedDataRepository : DataRepository {
             }
             .firstOrNull()
             ?.expiresAt
-            .let {
-                if (it == null) false
+            ?.let {
+                if (it > Clock.System.now()) true
                 else {
-                    val result = it > Clock.System.now()
-                    if (!result) {
-                        revokeRefreshToken(jti)
-                    }
-                    result
+                    revokeRefreshToken(jti)
+                    false
                 }
-            }
+            } ?: false
     }
 
-    override suspend fun revokeRefreshToken(jti: Uuid, delete: Boolean) {
+    override suspend fun revokeRefreshToken(jti: Uuid) {
         dbQuery {
             RefreshTokenEntity
                 .find { RefreshTokensTable.jti eq jti.toJavaUuid() }
                 .firstOrNull()
-                ?.let {
-                    if (delete) {
-                        it.delete()
-                    } else {
-                        // 1s 后过期
-                        it.expiresAt = Clock.System.now().plus(1.seconds)
-                    }
-                }
+                ?.delete()
         }
     }
 

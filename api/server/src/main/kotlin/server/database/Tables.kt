@@ -10,6 +10,7 @@
 package xyz.hyli.timeflow.server.database
 
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.datetime.date
@@ -33,7 +34,11 @@ object UsersTable : IntIdTable("users") {
  * 刷新令牌表
  */
 object RefreshTokensTable : LongIdTable("refresh_tokens") {
-    val userId = reference("user_id", UsersTable.id).index()
+    val userId = reference(
+        "user_id",
+        UsersTable.id,
+        ReferenceOption.CASCADE
+    ).index()
     val jti = uuid("jti").uniqueIndex()
     val expiresAt = timestamp("expires_at")
 }
@@ -42,7 +47,11 @@ object RefreshTokensTable : LongIdTable("refresh_tokens") {
  * 课程表主表
  */
 object SchedulesTable : LongIdTable("schedules") {
-    val userId = reference("user_id", UsersTable.id).index()
+    val userId = reference(
+        "user_id",
+        UsersTable.id,
+        ReferenceOption.CASCADE
+    ).index()
     val localId = short("local_id").index()
     val name = varchar("name", 255)
     val termStartDate = date("term_start_date")
@@ -60,7 +69,11 @@ object SchedulesTable : LongIdTable("schedules") {
  * 课程信息表
  */
 object CoursesTable : LongIdTable("courses") {
-    val scheduleId = reference("schedule_id", SchedulesTable.id).index()
+    val scheduleId = reference(
+        "schedule_id",
+        SchedulesTable.id,
+        ReferenceOption.CASCADE
+    ).index()
     val localId = short("local_id").index()
     val name = varchar("name", 255)
     val teacher = varchar("teacher", 128).nullable()
