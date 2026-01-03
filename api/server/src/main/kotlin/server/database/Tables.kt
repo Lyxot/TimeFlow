@@ -23,7 +23,7 @@ import xyz.hyli.timeflow.data.Weekday
  * 用户表
  */
 object UsersTable : IntIdTable("users") {
-    val authId = varchar("auth_id", 255).uniqueIndex()
+    val authId = uuid("auth_id").uniqueIndex()
     val username = varchar("username", 50)
     val email = varchar("email", 255).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
@@ -33,8 +33,8 @@ object UsersTable : IntIdTable("users") {
  * 刷新令牌表
  */
 object RefreshTokensTable : LongIdTable("refresh_tokens") {
-    val userId = reference("user_id", UsersTable.id)
-    val jti = varchar("jti", 255).uniqueIndex()
+    val userId = reference("user_id", UsersTable.id).index()
+    val jti = uuid("jti").uniqueIndex()
     val expiresAt = timestamp("expires_at")
 }
 

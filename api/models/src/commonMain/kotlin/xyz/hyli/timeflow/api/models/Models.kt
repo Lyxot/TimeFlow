@@ -10,12 +10,15 @@
 package xyz.hyli.timeflow.api.models
 
 import kotlinx.serialization.Serializable
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 // 这个 data class 作为 Service 和 Repository 之间传输用户数据的标准模型
+@OptIn(ExperimentalUuidApi::class)
 @Serializable
 data class User(
     val id: Int,
-    val authId: String,
+    val authId: Uuid,
     val username: String,
     val email: String
 )

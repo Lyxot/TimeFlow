@@ -59,7 +59,7 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             val passwordHash = argon2.hash(10, 65536, 1, payload.password.toCharArray())
 
             // 4. Create a unique authId and save the new user
-            val authId = Uuid.generateV7().toString()
+            val authId = Uuid.generateV7()
             repository.createUser(authId, payload.username, payload.email, passwordHash)
 
             call.respond(HttpStatusCode.Created, mapOf("message" to "User created successfully"))
@@ -104,9 +104,9 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             // POST /api/v1/auth/refresh
             post<ApiV1.Auth.Refresh> { request ->
                 val principal = call.principal<JWTPrincipal>()
-                val authId = principal!!.payload.getClaim("authId").asString()
+                val authId = Uuid.parse(principal!!.payload.getClaim("authId").asString())
                 val user = repository.findUserByAuthId(authId)!!
-                val jti = principal.jwtId!!
+                val jti = Uuid.parse(principal.jwtId!!)
 
                 val (newAccessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
                 val newRefreshToken = if (request.rotate == true) {

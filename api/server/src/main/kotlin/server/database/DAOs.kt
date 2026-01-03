@@ -19,6 +19,8 @@ import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.WeekList
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.toKotlinUuid
 
 /**
  * 与 UsersTable 对应的 DAO 实体。
@@ -33,10 +35,11 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var passwordHash by UsersTable.passwordHash
 
 
+    @OptIn(ExperimentalUuidApi::class)
     val user: User
         get() = User(
             id = id.value,
-            authId = authId,
+            authId = authId.toKotlinUuid(),
             username = username,
             email = email
         )

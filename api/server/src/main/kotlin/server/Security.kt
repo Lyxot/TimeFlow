@@ -20,6 +20,7 @@ import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 fun Application.configureSecurity(repository: DataRepository) {
 
     val jwtSecret = environment.config.property("jwt.secret").getString()
@@ -58,14 +59,11 @@ fun Application.configureSecurity(repository: DataRepository) {
                     .build()
             )
             validate { credential ->
-                val authId = credential.payload.getClaim("authId").asString()
-                val jti = credential.jwtId
+                val authId = Uuid.parse(credential.payload.getClaim("authId").asString())
+                val jti = credential.jwtId?.let { Uuid.parse(it) }
                 val user = repository.findUserByAuthId(authId)
-                val isJtiValid = jti != null && repository.isRefreshTokenValid(jti)
                 if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.REFRESH.name &&
-                    credential.payload.getClaim("authId").asString() != "" &&
-                    user != null &&
-                    isJtiValid
+                    user != null && jti != null && repository.isRefreshTokenValid(user.id, jti)
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -90,14 +88,14 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
      * Generates a JWT for the given user ID and token type.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun generateToken(authId: String, type: TokenType): Triple<String, String, Instant> {
-        val jti = Uuid.generateV7().toString()
+    fun generateToken(authId: Uuid, type: TokenType): Triple<String, Uuid, Instant> {
+        val jti = Uuid.generateV7()
         val expiresAt = Date(System.currentTimeMillis() + type.validityInMs).toInstant()
         val token = JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
-            .withJWTId(jti)
-            .withClaim("authId", authId)
+            .withJWTId(jti.toString())
+            .withClaim("authId", authId.toString())
             .withClaim("type", type.name)
             .withExpiresAt(expiresAt)
             .sign(Algorithm.HMAC256(secret))

@@ -10,17 +10,20 @@
 package xyz.hyli.timeflow.server.database
 
 import xyz.hyli.timeflow.api.models.User
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * 数据仓库的接口，定义了所有数据库操作。
  */
+@OptIn(ExperimentalUuidApi::class)
 interface DataRepository {
     /**
      * 根据认证ID查找用户。
      * @param authId 来自认证系统（如JWT）的用户唯一ID。
      * @return 如果找到则返回 [User] 对象，否则返回 null。
      */
-    suspend fun findUserByAuthId(authId: String): User?
+    suspend fun findUserByAuthId(authId: Uuid): User?
 
     /**
      * 根据邮箱地址查找用户。
@@ -44,7 +47,7 @@ interface DataRepository {
      * @param passwordHash 经过哈希处理的密码。
      * @return 创建成功后的 [User] 对象。
      */
-    suspend fun createUser(authId: String, username: String, email: String, passwordHash: String): User
+    suspend fun createUser(authId: Uuid, username: String, email: String, passwordHash: String): User
 
     /**
      * Adds a new refresh token JTI to the database.
@@ -52,18 +55,18 @@ interface DataRepository {
      * @param jti The unique ID (JTI) of the JWT refresh token.
      * @param expiresAt The expiration timestamp of the refresh token.
      */
-    suspend fun addRefreshToken(userId: Int, jti: String, expiresAt: java.time.Instant): RefreshTokenEntity
+    suspend fun addRefreshToken(userId: Int, jti: Uuid, expiresAt: java.time.Instant): RefreshTokenEntity
 
     /**
      * Checks if a given refresh token JTI is valid (i.e., exists in the database).
      * @param jti The JTI to check.
      * @return True if the JTI is found, false otherwise.
      */
-    suspend fun isRefreshTokenValid(jti: String): Boolean
+    suspend fun isRefreshTokenValid(userId: Int, jti: Uuid): Boolean
 
     /**
      * Revokes a refresh token by deleting its JTI from the database.
      * @param jti The JTI of the token to revoke.
      */
-    suspend fun revokeRefreshToken(jti: String, delete: Boolean = false)
+    suspend fun revokeRefreshToken(jti: Uuid, delete: Boolean = false)
 }

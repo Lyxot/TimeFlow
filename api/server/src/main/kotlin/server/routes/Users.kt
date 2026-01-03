@@ -17,12 +17,15 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.database.DataRepository
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 fun Route.usersRoutes(repository: DataRepository) {
     authenticate("access-auth") {
         get<ApiV1.Users.Me> {
             val principal = call.principal<JWTPrincipal>()
-            val authId = principal!!.payload.getClaim("authId").asString()
+            val authId = Uuid.parse(principal!!.payload.getClaim("authId").asString())
 
             val user = repository.findUserByAuthId(authId)
 
