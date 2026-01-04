@@ -201,4 +201,45 @@ class ApiClient(
                 permanent = permanent.takeIf { it }
             )
         )
+
+    suspend fun courses(scheduleId: Short) =
+        authenticatedClient.get(
+            ApiV1.Schedules.ScheduleId.Courses(
+                parent = ApiV1.Schedules.ScheduleId(scheduleId = scheduleId)
+            )
+        )
+
+    suspend fun getCourse(scheduleId: Short, courseId: Short) =
+        authenticatedClient.get(
+            ApiV1.Schedules.ScheduleId.Courses.CourseId(
+                parent = ApiV1.Schedules.ScheduleId.Courses(
+                    parent = ApiV1.Schedules.ScheduleId(scheduleId = scheduleId)
+                ),
+                courseId = courseId
+            )
+        )
+
+    suspend fun upsertCourse(
+        scheduleId: Short,
+        courseId: Short,
+        payload: ApiV1.Schedules.ScheduleId.Courses.CourseId.Payload
+    ) = authenticatedClient.put(
+        ApiV1.Schedules.ScheduleId.Courses.CourseId(
+            parent = ApiV1.Schedules.ScheduleId.Courses(
+                parent = ApiV1.Schedules.ScheduleId(scheduleId = scheduleId)
+            ),
+            courseId = courseId
+        ),
+        payloadBuilder(payload)
+    )
+
+    suspend fun deleteCourse(scheduleId: Short, courseId: Short) =
+        authenticatedClient.delete(
+            ApiV1.Schedules.ScheduleId.Courses.CourseId(
+                parent = ApiV1.Schedules.ScheduleId.Courses(
+                    parent = ApiV1.Schedules.ScheduleId(scheduleId = scheduleId)
+                ),
+                courseId = courseId
+            )
+        )
 }

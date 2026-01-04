@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.CourseSummary
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
 import xyz.hyli.timeflow.server.database.DatabaseFactory.dbQuery
@@ -176,11 +177,29 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
-    override suspend fun upsertCourse(
-        userId: Int, scheduleLocalId: Short, courseLocalId: Short, course: Course
-    ): Boolean? = dbQuery {
+    override suspend fun getCourses(userId: Int, scheduleLocalId: Short): Map<Short, CourseSummary>? = dbQuery {
+        getScheduleEntity(userId, scheduleLocalId)
+            ?.courses
+            ?.associate { it.localId to it.course.summary }
+    }
+
+    /**
+     * Private helper to get CourseEntity by ScheduleEntity and course local ID.
+     * @return The CourseEntity if found, otherwise null.
+     */
+    private fun getCourseEntity(
+        scheduleEntity: ScheduleEntity?,
+        courseLocalId: Short
+    ): CourseEntity? = scheduleEntity?.let {
+        CourseEntity.find {
+            (CoursesTable.scheduleId eq it.id) and
+                    (CoursesTable.localId eq courseLocalId)
+        }.singleOrNull()
+    }
+
+    override suspend fun getCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short): Course? = dbQuery {
         val scheduleEntity = getScheduleEntity(userId, scheduleLocalId)
-        scheduleEntity?.let { upsertCourse(it, courseLocalId, course) }
+        getCourseEntity(scheduleEntity, courseLocalId)?.course
     }
 
     /**
@@ -189,9 +208,7 @@ class ExposedDataRepository : DataRepository {
      */
     private fun upsertCourse(scheduleEntity: ScheduleEntity, localId: Short, course: Course): Boolean {
         var wasCreated = false
-        CourseEntity.find {
-            (CoursesTable.scheduleId eq scheduleEntity.id) and (CoursesTable.localId eq localId)
-        }.singleOrNull()?.apply {
+        getCourseEntity(scheduleEntity, localId)?.apply {
             // Course exists, update it
             this.name = course.name
             this.teacher = course.teacher
@@ -216,5 +233,24 @@ class ExposedDataRepository : DataRepository {
             this.note = course.note
         }
         return wasCreated
+    }
+
+    override suspend fun upsertCourse(
+        userId: Int, scheduleLocalId: Short, courseLocalId: Short, course: Course
+    ): Boolean? = dbQuery {
+        val scheduleEntity = getScheduleEntity(userId, scheduleLocalId)
+        scheduleEntity?.let { upsertCourse(it, courseLocalId, course) }
+    }
+
+    override suspend fun deleteCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short): Boolean = dbQuery {
+        val scheduleEntity = getScheduleEntity(userId, scheduleLocalId)
+        val courseEntity = getCourseEntity(scheduleEntity, courseLocalId)
+
+        if (courseEntity != null) {
+            courseEntity.delete()
+            true
+        } else {
+            false
+        }
     }
 }

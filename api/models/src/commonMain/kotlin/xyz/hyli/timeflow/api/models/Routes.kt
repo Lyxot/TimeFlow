@@ -111,6 +111,9 @@ class ApiV1 {
                 class CourseId(val parent: Courses, val courseId: Short) {
                     // GET /schedules/{scheduleId}/courses/{courseId}
                     typealias Response = Course
+
+                    // PUT /schedules/{scheduleId}/courses/{courseId}
+                    typealias Payload = Course
                 }
             }
         }

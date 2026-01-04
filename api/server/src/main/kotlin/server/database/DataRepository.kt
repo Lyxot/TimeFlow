@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.server.database
 
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.data.Course
+import xyz.hyli.timeflow.data.CourseSummary
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
 import kotlin.uuid.ExperimentalUuidApi
@@ -53,7 +54,7 @@ interface DataRepository {
     suspend fun createUser(authId: Uuid, username: String, email: String, passwordHash: String): User
 
     /**
-     * Adds a new refresh token JTI to the database.
+     * Adds a new refresh token JTI to the database. 
      * @param userId The ID of the user owning the token.
      * @param jti The unique ID (JTI) of the JWT refresh token.
      * @param expiresAt The expiration timestamp of the refresh token.
@@ -107,6 +108,23 @@ interface DataRepository {
     suspend fun deleteSchedule(userId: Int, localId: Short, permanent: Boolean = false): Boolean
 
     /**
+     * Retrieves all course summaries for a given schedule.
+     * @param userId The ID of the user.
+     * @param scheduleLocalId The local ID of the schedule.
+     * @return A map of local course IDs to [CourseSummary] objects, or null if the schedule is not found.
+     */
+    suspend fun getCourses(userId: Int, scheduleLocalId: Short): Map<Short, CourseSummary>?
+
+    /**
+     * Retrieves a single, full course for a given user by its schedule and course local IDs.
+     * @param userId The ID of the user.
+     * @param scheduleLocalId The local ID of the schedule containing the course.
+     * @param courseLocalId The local ID of the course.
+     * @return The full [Course] object if found, otherwise null.
+     */
+    suspend fun getCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short): Course?
+
+    /**
      * Creates or updates a course within a given schedule. This is the public-facing method.
      * @param userId The ID of the user performing the action.
      * @param scheduleLocalId The local ID of the parent schedule.
@@ -115,4 +133,13 @@ interface DataRepository {
      * @return True if a new course was created, false if updated, or null if the parent schedule was not found.
      */
     suspend fun upsertCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short, course: Course): Boolean?
+
+    /**
+     * Deletes a course for a given user by its schedule and course local IDs.
+     * @param userId The ID of the user.
+     * @param scheduleLocalId The local ID of the schedule containing the course.
+     * @param courseLocalId The local ID of the course to delete.
+     * @return True if a course was found and deleted, false otherwise.
+     */
+    suspend fun deleteCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short): Boolean
 }

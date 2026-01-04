@@ -18,8 +18,7 @@ import xyz.hyli.timeflow.api.models.Ping
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.api.models.Version
 import xyz.hyli.timeflow.client.ApiClient
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.ScheduleSummary
+import xyz.hyli.timeflow.data.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -158,15 +157,6 @@ class ApplicationTest {
                 assertEquals("test@test.com", body.email, "$message Email should be correct")
             }
 
-            /**
-             * Test: Automatic Token Refresh
-             * Simulates an expired access token to ensure the ApiClient's interceptor handles refreshing it.
-             */
-            tokenManager.setAccessToken("invalid_token")
-            client.me().apply {
-                assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Auto refresh access token should succeed")
-            }
-
             // --- Schedules API Tests ---
 
             /**
@@ -245,9 +235,84 @@ class ApplicationTest {
                 assertEquals("Updated Schedule Name", body<Schedule>().name, "$message Name should be updated")
             }
 
+            // --- Courses API Tests (on the existing schedule) ---
+
+            /**
+             * Test: GET /schedules/{id}/courses (Initial)
+             * The new schedule should have an empty map of courses.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] Initial fetch"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, CourseSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            val testCourseId = 201.toShort()
+            val testCourse = Course(
+                name = "Test Course", teacher = "Mr. Ktor", classroom = "Server Room",
+                time = Range(3, 4),
+                weekday = Weekday.FRIDAY,
+                week = WeekList(listOf(1, 2, 3, 4, 5)),
+                color = 1, note = ""
+            )
+
+            /**
+             * Test: PUT /schedules/{id}/courses/{id} (Create)
+             * Creates a new course in the schedule.
+             */
+            client.upsertCourse(testScheduleId, testCourseId, testCourse).apply {
+                assertEquals(HttpStatusCode.Created, status, "[PUT /.../courses/{id}] Create should return 201 Created")
+            }
+
+            /**
+             * Test: GET /schedules/{id}/courses (After Create)
+             * The course list should now contain one summary.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] After creation"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<ApiV1.Schedules.ScheduleId.Courses.Response>()
+                assertEquals(1, body.size, "$message Map size should be 1")
+                assertEquals(testCourse.name, body[testCourseId]?.name, "$message Course name should match")
+            }
+
+            /**
+             * Test: GET /schedules/{id}/courses/{id}
+             * Fetches the full details of the newly created course.
+             */
+            client.getCourse(testScheduleId, testCourseId).apply {
+                val message = "[GET /.../courses/{id}]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(testCourse.name, body<Course>().name, "$message Course name should match")
+            }
+
+            /**
+             * Test: DELETE /schedules/{id}/courses/{id}
+             * Deletes the course.
+             */
+            client.deleteCourse(testScheduleId, testCourseId).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[DELETE /.../courses/{id}] Delete should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Verify Course Deletion
+             * The course list should be empty again.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] After deletion"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, CourseSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            // --- Final Cleanup ---
+            
             /**
              * Test: DELETE /schedules/{id}
-             * Permanently deletes the schedule.
+             * Permanently deletes the parent schedule.
              */
             client.deleteSchedule(testScheduleId, permanent = true).apply {
                 assertEquals(
@@ -258,13 +323,22 @@ class ApplicationTest {
             }
 
             /**
-             * Test: Verify Deletion
+             * Test: Verify Schedule Deletion
              * The list of schedules should now be empty again.
              */
             client.schedules().apply {
                 val message = "[GET /schedules] After deletion"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: Automatic Token Refresh
+             * Simulates an expired access token to ensure the ApiClient's interceptor handles refreshing it.
+             */
+            tokenManager.setAccessToken("invalid_token")
+            client.me().apply {
+                assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Auto refresh access token should succeed")
             }
         }
     }
