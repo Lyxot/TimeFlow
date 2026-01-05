@@ -188,7 +188,7 @@ jobs:
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0)
           CLEAN_TAG=$(echo $LATEST_TAG | sed 's/^v//')
-          FILENAME=TimeFlow-${CLEAN_TAG}-wasm.zip
+          FILENAME=TimeFlow-${CLEAN_TAG}-${{ matrix.name }}.zip
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
 
           cd ${{ matrix.path }}

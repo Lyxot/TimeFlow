@@ -31,9 +31,6 @@ import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.utils.writeBytesToFile
-import xyz.hyli.timeflow.shared.generated.resources.*
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMobile
 import kotlin.uuid.ExperimentalUuidApi
 
 class TimeFlowViewModel(
