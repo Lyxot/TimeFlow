@@ -40,10 +40,12 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import com.materialkolor.ktx.harmonize
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -55,6 +57,9 @@ import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isWeb
+import xyz.hyli.timeflow.utils.writeBytesToFile
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -493,6 +498,8 @@ fun ScheduleFAB(
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
     var showContent by remember { mutableStateOf(false) }
+
+    @Suppress("DEPRECATION")
     val saver = rememberFileSaverLauncher { file ->
         if (file != null) {
             viewModel.exportScheduleToFile(
@@ -541,7 +548,17 @@ fun ScheduleFAB(
                 onClick = {
                     showContent = false
                     // TODO: 分享课程表Dialog
-                    saver.launch(schedule!!.name, "pb")
+                    if (currentPlatform().isWeb()) {
+                        viewModel.viewModelScope.launch {
+                            writeBytesToFile(
+                                schedule!!.toProtoBufByteArray(),
+                                file = null,
+                                filename = schedule!!.name + ".pb"
+                            )
+                        }
+                    } else {
+                        saver.launch(schedule!!.name, "pb")
+                    }
                 },
                 text = {
                     Text(stringResource(Res.string.export))

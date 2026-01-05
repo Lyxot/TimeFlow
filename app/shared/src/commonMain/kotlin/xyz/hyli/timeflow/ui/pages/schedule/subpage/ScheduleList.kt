@@ -21,16 +21,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import xyz.hyli.timeflow.data.toProtoBufByteArray
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmActionDialog
 import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.isWeb
+import xyz.hyli.timeflow.utils.writeBytesToFile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -304,6 +309,8 @@ fun ScheduleListScreen(
                 visible = selectedSchedules.size == 1 && multipleSelectionMode && !recycleBinMode,
             ) {
                 val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
+
+                @Suppress("DEPRECATION")
                 val saver = rememberFileSaverLauncher { file ->
                     if (file != null) {
                         viewModel.exportScheduleToFile(
@@ -320,7 +327,17 @@ fun ScheduleListScreen(
                 }
                 IconButton(
                     onClick = {
-                        saver.launch(settings.schedules[id]!!.name, "pb")
+                        if (currentPlatform().isWeb()) {
+                            viewModel.viewModelScope.launch {
+                                writeBytesToFile(
+                                    settings.schedules[id]!!.toProtoBufByteArray(),
+                                    file = null,
+                                    filename = settings.schedules[id]!!.name + ".pb"
+                                )
+                            }
+                        } else {
+                            saver.launch(settings.schedules[id]!!.name, "pb")
+                        }
                     }
                 ) {
                     Icon(

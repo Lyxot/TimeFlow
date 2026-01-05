@@ -58,4 +58,5 @@ include(":app:shared")
 include(":app:android")
 include(":app:ios")
 include(":app:desktop")
+include(":app:web")
 

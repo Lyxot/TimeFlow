@@ -40,11 +40,15 @@ kotlin {
 
     jvm { }
 
-//    wasmJs {
-//        browser()
-//        binaries.executable()
-//    }
+    js {
+        browser()
+        binaries.executable()
+    }
 
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
 
     iosX64()
     iosArm64()
@@ -90,9 +94,9 @@ kotlin {
             api(project(":app:app-datastore"))
         }
 
-//        wasmJsMain.dependencies {
-//
-//        }
+        webMain.dependencies {
+
+        }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -128,34 +132,18 @@ aboutLibraries {
         outputFile = file("src/androidMain/res/raw/libraries.json")
     }
     exports {
-        create("jvm") {
-            prettyPrint = true
-            outputFile = file("src/jvmMain/composeResources/files/libraries.json")
-        }
-
-        create("ios") {
-            prettyPrint = true
-            outputFile = file("src/iosMain/composeResources/files/libraries.json")
+        listOf(
+            "jvm", "ios", "js", "wasmJs"
+        ).forEach {
+            create(it) {
+                prettyPrint = true
+                outputFile = file("src/${it}Main/composeResources/files/libraries.json")
+            }
         }
     }
 }
 
 // 自动导出库定义
-// Android
-tasks.matching {
-    it.name == "copyNonXmlValueResourcesForAndroidMain" ||
-            it.name.matches(Regex(".*processAndroid.*Resources"))
-}.configureEach {
-    dependsOn("exportLibraryDefinitions")
-}
-
-// Desktop
-tasks.matching {
-    it.name == "copyNonXmlValueResourcesForJvmMain" ||
-            it.name.matches(Regex(".*processJvm.*Resources"))
-}.configureEach {
-    dependsOn("exportLibraryDefinitionsJvm")
-}
 
 // iOS: Run the following command
 // ./gradlew :app:exportLibraryDefinitions -PaboutLibraries.outputFile=src/iosMain/composeResources/files/libraries.json -PaboutLibraries.exportVariant=metadataIosMain
@@ -179,11 +167,27 @@ tasks.matching {
     dependsOn(exportLibraryDefinitionsIos)
 }
 
+listOf(
+    "Android" to "exportLibraryDefinitions",
+    "Jvm" to "exportLibraryDefinitionsJvm",
+    "Js" to "exportLibraryDefinitionsJs",
+    "WasmJs" to "exportLibraryDefinitionsWasmJs"
+).forEach { (platform, taskName) ->
+    tasks.matching {
+        it.name == "copyNonXmlValueResourcesFor${platform}Main" ||
+                it.name.matches(Regex(".*process${platform}.*Resources"))
+    }.configureEach {
+        dependsOn(taskName)
+    }
+
+}
+
 dependencies {
     with(libs.kotlin.inject.ksp) {
         add("kspAndroid", this)
         add("kspJvm", this)
-//        add("kspWasmJs", this)
+        add("kspJs", this)
+        add("kspWasmJs", this)
         add("kspIosX64", this)
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)

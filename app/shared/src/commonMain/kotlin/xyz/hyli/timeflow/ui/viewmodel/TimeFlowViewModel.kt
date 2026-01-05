@@ -16,7 +16,9 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import io.github.vinceglb.filekit.*
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -28,8 +30,7 @@ import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isMobile
+import xyz.hyli.timeflow.utils.writeBytesToFile
 import kotlin.uuid.ExperimentalUuidApi
 
 class TimeFlowViewModel(
@@ -120,11 +121,11 @@ class TimeFlowViewModel(
                 return@launch
             }
             try {
-                file.write(schedule.toProtoBufByteArray())
+                writeBytesToFile(schedule.toProtoBufByteArray(), file)
                 showMessage(
                     getString(
                         Res.string.schedule_value_export_schedule_success,
-                        if (currentPlatform().isMobile()) file.name else file.path
+                        file.name
                     )
                 )
             } catch (e: Exception) {
