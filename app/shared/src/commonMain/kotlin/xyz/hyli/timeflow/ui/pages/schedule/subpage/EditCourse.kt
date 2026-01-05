@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,53 +9,16 @@
 
 package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,42 +33,10 @@ import androidx.navigation.NavHostController
 import com.materialkolor.ktx.harmonize
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
-import xyz.hyli.timeflow.data.Course
-import xyz.hyli.timeflow.data.Range
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.WeekDescriptionEnum
-import xyz.hyli.timeflow.data.WeekList
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.all_week
-import xyz.hyli.timeflow.shared.generated.resources.confirm
-import xyz.hyli.timeflow.shared.generated.resources.even_week
-import xyz.hyli.timeflow.shared.generated.resources.odd_week
-import xyz.hyli.timeflow.shared.generated.resources.required
-import xyz.hyli.timeflow.shared.generated.resources.save
-import xyz.hyli.timeflow.shared.generated.resources.schedule_button_confirm_delete
-import xyz.hyli.timeflow.shared.generated.resources.schedule_button_delete_course
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_add_course
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_classroom
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_color
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_name
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_note
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_teacher
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_time_end
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_time_start
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_week
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_edit_course
-import xyz.hyli.timeflow.ui.components.ColorButton
+import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
-import xyz.hyli.timeflow.ui.components.ColorPicker
-import xyz.hyli.timeflow.ui.components.ColorPickerStyle
-import xyz.hyli.timeflow.ui.components.CustomColorButton
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.IntTextField
-import xyz.hyli.timeflow.ui.components.NavigationBackIcon
-import xyz.hyli.timeflow.ui.components.WeightedGrid
-import xyz.hyli.timeflow.ui.components.WeightedGridWithDrag
-import xyz.hyli.timeflow.ui.components.bottomPadding
-import xyz.hyli.timeflow.ui.components.navigationBarHorizontalPadding
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 

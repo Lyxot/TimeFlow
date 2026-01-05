@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,22 +9,11 @@
 
 package xyz.hyli.timeflow.ui.pages.settings.subpage
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,21 +29,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import xyz.hyli.timeflow.BuildConfig
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.about_title_author
-import xyz.hyli.timeflow.shared.generated.resources.about_title_homepage
-import xyz.hyli.timeflow.shared.generated.resources.about_title_license
-import xyz.hyli.timeflow.shared.generated.resources.about_title_license_notice
-import xyz.hyli.timeflow.shared.generated.resources.about_title_source_code
-import xyz.hyli.timeflow.shared.generated.resources.about_value_description
-import xyz.hyli.timeflow.shared.generated.resources.about_value_download
-import xyz.hyli.timeflow.shared.generated.resources.ic_launcher
-import xyz.hyli.timeflow.shared.generated.resources.ic_launcher_night
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_about
-import xyz.hyli.timeflow.shared.generated.resources.url_github_profile
-import xyz.hyli.timeflow.shared.generated.resources.url_github_repository
-import xyz.hyli.timeflow.shared.generated.resources.url_homepage
-import xyz.hyli.timeflow.shared.generated.resources.url_license
+import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.NavigationBackIcon
 import xyz.hyli.timeflow.ui.components.bottomPadding
