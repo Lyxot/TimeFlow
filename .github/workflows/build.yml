@@ -146,6 +146,61 @@ jobs:
           name: ${{ matrix.name }}
           path: ${{ matrix.path }}
 
+  build-web:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: js
+            task: ./gradlew app:web:jsBrowserDistribution
+            path: app/web/build/dist/js/productionExecutable
+          - name: wasmJs
+            task: ./gradlew app:web:wasmJsBrowserDistribution
+            path: app/web/build/dist/wasmJs/productionExecutable
+
+    runs-on: ubuntu-latest
+    name: Build ${{ matrix.name }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ${{ matrix.task }}
+
+      - name: Prepare artifact
+        id: artifact
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          CLEAN_TAG=$(echo $LATEST_TAG | sed 's/^v//')
+          FILENAME=TimeFlow-${CLEAN_TAG}-wasm.zip
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+
+          cd ${{ matrix.path }}
+          7z a -tzip -mx9 -r $GITHUB_WORKSPACE/${FILENAME} *      
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ steps.artifact.outputs.filename }}
+
   package:
     needs: build-desktop
     runs-on: ubuntu-latest
