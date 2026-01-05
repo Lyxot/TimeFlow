@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -13,20 +13,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DisplayMode
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp

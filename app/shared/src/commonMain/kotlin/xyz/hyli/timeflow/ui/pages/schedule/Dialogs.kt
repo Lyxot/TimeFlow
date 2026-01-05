@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -10,33 +10,13 @@
 package xyz.hyli.timeflow.ui.pages.schedule
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,40 +28,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import xyz.hyli.timeflow.data.Course
-import xyz.hyli.timeflow.data.Range
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.WeekDescriptionEnum
-import xyz.hyli.timeflow.data.WeekList
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.cancel
-import xyz.hyli.timeflow.shared.generated.resources.confirm
-import xyz.hyli.timeflow.shared.generated.resources.dialog_course_time_picker_section
-import xyz.hyli.timeflow.shared.generated.resources.dialog_title_course_time_picker
-import xyz.hyli.timeflow.shared.generated.resources.save
-import xyz.hyli.timeflow.shared.generated.resources.schedule_button_edit
-import xyz.hyli.timeflow.shared.generated.resources.schedule_course_not_this_week
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_add_course
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_confirm_delete_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_detail
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_course_time_start
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_create_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_title_edit_course
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_confirm_delete_schedule
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_confirm_delete_schedule_permanently
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_time_period
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_week
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_schedule_name_empty
-import xyz.hyli.timeflow.ui.components.DialogButton
-import xyz.hyli.timeflow.ui.components.DialogButtonType
-import xyz.hyli.timeflow.ui.components.DialogDefaults
-import xyz.hyli.timeflow.ui.components.DialogInputValidator
-import xyz.hyli.timeflow.ui.components.DialogState
-import xyz.hyli.timeflow.ui.components.MyDialog
-import xyz.hyli.timeflow.ui.components.TextInputDialog
-import xyz.hyli.timeflow.ui.components.WheelPicker
-import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
-import xyz.hyli.timeflow.ui.components.rememberDialogState
+import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.DeleteCourseButton
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseContent
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseStyle
@@ -116,7 +65,7 @@ fun AddScheduleDialog(
 
 @Composable
 fun ConfirmActionDialog(
-    showConfirmSelectScheduleDialog: DialogState,
+    showConfirmSelectScheduleDialog: MyDialogState,
     title: String,
     content: String,
     onConfirm: () -> Unit
@@ -147,7 +96,7 @@ fun CourseListDialog(
     currentWeek: Int,
     totalWeeks: Int,
     time: Range,
-    showCourseListDialog: DialogState,
+    showCourseListDialog: MyDialogState,
     onEditCourse: (Short, Course) -> Unit,
     onCreateNewCourse: (Course) -> Unit
 ) {
@@ -309,7 +258,7 @@ fun EditCourseDialog(
     scheduleParams: ScheduleParams,
     courseID: Short,
     initValue: Course,
-    showEditCourseDialog: DialogState
+    showEditCourseDialog: MyDialogState
 ) {
     val schedule = scheduleParams.schedule
     val course = remember { mutableStateOf(initValue) }
@@ -492,7 +441,7 @@ fun DeleteSelectedSchedulesDialog(
     selectedScheduleName: List<String>,
     onConfirm: () -> Unit,
     permanently: Boolean,
-    showConfirmDeleteSelectedSchedulesDialog: DialogState
+    showConfirmDeleteSelectedSchedulesDialog: MyDialogState
 ) {
     MyDialog(
         state = showConfirmDeleteSelectedSchedulesDialog,

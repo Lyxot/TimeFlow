@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -17,11 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
-import xyz.hyli.timeflow.desktop.generated.resources.Res
-import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_dismiss_48_regular
-import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_square_48_regular
-import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_square_multiple_48_regular
-import xyz.hyli.timeflow.desktop.generated.resources.ic_fluent_subtract_48_filled
+import xyz.hyli.timeflow.desktop.generated.resources.*
 
 @Composable
 internal fun WindowsSystemButtons(

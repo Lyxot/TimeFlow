@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -7,9 +7,11 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+import java.io.ByteArrayOutputStream
 import java.lang.System.getenv
 import java.net.HttpURLConnection
 import java.net.URI
+import java.nio.charset.Charset
 
 /*
  * Copyright (c) 2025 Lyxot and contributors.
@@ -55,8 +57,31 @@ val appVersionCode = app.versions.major.get().toInt() * 10000 +
 
 val versionName: Any = app.versions.major.get()
 
+abstract class GitCommitValueSource : ValueSource<String, ValueSourceParameters.None> {
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
+
+    override fun obtain(): String? {
+        val output = ByteArrayOutputStream()
+        return try {
+            execOperations.exec {
+                commandLine("git", "rev-parse", "--verify", "--short", "HEAD")
+                standardOutput = output
+            }
+            // 返回處理後的字符串
+            String(output.toByteArray(), Charset.defaultCharset()).trim()
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+}
+
+val gitCommitProvider = providers.of(GitCommitValueSource::class) {}
+
 ext {
     set("appVersionCode", appVersionCode)
+    set("commitHash", gitCommitProvider.get() as String)
 }
 
 allprojects {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -21,15 +21,12 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.multiplatform.android)
     alias(libs.plugins.aboutLibraries)
-    alias(libs.plugins.build.config)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hot.reload)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
 }
-
-val portable = providers.gradleProperty("portable").map { it.toBoolean() }.getOrElse(false)
 
 kotlin {
     androidLibrary {
@@ -67,7 +64,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.navigation.compose)
-            implementation(libs.composables.core)
             implementation(libs.compose.animation)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.material.icons.extended)
@@ -185,19 +181,6 @@ tasks.matching {
             it.name.matches(Regex(".*processIos.*Resources"))
 }.configureEach {
     dependsOn(exportLibraryDefinitionsIos)
-}
-
-buildConfig {
-    // BuildConfig configuration here.
-    // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
-    packageName = "xyz.hyli.timeflow"
-    useKotlinOutput { internalVisibility = false }
-    buildConfigField("APP_NAME", "TimeFlow")
-    buildConfigField("APP_VERSION_NAME", app.versions.name.get())
-    buildConfigField("APP_VERSION_CODE", rootProject.ext.get("appVersionCode").toString().toInt())
-    buildConfigField("BUILD_TIME", System.currentTimeMillis())
-    buildConfigField("AUTHOR", "Lyxot")
-    buildConfigField("PORTABLE", portable)
 }
 
 dependencies {

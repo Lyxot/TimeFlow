@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,26 +9,13 @@
 
 package xyz.hyli.timeflow.ui.pages.settings
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,61 +38,8 @@ import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ThemeMode
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.ic_launcher
-import xyz.hyli.timeflow.shared.generated.resources.ic_launcher_night
-import xyz.hyli.timeflow.shared.generated.resources.page_settings
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_create_schedule
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_schedule_empty
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_schedule_lessons_per_day
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_schedule_not_selected
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_theme_dynamic_color
-import xyz.hyli.timeflow.shared.generated.resources.settings_theme_dark
-import xyz.hyli.timeflow.shared.generated.resources.settings_theme_light
-import xyz.hyli.timeflow.shared.generated.resources.settings_theme_system
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_about
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_changelog
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_config_path
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_create_schedule
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_display_weekends
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_donate
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_feedback
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_general
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_other
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_lessons_per_day
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_name
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_term_end_date
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_term_start_date
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_total_weeks
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_selected_schedule
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_theme
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_theme_color
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_theme_dynamic_color
-import xyz.hyli.timeflow.shared.generated.resources.settings_value_version
-import xyz.hyli.timeflow.shared.generated.resources.settings_warning_schedule_name_empty
-import xyz.hyli.timeflow.shared.generated.resources.url_changelog
-import xyz.hyli.timeflow.shared.generated.resources.url_donate
-import xyz.hyli.timeflow.shared.generated.resources.url_feedback
-import xyz.hyli.timeflow.ui.components.BasePreference
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.Dependency
-import xyz.hyli.timeflow.ui.components.DialogInputValidator
-import xyz.hyli.timeflow.ui.components.MILLIS_PER_DAY
-import xyz.hyli.timeflow.ui.components.PreferenceBool
-import xyz.hyli.timeflow.ui.components.PreferenceBoolStyle
-import xyz.hyli.timeflow.ui.components.PreferenceColor
-import xyz.hyli.timeflow.ui.components.PreferenceDate
-import xyz.hyli.timeflow.ui.components.PreferenceDivider
-import xyz.hyli.timeflow.ui.components.PreferenceInputText
-import xyz.hyli.timeflow.ui.components.PreferenceList
-import xyz.hyli.timeflow.ui.components.PreferenceListStyle
-import xyz.hyli.timeflow.ui.components.PreferenceNumber
-import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
-import xyz.hyli.timeflow.ui.components.PreferenceScreen
-import xyz.hyli.timeflow.ui.components.PreferenceSection
-import xyz.hyli.timeflow.ui.components.bottomPadding
-import xyz.hyli.timeflow.ui.components.rememberDialogInputValidator
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -439,7 +373,7 @@ fun SettingsScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}(${BuildConfig.APP_VERSION_CODE})")
+                    Text("${stringResource(Res.string.settings_value_version)}: ${BuildConfig.APP_VERSION_NAME}-${BuildConfig.GIT_COMMIT_HASH}")
                     Text(
                         text = "©️ ${
                             Instant.fromEpochMilliseconds(BuildConfig.BUILD_TIME).toLocalDateTime(
