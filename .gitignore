@@ -17,3 +17,4 @@ Pods/
 *yarn.lock
 !/kotlin-js-store/
 libraries.json
+/test
