@@ -21,7 +21,7 @@ BuildType.all.forEach { buildType ->
     val target = Target.Android
     val projectName = ":app:android"
     val capitalizedType = buildType.capitalized
-    tasks.register("buildAndroid${capitalizedType}Apk", Sync::class) {
+    tasks.register("buildAndroid${capitalizedType}Apk", Copy::class) {
         description = "Builds the Android $buildType APK."
         group = "build"
         from(project(projectName).layout.buildDirectory.dir("outputs/apk/${buildType}/${target.artifactName}"))
@@ -35,7 +35,7 @@ BuildType.all.forEach { buildType ->
     val target = Target.Ios
     val projectName = ":app:ios"
     val capitalizedType = buildType.capitalized
-    tasks.register("buildIos${capitalizedType}Ipa", Sync::class) {
+    tasks.register("buildIos${capitalizedType}Ipa", Copy::class) {
         description = "Builds the iOS $buildType IPA."
         group = "build"
         from(project(projectName).layout.buildDirectory.dir("archives/${buildType}/${target.artifactName}"))
@@ -56,7 +56,7 @@ listOf(
     val desktopProject = project(":app:desktop")
     BuildType.all.forEach { buildType ->
         val capitalizedType = buildType.capitalized
-        tasks.register("build${capitalizedName}${capitalizedType}${target.format.suffix.capitalize()}", Sync::class) {
+        tasks.register("build${capitalizedName}${capitalizedType}${target.format.suffix.capitalize()}", Copy::class) {
             description = "Builds the ${target.system.name} $buildType ${target.format.suffix.uppercase()}."
             group = "build"
             val outputDir = desktopProject.layout.buildDirectory.dir(
