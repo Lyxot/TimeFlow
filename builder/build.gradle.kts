@@ -12,9 +12,7 @@ import xyz.hyli.timeflow.buildsrc.BuildArchiveTask
 import xyz.hyli.timeflow.buildsrc.BuildType
 import xyz.hyli.timeflow.buildsrc.Target
 import xyz.hyli.timeflow.buildsrc.capitalize
-import kotlin.collections.firstOrNull
 import kotlin.collections.forEach
-import kotlin.collections.listOf
 
 Target.appVersion = app.versions.name.get()
 
@@ -108,7 +106,7 @@ run {
 
             val dependencyTask = ":app:desktop:create" +
                     (if (buildType.isRelease()) "Release" else "") +
-                    "Distributable"
+                    "PortableDistributable"
             dependsOn(dependencyTask)
         }
     }

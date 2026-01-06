@@ -48,7 +48,11 @@ kotlin {
     }
 }
 
-val portable: Boolean = providers.gradleProperty("portable").map { it.toBoolean() }.getOrElse(false)
+// Check if any portable-related tasks are being executed
+val portable: Boolean = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("Portable", ignoreCase = true) ||
+            taskName.contains("PortableDistributable", ignoreCase = true)
+} || (project.findProperty("portable") as? String)?.toBoolean() ?: false
 
 buildConfig {
     // BuildConfig configuration here.
