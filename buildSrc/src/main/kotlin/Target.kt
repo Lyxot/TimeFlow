@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.buildsrc
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 sealed class Target {
     companion object {
         const val APP_NAME = "TimeFlow"
@@ -65,6 +67,15 @@ sealed class Target {
                 }
             }
         override val artifactSuffix get() = "${system.name}-$archString"
+
+        fun matchCurrentSystem(): Boolean {
+            return when (this.system) {
+                is OS.Desktop.MacOS -> Os.isFamily(Os.FAMILY_MAC)
+                is OS.Desktop.Windows -> Os.isFamily(Os.FAMILY_WINDOWS)
+                is OS.Desktop.Linux -> Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
+                else -> false
+            }
+        }
     }
 
     open class MacOS(

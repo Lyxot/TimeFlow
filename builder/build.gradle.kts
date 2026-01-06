@@ -7,12 +7,15 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
 import xyz.hyli.timeflow.buildsrc.BuildAppImageTask
 import xyz.hyli.timeflow.buildsrc.BuildArchiveTask
 import xyz.hyli.timeflow.buildsrc.BuildType
 import xyz.hyli.timeflow.buildsrc.Target
 import xyz.hyli.timeflow.buildsrc.capitalize
+import kotlin.collections.firstOrNull
 import kotlin.collections.forEach
+import kotlin.collections.listOf
 
 Target.appVersion = app.versions.name.get()
 
@@ -38,6 +41,7 @@ BuildType.all.forEach { buildType ->
     tasks.register("buildIos${capitalizedType}Ipa", Copy::class) {
         description = "Builds the iOS $buildType IPA."
         group = "build"
+        onlyIf { Os.isFamily(Os.FAMILY_MAC) }
         from(project(projectName).layout.buildDirectory.dir("archives/${buildType}/${target.artifactName}"))
         into(layout.buildDirectory.dir("artifacts/${buildType}/ios"))
         dependsOn("${projectName}:build${capitalizedType}Ipa")
@@ -54,11 +58,14 @@ listOf(
 ).forEach { target ->
     val capitalizedName = target.system.name.capitalize()
     val desktopProject = project(":app:desktop")
+
     BuildType.all.forEach { buildType ->
         val capitalizedType = buildType.capitalized
         tasks.register("build${capitalizedName}${capitalizedType}${target.format.suffix.capitalize()}", Copy::class) {
             description = "Builds the ${target.system.name} $buildType ${target.format.suffix.uppercase()}."
             group = "build"
+            onlyIf { target.matchCurrentSystem() }
+
             val outputDir = desktopProject.layout.buildDirectory.dir(
                 "compose/binaries/main" +
                         (if (buildType.isDebug()) "" else "-release") +
@@ -89,6 +96,7 @@ run {
         tasks.register("buildWindows${capitalizedType}Portable", BuildArchiveTask::class) {
             group = "build"
             description = "Packages the application as a Windows Portable $buildType ZIP"
+            onlyIf { target.matchCurrentSystem() }
 
             val distributableDir = desktopProject.layout.buildDirectory.dir(binaryPath).map { dir ->
                 val files = dir.asFile.listFiles()
@@ -121,6 +129,7 @@ run {
         tasks.register("buildLinux${capitalizedType}AppImage", BuildAppImageTask::class) {
             description = "Builds the Linux $buildType AppImage."
             group = "build"
+            onlyIf { target.matchCurrentSystem() }
 
             val binaryPath = "compose/binaries/main" + (if (buildType.isDebug()) "" else "-release") + "/app/TimeFlow"
             distributableDir.set(desktopProject.layout.buildDirectory.dir(binaryPath))
