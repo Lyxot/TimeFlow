@@ -36,11 +36,11 @@ fun isCommandAvailable(cmd: String): Boolean {
 /**
  * 获取可用的 7-Zip 命令名称
  */
-fun get7zipCommand(): String {
+fun get7zipCommand(): String? {
     return when {
         isCommandAvailable("7zz") -> "7zz"
         isCommandAvailable("7z") -> "7z"
-        else -> throw GradleException("未能在系统中找到 7zz 或 7z 命令。请先安装 7-Zip (例如: brew install sevenzip)")
+        else -> null
     }
 }
 
@@ -92,10 +92,25 @@ abstract class BuildArchiveTask : DefaultTask() {
         val output = outputFile.get().asFile
         output.parentFile.mkdirs()
         val sevenZipCmd = get7zipCommand()
+        if (sevenZipCmd == null) {
+            logger.lifecycle("[Archive] 7z/7zz not found, falling back to 'zip' command.")
+        }
 
         execOperations.exec {
             workingDir(prepareDirectory.parentFile)
-            commandLine(sevenZipCmd, "a", "-tzip", "-mx=9", "-r", "-snl", output.absolutePath, prepareDirectory.name)
+            sevenZipCmd?.let {
+                commandLine(
+                    it,
+                    "a",
+                    "-tzip",
+                    "-mx=9",
+                    "-r",
+                    "-snl",
+                    output.absolutePath,
+                    prepareDirectory.name
+                )
+            }
+                ?: commandLine("zip", "-r", "-y", "-9", output.absolutePath, prepareDirectory.name)
         }
 
         // Clean up prepare directory
