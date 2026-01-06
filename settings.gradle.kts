@@ -60,3 +60,4 @@ include(":app:ios")
 include(":app:desktop")
 include(":app:web")
 
+include(":builder")
