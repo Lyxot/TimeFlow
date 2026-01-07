@@ -34,7 +34,7 @@ abstract class BuildIpaPayloadTask : DefaultTask() {
     abstract val archiveDir: DirectoryProperty
 
     @get:OutputDirectory
-    abstract val outputIpaPayloadDir: RegularFileProperty
+    abstract val outputIpaPayloadDir: DirectoryProperty
 
     /* -------------------------------------------------------------
      * Services (injected)
@@ -97,7 +97,7 @@ listOf(
 
         // Adjust these paths as needed
         archiveDir = layout.buildDirectory.dir("archives/${buildType}/TimeFlow.xcarchive")
-        outputIpaPayloadDir = layout.buildDirectory.file("archives/${buildType}/Payload")
+        outputIpaPayloadDir = layout.buildDirectory.dir("archives/${buildType}/Payload")
         dependsOn(buildArchive)
     }
     tasks.register("build${capitalizedName}Ipa", BuildArchiveTask::class) {

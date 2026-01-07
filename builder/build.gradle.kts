@@ -13,9 +13,7 @@ import xyz.hyli.timeflow.buildsrc.BuildArchiveTask
 import xyz.hyli.timeflow.buildsrc.BuildType
 import xyz.hyli.timeflow.buildsrc.Target
 import xyz.hyli.timeflow.buildsrc.capitalize
-import kotlin.collections.firstOrNull
 import kotlin.collections.forEach
-import kotlin.collections.listOf
 
 Target.appVersion = app.versions.name.get()
 
@@ -75,7 +73,7 @@ listOf(
                 include("*${target.format.suffix}")
                 rename { target.artifactName }
             }
-            into(layout.buildDirectory.dir("artifacts/${buildType}/${target.system.name}"))
+            into(layout.buildDirectory.dir("artifacts/${buildType}/${target.system.name}-${target.archString}"))
             val dependencyTask = ":app:desktop:package" +
                     (if (buildType.isDebug()) "" else "Release") +
                     if (target == Target.Windows.Portable) "Portable" else target.format.suffix.capitalize()
@@ -91,26 +89,17 @@ run {
     // Windows Portable packaging tasks
     BuildType.all.forEach { buildType ->
         val capitalizedType = buildType.capitalized
-        val binaryPath = "compose/binaries/main" + (if (buildType.isRelease()) "-release" else "") + "/app"
+        val binaryPath =
+            "compose/binaries/main" + (if (buildType.isRelease()) "-release" else "") + "/app/${Target.APP_NAME}"
 
         tasks.register("buildWindows${capitalizedType}Portable", BuildArchiveTask::class) {
             group = "build"
             description = "Packages the application as a Windows Portable $buildType ZIP"
             onlyIf { target.matchCurrentSystem() }
 
-            val distributableDir = desktopProject.layout.buildDirectory.dir(binaryPath).map { dir ->
-                val files = dir.asFile.listFiles()
-                val appDir = files?.firstOrNull { it.isDirectory && !it.isHidden } ?: files?.firstOrNull()
-                if (appDir != null) {
-                    dir.dir(appDir.name)
-                } else {
-                    dir
-                }
-            }
-
-            sourceDir.set(distributableDir)
+            sourceDir.set(desktopProject.layout.buildDirectory.dir(binaryPath))
             prepareDir.set(layout.buildDirectory.dir("tmp/${target.system.name}/${buildType}"))
-            outputFile.set(layout.buildDirectory.file("artifacts/${buildType}/${target.system.name}/${target.artifactName}"))
+            outputFile.set(layout.buildDirectory.file("artifacts/${buildType}/${target.system.name}-${target.archString}/${target.artifactName}"))
 
             val dependencyTask = ":app:desktop:create" +
                     (if (buildType.isRelease()) "Release" else "") +
@@ -137,7 +126,7 @@ run {
             desktopFile.set(file("resources/appimage/TimeFlow.desktop"))
             appRunFile.set(file("resources/appimage/AppRun"))
             appImageToolDir.set(layout.buildDirectory.dir("appimagetool"))
-            outputFile.set(layout.buildDirectory.file("artifacts/${buildType}/linux/${target.artifactName}"))
+            outputFile.set(layout.buildDirectory.file("artifacts/${buildType}/linux-${target.archString}/${target.artifactName}"))
             arch.set(target.archString)
 
             val dependencyTask = ":app:desktop:create" +

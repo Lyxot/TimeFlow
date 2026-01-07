@@ -75,6 +75,7 @@ abstract class BuildArchiveTask : DefaultTask() {
         if (sourceDirectory.listFiles()?.isEmpty() == true) {
             return
         }
+        logger.lifecycle("[Archive] Creating archive from: ${sourceDirectory.absolutePath}")
 
         val folderName = archiveFolderName.orNull ?: sourceDirectory.name
         val prepareDirectory = prepareDir.get().asFile.resolve(folderName)

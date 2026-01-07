@@ -47,21 +47,21 @@ jobs:
             task: ./gradlew :builder:buildMacOSReleaseDmg
           - name: linux-x86_64
             runner: ubuntu-latest
-            task: ./gradlew :builder:buildLinuxReleaseDeb :builder:buildLinuxReleaseRpm :builder:buildLinuxReleaseAppImage
+            task: ./gradlew :builder:buildLinuxReleaseAppImage :builder:buildLinuxReleaseDeb :builder:buildLinuxReleaseRpm
           - name: linux-aarch64
             runner: ubuntu-24.04-arm
-            task: ./gradlew :builder:buildLinuxReleaseDeb :builder:buildLinuxReleaseRpm :builder:buildLinuxReleaseAppImage
+            task: ./gradlew :builder:buildLinuxReleaseAppImage :builder:buildLinuxReleaseDeb :builder:buildLinuxReleaseRpm
           - name: windows-x86_64
             runner: windows-latest
-            task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe :builder:buildWindowsReleasePortable
+            task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe && ./gradlew.bat :builder:buildWindowsReleasePortable
           - name: windows-arm64
             runner: windows-11-arm
-            task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe :builder:buildWindowsReleasePortable
+            task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe && ./gradlew.bat :builder:buildWindowsReleasePortable
           - name: js
-            runner: ubuntu-latest
+            runner: ubuntu-24.04-arm
             task: ./gradlew :builder:buildJsReleaseZip
           - name: wasmJs
-            runner: ubuntu-latest
+            runner: ubuntu-24.04-arm
             task: ./gradlew :builder:buildWasmJsReleaseZip
 
     runs-on: ${{ matrix.runner }}
@@ -79,7 +79,7 @@ jobs:
       - name: Setup JDK
         uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: ${{ startsWith(matrix.name, 'windows') && 'jetbrains' || 'zulu' }}
           java-version: 17
 
       - name: Setup Gradle
@@ -104,5 +104,5 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.name }}
-          path: builder/build/artifacts/release/*/*
+          path: builder/build/artifacts/release/${{ matrix.name }}/*
     
