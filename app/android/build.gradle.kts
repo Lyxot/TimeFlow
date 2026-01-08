@@ -8,6 +8,7 @@
  */
 
 
+import xyz.hyli.timeflow.buildsrc.Target
 import java.lang.System.getenv
 
 plugins {
@@ -25,6 +26,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel)
 }
+
+Target.appVersion = app.versions.name.get()
 
 android {
     namespace = "xyz.hyli.timeflow"
@@ -74,7 +77,7 @@ android {
     android.applicationVariants.all {
         outputs.all {
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
-                this.outputFileName = "TimeFlow-$versionName.apk"
+                this.outputFileName = Target.Android.artifactName
             }
         }
     }

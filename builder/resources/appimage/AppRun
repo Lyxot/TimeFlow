@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Copyright (c) 2026 Lyxot and contributors.
+#
+# 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
+# Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
+#
+# https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
+#
+
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+export PATH="${HERE}/usr/bin/:${PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib/:${LD_LIBRARY_PATH}"
+exec "${HERE}/usr/bin/TimeFlow" "$@"

@@ -106,3 +106,15 @@ compose.desktop {
 tasks.withType<ComposeHotRun>().configureEach {
     mainClass.set("MainKt")
 }
+
+// Portable distributable tasks - the "Portable" in the name triggers BuildConfig.PORTABLE=true
+listOf("", "Release").forEach { buildType ->
+    tasks.register("create${buildType}PortableDistributable") {
+        group = "compose desktop"
+        description = "Creates a ${
+            buildType.lowercase().ifEmpty { "debug" }
+        } portable distributable with PORTABLE=true in BuildConfig"
+
+        dependsOn("create${buildType}Distributable")
+    }
+}
