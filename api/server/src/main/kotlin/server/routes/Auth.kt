@@ -26,9 +26,10 @@ import xyz.hyli.timeflow.utils.toUuid
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
+
 @OptIn(ExperimentalUuidApi::class)
 fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
-    val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
 
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email

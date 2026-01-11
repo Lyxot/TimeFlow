@@ -39,7 +39,7 @@ class ApiClient(
     client: HttpClient? = null,
 ) : AutoCloseable {
     @OptIn(ExperimentalUuidApi::class, ExperimentalSerializationApi::class)
-    val httpClient = (client ?: HttpClient(HttpEngine)).config {
+    private fun HttpClientConfig<*>.configureBase() {
         install(Logging) {
             sanitizeHeader { header ->
                 header == HttpHeaders.Authorization
@@ -78,24 +78,24 @@ class ApiClient(
         }
     }
 
-    private val authenticatedClient: HttpClient
-        get() = httpClient.config {
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        val accessToken = tokenManager.getAccessToken()
-                        val refreshToken = tokenManager.getRefreshToken()
-                        BearerTokens(accessToken, refreshToken)
-                    }
-                    refreshTokens {
-                        refresh(tokenManager.isRefreshTokenNeedRotate())
-                        val accessToken = tokenManager.getAccessToken()
-                        val refreshToken = tokenManager.getRefreshToken()
-                        BearerTokens(accessToken, refreshToken)
-                    }
+    private val httpClient = client?.config { configureBase() } ?: HttpClient(HttpEngine) { configureBase() }
+    private val authenticatedClient: HttpClient = httpClient.config {
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    val accessToken = tokenManager.getAccessToken()
+                    val refreshToken = tokenManager.getRefreshToken()
+                    BearerTokens(accessToken, refreshToken)
+                }
+                refreshTokens {
+                    refresh(tokenManager.isRefreshTokenNeedRotate())
+                    val accessToken = tokenManager.getAccessToken()
+                    val refreshToken = tokenManager.getRefreshToken()
+                    BearerTokens(accessToken, refreshToken)
                 }
             }
         }
+    }
 
     private var contentType = ContentType.Application.Json
 
@@ -144,25 +144,14 @@ class ApiClient(
         httpClient.post(ApiV1.Auth.SendVerificationCode(), payloadBuilder(payload))
 
     suspend fun refresh(rotate: Boolean) =
-        httpClient.config {
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        BearerTokens(
-                            accessToken = tokenManager.getRefreshToken(),
-                            refreshToken = null
-                        )
-                    }
-                }
+        httpClient.post(ApiV1.Auth.Refresh(rotate = rotate.takeIf { it })) {
+            header(HttpHeaders.Authorization, "Bearer ${tokenManager.getRefreshToken()}")
+        }.apply {
+            if (status == HttpStatusCode.OK) {
+                val response = body<ApiV1.Auth.Refresh.Response>()
+                setTokens(BearerTokens(response.accessToken, response.refreshToken))
             }
         }
-            .post(ApiV1.Auth.Refresh(rotate = rotate.takeIf { it }))
-            .apply {
-                if (status == HttpStatusCode.OK) {
-                    val response = body<ApiV1.Auth.Refresh.Response>()
-                    setTokens(BearerTokens(response.accessToken, response.refreshToken))
-                }
-            }
 
     private fun setTokens(tokens: BearerTokens) {
         tokenManager.setAccessToken(tokens.accessToken)
