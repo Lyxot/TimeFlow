@@ -53,7 +53,11 @@ val appVersionCode = app.versions.major.get().toInt() * 10000 +
             match?.groupValues?.get(1)?.toInt() ?: 0
         } catch (e: Exception) {
             println("Error getting commit count from GitHub API: ${e.message}")
-            0
+            if (getenv("CI").toBoolean()) {
+                throw e
+            } else {
+                0
+            }
         }
 
 val versionName: Any = app.versions.major.get()

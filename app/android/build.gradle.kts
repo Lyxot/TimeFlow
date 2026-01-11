@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -8,6 +8,7 @@
  */
 
 
+import xyz.hyli.timeflow.buildsrc.Target
 import java.lang.System.getenv
 
 plugins {
@@ -25,6 +26,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel)
 }
+
+Target.appVersion = app.versions.name.get()
 
 android {
     namespace = "xyz.hyli.timeflow"
@@ -74,7 +77,7 @@ android {
     android.applicationVariants.all {
         outputs.all {
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
-                this.outputFileName = "TimeFlow-$versionName.apk"
+                this.outputFileName = Target.Android.artifactName
             }
         }
     }

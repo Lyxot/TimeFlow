@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -11,19 +11,7 @@ package xyz.hyli.timeflow.ui.pages.today
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeightIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -31,17 +19,8 @@ import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -60,21 +39,7 @@ import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Time
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.friday_long
-import xyz.hyli.timeflow.shared.generated.resources.monday_long
-import xyz.hyli.timeflow.shared.generated.resources.saturday_long
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_time
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_time_period
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_week
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_schedule_empty
-import xyz.hyli.timeflow.shared.generated.resources.settings_subtitle_schedule_not_selected
-import xyz.hyli.timeflow.shared.generated.resources.sunday_long
-import xyz.hyli.timeflow.shared.generated.resources.thursday_long
-import xyz.hyli.timeflow.shared.generated.resources.today_title_no_courses
-import xyz.hyli.timeflow.shared.generated.resources.today_value_date
-import xyz.hyli.timeflow.shared.generated.resources.tuesday_long
-import xyz.hyli.timeflow.shared.generated.resources.wednesday_long
+import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.theme.NotoSans

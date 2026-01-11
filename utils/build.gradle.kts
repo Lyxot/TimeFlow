@@ -28,6 +28,10 @@ kotlin {
     iosArm64 { }
     iosSimulatorArm64 { }
     jvm { }
+    js {
+        browser()
+        binaries.executable()
+    }
     wasmJs {
         browser()
         binaries.executable()
@@ -35,15 +39,20 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.filekit.core)
             implementation(libs.korlibs.compression)
         }
-        wasmJsMain.dependencies {
+        webMain.dependencies {
             implementation(libs.kotlinx.browser)
         }
     }
 }
 
-val portable: Boolean = providers.gradleProperty("portable").map { it.toBoolean() }.getOrElse(false)
+// Check if any portable-related tasks are being executed
+val portable: Boolean = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("Portable", ignoreCase = true) ||
+            taskName.contains("PortableDistributable", ignoreCase = true)
+} || (project.findProperty("portable") as? String)?.toBoolean() ?: false
 
 buildConfig {
     // BuildConfig configuration here.

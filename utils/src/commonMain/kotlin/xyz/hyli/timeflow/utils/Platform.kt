@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -52,10 +52,20 @@ sealed class Platform {
 
     class Linux : Desktop("Linux")
 
-    data class Wasm(
-        val userAgent: String,
-    ) : Platform() {
-        override val name: String get() = "Wasm"
+    sealed class Web(
+        open val userAgent: String
+    ) : Platform()
+
+    data class WasmJS(
+        override val userAgent: String
+    ) : Web(userAgent) {
+        override val name: String get() = "WasmJS"
+    }
+
+    data class JS(
+        override val userAgent: String,
+    ) : Web(userAgent) {
+        override val name: String get() = "JS"
     }
 }
 
@@ -117,9 +127,9 @@ inline fun Platform.isAndroid(): Boolean {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun Platform.isWasm(): Boolean {
-    contract { returns(true) implies (this@isWasm is Platform.Wasm) }
-    return this is Platform.Wasm
+inline fun Platform.isWeb(): Boolean {
+    contract { returns(true) implies (this@isWeb is Platform.Web) }
+    return this is Platform.Web
 }
 
 inline fun Platform.supportDynamicColor(): Boolean {

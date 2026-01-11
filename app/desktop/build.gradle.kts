@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -105,4 +105,16 @@ compose.desktop {
 //https://github.com/JetBrains/compose-hot-reload
 tasks.withType<ComposeHotRun>().configureEach {
     mainClass.set("MainKt")
+}
+
+// Portable distributable tasks - the "Portable" in the name triggers BuildConfig.PORTABLE=true
+listOf("", "Release").forEach { buildType ->
+    tasks.register("create${buildType}PortableDistributable") {
+        group = "compose desktop"
+        description = "Creates a ${
+            buildType.lowercase().ifEmpty { "debug" }
+        } portable distributable with PORTABLE=true in BuildConfig"
+
+        dependsOn("create${buildType}Distributable")
+    }
 }

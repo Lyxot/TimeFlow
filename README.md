@@ -34,24 +34,52 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
 - Android SDK (并将路径配置在项目的 `local.properties` 文件中)
 - （可选）[KDoctor](https://github.com/Kotlin/kdoctor) 来检查您的开发环境
 
-**构建 Android 应用 (APK):**
+构建任务统一使用 `build{Target}{BuildType}{Format}` 命名格式，例如 `buildAndroidReleaseApk`、`buildLinuxDebugAppImage`。
+
+**构建 Android 应用:**
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew buildAndroidReleaseApk
 ```
 
-生成的 APK 文件位于 `app/build/outputs/apk/debug/app-debug.apk`。
-
-**运行桌面端应用:**
+**构建 iOS 应用:**
 
 ```bash
-./gradlew :app:run
+./gradlew buildIosReleaseIpa
 ```
+
+**构建桌面端应用:**
+
+```bash
+# macOS
+./gradlew buildMacosReleaseDmg
+
+# Linux
+./gradlew buildLinuxReleaseAppImage
+./gradlew buildLinuxReleaseDeb
+./gradlew buildLinuxReleaseRpm
+
+# Windows
+./gradlew buildWindowsReleaseMsi
+./gradlew buildWindowsReleaseExe
+./gradlew buildWindowsReleasePortable
+```
+
+> **注意**: 桌面端构建任务只能在对应的操作系统上运行，且不支持跨架构构建。例如，`buildMacOSReleaseDmg` 只能在 macOS 上运行。
+
+**构建 Web 应用:**
+
+```bash
+./gradlew buildJsReleaseZip
+./gradlew buildWasmJsReleaseZip
+```
+
+生成的构建产物位于 `builder/build/artifacts` 目录下。
 
 **运行测试:**
 
 ```bash
-./gradlew jvmTest
+./gradlew :app:shared:jvmTest
 ```
 
 ## License

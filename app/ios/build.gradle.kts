@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -7,51 +7,10 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-fun ipaArguments(
-    destination: String = "generic/platform=iOS",
-    sdk: String = "iphoneos",
-): Array<String> {
-    return arrayOf(
-        "xcodebuild",
-        "-project", rootDir.resolve("iosApp/iosApp.xcodeproj").absolutePath,
-        "-scheme", "iosApp",
-        "-destination", destination,
-        "-sdk", sdk,
-        "CODE_SIGNING_ALLOWED=NO",
-        "CODE_SIGNING_REQUIRED=NO",
-    )
-}
-
-
-val buildDebugArchive = tasks.register("buildDebugArchive", Exec::class) {
-    group = "build"
-    description = "Builds the iOS framework for Debug"
-    workingDir(projectDir)
-
-    val output = layout.buildDirectory.dir("archives/debug/TimeFlow.xcarchive")
-    outputs.dir(output)
-    commandLine(
-        *ipaArguments(),
-        "archive",
-        "-configuration", "Debug",
-        "-archivePath", output.get().asFile.absolutePath,
-    )
-}
-
-val buildReleaseArchive = tasks.register("buildReleaseArchive", Exec::class) {
-    group = "build"
-    description = "Builds the iOS framework for Release"
-    workingDir(projectDir)
-
-    val output = layout.buildDirectory.dir("archives/release/TimeFlow.xcarchive")
-    outputs.dir(output)
-    commandLine(
-        *ipaArguments(),
-        "archive",
-        "-configuration", "Release",
-        "-archivePath", output.get().asFile.absolutePath,
-    )
-}
+import xyz.hyli.timeflow.buildsrc.BuildArchiveTask
+import xyz.hyli.timeflow.buildsrc.Target
+import xyz.hyli.timeflow.buildsrc.capitalize
+import xyz.hyli.timeflow.buildsrc.ipaArguments
 
 /**
  * Packages an unsigned IPA **and** injects an ad‑hoc signature so sideloaders can re‑sign it.
@@ -64,7 +23,7 @@ val buildReleaseArchive = tasks.register("buildReleaseArchive", Exec::class) {
  * This task is **configuration‑cache safe** – it does *not* capture the `Project` instance.
  */
 @CacheableTask
-abstract class BuildIpaTask : DefaultTask() {
+abstract class BuildIpaPayloadTask : DefaultTask() {
 
     /* -------------------------------------------------------------
      * Inputs / outputs
@@ -74,8 +33,8 @@ abstract class BuildIpaTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     abstract val archiveDir: DirectoryProperty
 
-    @get:OutputFile
-    abstract val outputIpa: RegularFileProperty
+    @get:OutputDirectory
+    abstract val outputIpaPayloadDir: DirectoryProperty
 
     /* -------------------------------------------------------------
      * Services (injected)
@@ -89,14 +48,14 @@ abstract class BuildIpaTask : DefaultTask() {
      * ----------------------------------------------------------- */
 
     @TaskAction
-    fun buildIpa() {
+    fun buildIpaPayload() {
         // 1. Locate the .app inside the .xcarchive
         val appDir = archiveDir.get().asFile.resolve("Products/Applications/TimeFlow.app")
         if (!appDir.exists())
             throw GradleException("Could not find TimeFlow.app in archive at: ${appDir.absolutePath}")
 
         // 2. Create temporary Payload directory and copy .app into it
-        val payloadDir = File(temporaryDir, "Payload").apply { mkdirs() }
+        val payloadDir = outputIpaPayloadDir.get().asFile.apply { mkdirs() }
         val destApp = File(payloadDir, appDir.name)
         appDir.copyRecursively(destApp, overwrite = true)
 
@@ -108,48 +67,47 @@ abstract class BuildIpaTask : DefaultTask() {
                 destApp.absolutePath,
             )
         }
-
-        // 4. Zip Payload ⇒ .ipa using the system `zip` command
-        //
-        //    -r : recurse into directories
-        //    -y : store symbolic links as the link instead of the referenced file
-        //
-        // The working directory is the temporary folder so the archive
-        // has a top‑level "Payload/" directory (required for .ipa files).
-        val zipFile = File(temporaryDir, "TimeFlow.zip")
-        execOperations.exec {
-            workingDir(temporaryDir)
-            commandLine("zip", "-r", "-y", zipFile.absolutePath, "Payload")
-        }
-
-        // 5. Move to final location (with .ipa extension)
-        outputIpa.get().asFile.apply {
-            parentFile.mkdirs()
-            delete()
-            zipFile.renameTo(this)
-        }
-
-        logger.lifecycle("[IPA] Created ad‑hoc‑signed IPA at: ${outputIpa.get().asFile.absolutePath}")
     }
 }
 
-tasks.register("buildDebugIpa", BuildIpaTask::class) {
-    description = "Manually packages the .app from the .xcarchive into an unsigned .ipa"
-    group = "build"
+Target.appVersion = app.versions.name.get()
 
-    // Adjust these paths as needed
-    archiveDir = layout.buildDirectory.dir("archives/debug/TimeFlow.xcarchive")
-    outputIpa = layout.buildDirectory.file("archives/debug/TimeFlow-${app.versions.name.get()}.ipa")
-    dependsOn(buildDebugArchive)
-}
+listOf(
+    "debug", "release"
+).forEach { buildType ->
+    val capitalizedName = buildType.capitalize()
 
-tasks.register("buildReleaseIpa", BuildIpaTask::class) {
-    description = "Manually packages the .app from the .xcarchive into an unsigned .ipa"
-    group = "build"
+    val buildArchive = tasks.register("build${capitalizedName}Archive", Exec::class) {
+        group = "build"
+        description = "Builds the iOS framework for ${capitalizedName}"
+        workingDir(projectDir)
 
-    // Adjust these paths as needed
-    archiveDir = layout.buildDirectory.dir("archives/release/TimeFlow.xcarchive")
-    outputIpa =
-        layout.buildDirectory.file("archives/release/TimeFlow-${app.versions.name.get()}.ipa")
-    dependsOn(buildReleaseArchive)
+        val output = layout.buildDirectory.dir("archives/${buildType}/TimeFlow.xcarchive")
+        outputs.dir(output)
+        commandLine(
+            *ipaArguments(),
+            "archive",
+            "-configuration", capitalizedName,
+            "-archivePath", output.get().asFile.absolutePath,
+        )
+    }
+    val buildPayload = tasks.register("build${capitalizedName}IpaPayload", BuildIpaPayloadTask::class) {
+        description = "Manually packages the .app from the .xcarchive into an unsigned .ipa payload"
+        group = "build"
+
+        // Adjust these paths as needed
+        archiveDir = layout.buildDirectory.dir("archives/${buildType}/TimeFlow.xcarchive")
+        outputIpaPayloadDir = layout.buildDirectory.dir("archives/${buildType}/Payload")
+        dependsOn(buildArchive)
+    }
+    tasks.register("build${capitalizedName}Ipa", BuildArchiveTask::class) {
+        description = "Manually packages the .app from the .xcarchive into an unsigned .ipa"
+        group = "build"
+
+        sourceDir.set(layout.buildDirectory.dir("archives/${buildType}/Payload"))
+        prepareDir.set(layout.buildDirectory.dir("archives/${buildType}/tmp"))
+        archiveFolderName.set("Payload")
+        outputFile.set(layout.buildDirectory.file("archives/${buildType}/${Target.Ios.artifactName}"))
+        dependsOn(buildPayload)
+    }
 }

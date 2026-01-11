@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -13,21 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.getString
@@ -35,31 +22,8 @@ import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.Lesson
 import xyz.hyli.timeflow.data.LessonTimePeriodInfo
 import xyz.hyli.timeflow.data.Time
-import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.shared.generated.resources.save
-import xyz.hyli.timeflow.shared.generated.resources.schedule_value_course_time
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_lessons_per_day
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_lessons_time_afternoon
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_lessons_time_evening
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_lessons_time_morning
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_lessons_per_day
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_lessons_per_day_afternoon
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_lessons_per_day_evening
-import xyz.hyli.timeflow.shared.generated.resources.settings_title_schedule_lessons_per_day_morning
-import xyz.hyli.timeflow.shared.generated.resources.settings_warning_lessons_per_day_empty
-import xyz.hyli.timeflow.shared.generated.resources.settings_warning_lessons_time_conflict
-import xyz.hyli.timeflow.ui.components.BasePreference
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.NavigationBackIcon
-import xyz.hyli.timeflow.ui.components.PreferenceDivider
-import xyz.hyli.timeflow.ui.components.PreferenceNumber
-import xyz.hyli.timeflow.ui.components.PreferenceNumberStyle
-import xyz.hyli.timeflow.ui.components.PreferenceScreen
-import xyz.hyli.timeflow.ui.components.PreferenceSection
-import xyz.hyli.timeflow.ui.components.TimePeriodPickerDialog
-import xyz.hyli.timeflow.ui.components.TimePeriodPickerStyle
-import xyz.hyli.timeflow.ui.components.bottomPadding
-import xyz.hyli.timeflow.ui.components.rememberDialogState
+import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
