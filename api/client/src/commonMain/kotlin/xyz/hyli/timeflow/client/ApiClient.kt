@@ -137,8 +137,8 @@ class ApiClient(
     suspend fun register(payload: ApiV1.Auth.Register.Payload) = // TODO: implement verification code
         httpClient.post(ApiV1.Auth.Register(), payloadBuilder(payload))
 
-    suspend fun checkEmail(payload: ApiV1.Auth.CheckEmail.Payload) =
-        httpClient.get(ApiV1.Auth.CheckEmail(), payloadBuilder(payload))
+    suspend fun checkEmail(email: String) =
+        httpClient.get(ApiV1.Auth.CheckEmail(email = email))
 
     suspend fun sendVerificationCode(payload: ApiV1.Auth.SendVerificationCode.Payload) =
         httpClient.post(ApiV1.Auth.SendVerificationCode(), payloadBuilder(payload))

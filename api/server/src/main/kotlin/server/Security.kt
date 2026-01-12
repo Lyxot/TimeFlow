@@ -81,8 +81,8 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
     private val issuer = config.property("jwt.issuer").getString()
 
     enum class TokenType(val validityInMs: Long) {
-        ACCESS(36_000_00 * 12), // 12 hours
-        REFRESH(36_000_00 * 24 * 21) // 21 days
+        ACCESS(3_600_000L * 12), // 12 hours
+        REFRESH(3_600_000L * 24 * 21) // 21 days
     }
 
     /**

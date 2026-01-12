@@ -268,6 +268,17 @@ paths:
             application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
         '401': { description: Invalid credentials }
         '429': { description: Too many requests }
+  /auth/logout:
+    post:
+      tags: [ Auth ]
+      summary: Log out and revoke refresh token
+      security: [ { bearerAuth: [ ] } ]
+      description: >
+        Revokes the current refresh token, effectively logging out the user.
+        The access token will still be valid until it expires naturally.
+      responses:
+        '204': { description: Successfully logged out and refresh token revoked }
+        '401': { description: Unauthorized or invalid refresh token }
   /auth/refresh:
     post:
       tags: [ Auth ]

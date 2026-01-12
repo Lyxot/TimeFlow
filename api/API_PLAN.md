@@ -31,6 +31,7 @@
 | `POST` | `/auth/register`               | 使用邮箱、密码和收到的验证码注册一个新用户。                                         | &#10006; |
 | `POST` | `/auth/send-verification-code` | 请求向指定邮箱发送一个注册验证码。                                              | &#10006; |
 | `POST` | `/auth/login`                  | 用户登录并获取 JWT 令牌。                                                | &#10006; |
+| `POST` | `/auth/logout`                 | 登出并撤销当前的 Refresh Token。                                        | &#10004; |
 | `POST` | `/auth/refresh`                | 使用 Refresh Token 获取新的 Access Token。客户端可选择是否同时轮换 Refresh Token。 | &#10004; |
 | `GET`  | `/users/me`                    | 获取当前已登录用户的个人资料。                                                | &#10004; |
 

@@ -33,15 +33,13 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
 
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email
-        get<ApiV1.Auth.CheckEmail> { _ ->
-            val payload = call.receive<ApiV1.Auth.CheckEmail.Payload>()
-            val email = payload.email
-            if (email.isBlank()) {
+        get<ApiV1.Auth.CheckEmail> { request ->
+            if (request.email.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email parameter cannot be blank"))
                 return@get
             }
 
-            val user = repository.findUserByEmail(email)
+            val user = repository.findUserByEmail(request.email)
             call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = user != null))
         }
 
@@ -71,13 +69,16 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
         post<ApiV1.Auth.Login> { _ ->
             val payload = call.receive<ApiV1.Auth.Login.Payload>()
 
-            val (storedHash, user) = repository.findPasswordHashByEmail(payload.email)
-                ?: (null to null)
+            val result = repository.findPasswordHashByEmail(payload.email)
+            if (result == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
+                return@post
+            }
+
+            val (storedHash, user) = result
 
             // Verify password using Argon2
-            if (storedHash != null && user != null &&
-                argon2.verify(storedHash, payload.password.toCharArray())
-            ) {
+            if (argon2.verify(storedHash, payload.password.toCharArray())) {
                 // Password is correct, generate tokens
                 val (accessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
                 val (refreshToken, jti, expiresAt) = tokenManager.generateToken(

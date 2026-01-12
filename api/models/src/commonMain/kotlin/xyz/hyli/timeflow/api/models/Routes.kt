@@ -68,10 +68,7 @@ class ApiV1 {
 
         @Serializable
         @Resource("check-email")
-        class CheckEmail(val parent: Auth = Auth()) {
-            @Serializable
-            data class Payload(val email: String)
-
+        class CheckEmail(val parent: Auth = Auth(), val email: String = "") {
             @Serializable
             data class Response(val exists: Boolean)
         }

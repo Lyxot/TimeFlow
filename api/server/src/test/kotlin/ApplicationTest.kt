@@ -81,7 +81,7 @@ class ApplicationTest {
              * Test: GET /auth/check-email (Non-existing)
              * Checks if a non-registered email returns exists=false.
              */
-            client.checkEmail(ApiV1.Auth.CheckEmail.Payload(email = "test@test.com")).apply {
+            client.checkEmail("test@test.com").apply {
                 val message = "[GET /auth/check-email] Non-existing email"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertEquals(false, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be false")
@@ -139,7 +139,7 @@ class ApplicationTest {
              * Test: GET /auth/check-email (Existing)
              * Checks if a registered email returns exists=true.
              */
-            client.checkEmail(ApiV1.Auth.CheckEmail.Payload(email = "test@test.com")).apply {
+            client.checkEmail("test@test.com").apply {
                 val message = "[GET /auth/check-email] Existing email"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertEquals(true, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be true")
