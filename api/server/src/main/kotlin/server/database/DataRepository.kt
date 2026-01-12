@@ -75,6 +75,21 @@ interface DataRepository {
     suspend fun revokeRefreshToken(jti: Uuid)
 
     /**
+     * Gets the selected schedule ID for a user.
+     * Validates that the schedule exists and is not deleted.
+     * @param userId The ID of the user.
+     * @return The selected schedule local ID, or null if not set, doesn't exist, or is deleted.
+     */
+    suspend fun getSelectedScheduleId(userId: Int): Short?
+
+    /**
+     * Sets the selected schedule ID for a user.
+     * @param userId The ID of the user.
+     * @param scheduleId The local ID of the schedule to select, or null to clear the selection.
+     */
+    suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?)
+
+    /**
      * Retrieves all schedules for a given user.
      * @param userId The ID of the user.
      * @param deleted If null (default), returns only non-deleted schedules. If true, returns only deleted schedules. If false, returns only non-deleted schedules.

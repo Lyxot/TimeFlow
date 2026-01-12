@@ -33,6 +33,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var username by UsersTable.username
     var email by UsersTable.email
     var passwordHash by UsersTable.passwordHash
+    var selectedScheduleId by UsersTable.selectedScheduleId
 
 
     @OptIn(ExperimentalUuidApi::class)

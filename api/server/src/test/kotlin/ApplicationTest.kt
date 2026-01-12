@@ -157,6 +157,22 @@ class ApplicationTest {
                 assertEquals("test@test.com", body.email, "$message Email should be correct")
             }
 
+            // --- Selected Schedule API Tests ---
+
+            /**
+             * Test: GET /users/me/selected-schedule (Initial)
+             * A new user should have no selected schedule.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] Initial fetch"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should be null"
+                )
+            }
+
             // --- Schedules API Tests ---
 
             /**
@@ -233,6 +249,90 @@ class ApplicationTest {
                 val message = "[PUT /schedules/{id}] Verify update"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertEquals("Updated Schedule Name", body<Schedule>().name, "$message Name should be updated")
+            }
+
+            // --- Selected Schedule Tests (with existing schedule) ---
+
+            /**
+             * Test: PUT /users/me/selected-schedule
+             * Sets the selected schedule to an existing schedule.
+             */
+            client.setSelectedSchedule(testScheduleId).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /users/me/selected-schedule] Should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: GET /users/me/selected-schedule (After setting)
+             * Should return the selected schedule ID.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After setting"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    testScheduleId,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return the selected schedule ID"
+                )
+            }
+
+            /**
+             * Test: Soft delete selected schedule
+             * After soft deleting, the selected schedule should return null.
+             */
+            client.deleteSchedule(testScheduleId, permanent = false).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[DELETE /schedules/{id}] Soft delete should return 204 No Content"
+                )
+            }
+
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After soft delete"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return null after schedule is deleted"
+                )
+            }
+
+            /**
+             * Test: Restore schedule (create with same ID)
+             * Re-create the schedule to continue with course tests.
+             */
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = false)).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /schedules/{id}] Restore should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Set selected schedule after restore
+             * Should be able to select the restored schedule.
+             */
+            client.setSelectedSchedule(testScheduleId).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /users/me/selected-schedule] Should set restored schedule"
+                )
+            }
+
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After restore"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    testScheduleId,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return the selected schedule ID after restore"
+                )
             }
 
             // --- Courses API Tests (on the existing schedule) ---
@@ -382,6 +482,20 @@ class ApplicationTest {
                 val message = "[GET /schedules?deleted=true] After permanent deletion"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /users/me/selected-schedule (After permanent delete)
+             * Should return null after the selected schedule is permanently deleted.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After permanent delete"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return null after schedule is permanently deleted"
+                )
             }
 
             /**

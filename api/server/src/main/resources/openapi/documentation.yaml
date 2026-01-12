@@ -60,9 +60,6 @@ components:
     Weekday:
       type: string
       enum: [ MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY ]
-    ThemeMode:
-      type: string
-      enum: [ SYSTEM, LIGHT, DARK ]
     Lesson:
       type: object
       properties:
@@ -115,17 +112,15 @@ components:
         deleted: { type: boolean }
         termStartDate: { $ref: '#/components/schemas/Date' }
         termEndDate: { $ref: '#/components/schemas/Date' }
-    Settings:
+    # Selected Schedule Schemas
+    SelectedScheduleResponse:
       type: object
       properties:
-        themeMode: { $ref: '#/components/schemas/ThemeMode' }
-        themeDynamicColor: { type: boolean }
-        themeColor: { type: integer, format: int32 }
-        schedules:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Schedule'
-        selectedScheduleID: { type: integer }
+        scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the currently selected schedule, or null if none selected" }
+    SelectedScheduleRequest:
+      type: object
+      properties:
+        scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the schedule to select, or null to clear selection" }
 
     # Auth Schemas
     VerificationCodeRequest:
@@ -177,7 +172,6 @@ components:
           type: object
           properties:
             schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
-            settings: { $ref: '#/components/schemas/Settings' }
         deletes:
           type: object
           properties:
@@ -190,7 +184,6 @@ components:
           type: object
           properties:
             schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
-            settings: { $ref: '#/components/schemas/Settings' }
 
 # API Paths
 paths:
@@ -308,6 +301,30 @@ paths:
           description: User profile
           content:
             application/json: { schema: { $ref: '#/components/schemas/UserInfoResponse' } }
+        '401': { description: Unauthorized }
+
+  /users/me/selected-schedule:
+    get:
+      tags: [ Users ]
+      summary: Get the currently selected schedule
+      description: Returns the selected schedule ID, or null if no schedule is selected, the schedule doesn't exist, or the schedule is deleted.
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The selected schedule ID
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleResponse' } }
+        '401': { description: Unauthorized }
+    put:
+      tags: [ Users ]
+      summary: Set the currently selected schedule
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleRequest' } }
+      responses:
+        '204': { description: Selected schedule updated successfully }
         '401': { description: Unauthorized }
 
   # Schedules Endpoints
@@ -449,33 +466,6 @@ paths:
         '204': { description: Course deleted successfully }
         '401': { description: Unauthorized }
         '404': { description: Schedule or Course not found }
-
-  # Settings Endpoints
-  /settings:
-    get:
-      tags: [ Settings ]
-      summary: Get user settings
-      security: [ { bearerAuth: [ ] } ]
-      responses:
-        '200':
-          description: The user's settings object
-          content:
-            application/json: { schema: { $ref: '#/components/schemas/Settings' } }
-        '401': { description: Unauthorized }
-    put:
-      tags: [ Settings ]
-      summary: Update/replace user settings
-      security: [ { bearerAuth: [ ] } ]
-      requestBody:
-        required: true
-        content:
-          application/json: { schema: { $ref: '#/components/schemas/Settings' } }
-      responses:
-        '200':
-          description: Settings updated
-          content:
-            application/json: { schema: { $ref: '#/components/schemas/Settings' } }
-        '401': { description: Unauthorized }
 
   # Sync Endpoint
   /sync:

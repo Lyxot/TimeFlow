@@ -172,6 +172,14 @@ class ApiClient(
 
     suspend fun me() = authenticatedClient.get(ApiV1.Users.Me())
 
+    suspend fun getSelectedSchedule() = authenticatedClient.get(ApiV1.Users.Me.SelectedSchedule())
+
+    suspend fun setSelectedSchedule(scheduleId: Short?) =
+        authenticatedClient.put(
+            ApiV1.Users.Me.SelectedSchedule(),
+            payloadBuilder(ApiV1.Users.Me.SelectedSchedule.Payload(scheduleId))
+        )
+
     suspend fun schedules(deleted: Boolean? = null) = authenticatedClient.get(ApiV1.Schedules(deleted = deleted))
 
     suspend fun getSchedule(scheduleId: Short) =

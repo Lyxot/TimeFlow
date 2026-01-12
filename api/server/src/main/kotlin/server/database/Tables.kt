@@ -31,6 +31,7 @@ object UsersTable : IntIdTable("users") {
 
     // Argon2 hash is ~167 chars, 255 is sufficient
     val passwordHash = varchar("password_hash", 255)
+    val selectedScheduleId = short("selected_schedule_id").nullable()
 }
 
 /**

@@ -81,6 +81,16 @@ class ApiV1 {
         @Resource("me")
         class Me(val parent: Users = Users()) {
             typealias Response = User
+
+            @Serializable
+            @Resource("selected-schedule")
+            class SelectedSchedule(val parent: Me = Me()) {
+                @Serializable
+                data class Response(val scheduleId: Short?)
+
+                @Serializable
+                data class Payload(val scheduleId: Short?)
+            }
         }
     }
 

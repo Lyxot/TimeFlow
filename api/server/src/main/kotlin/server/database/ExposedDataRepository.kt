@@ -104,6 +104,19 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
+    override suspend fun getSelectedScheduleId(userId: Int): Short? = dbQuery {
+        val selectedId = UserEntity[userId].selectedScheduleId ?: return@dbQuery null
+
+        // Validate that the selected schedule exists and is not deleted
+        if (getScheduleEntity(userId, selectedId, false)?.schedule != null) selectedId else null
+    }
+
+    override suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?) {
+        dbQuery {
+            UserEntity[userId].selectedScheduleId = scheduleId
+        }
+    }
+
     override suspend fun getSchedules(userId: Int, deleted: Boolean?): Map<Short, ScheduleSummary> = dbQuery {
         val deletedStatus = deleted ?: false
         ScheduleEntity
@@ -119,15 +132,21 @@ class ExposedDataRepository : DataRepository {
     }
 
     /**
-     * Private helper to get ScheduleEntity by userId and localId, ensuring it's not deleted.
+     * Private helper to get ScheduleEntity by userId and localId.
+     * @param userId The ID of the user.
+     * @param localId The local ID of the schedule.
+     * @param deleted If null, finds schedules regardless of deleted status. If false (default), only non-deleted. If true, only deleted.
      * @return The ScheduleEntity if found, otherwise null.
      */
-    private fun getScheduleEntity(userId: Int, localId: Short): ScheduleEntity? =
+    private fun getScheduleEntity(userId: Int, localId: Short, deleted: Boolean? = false): ScheduleEntity? =
         ScheduleEntity
             .find {
-                (SchedulesTable.userId eq userId) and
-                        (SchedulesTable.localId eq localId) and
-                        (SchedulesTable.deleted eq false)
+                val baseCondition = (SchedulesTable.userId eq userId) and (SchedulesTable.localId eq localId)
+                if (deleted == null) {
+                    baseCondition
+                } else {
+                    baseCondition and (SchedulesTable.deleted eq deleted)
+                }
             }
             .singleOrNull()
 
@@ -135,8 +154,8 @@ class ExposedDataRepository : DataRepository {
         try {
             var wasCreated = false
 
-            // 1. Find existing schedule or create a new one
-            val scheduleEntity = getScheduleEntity(userId, localId)
+            // 1. Find existing schedule (including soft-deleted) or create a new one
+            val scheduleEntity = getScheduleEntity(userId, localId, deleted = null)
                 ?.apply {
                     // It exists, so update its properties
                     this.name = schedule.name.truncateName()
