@@ -17,6 +17,12 @@ import xyz.hyli.timeflow.data.CourseSummary
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
 import xyz.hyli.timeflow.server.database.DatabaseFactory.dbQuery
+import xyz.hyli.timeflow.utils.InputValidation.truncateClassroom
+import xyz.hyli.timeflow.utils.InputValidation.truncateEmail
+import xyz.hyli.timeflow.utils.InputValidation.truncateName
+import xyz.hyli.timeflow.utils.InputValidation.truncateNote
+import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
+import xyz.hyli.timeflow.utils.InputValidation.truncateUsername
 import kotlin.time.Clock
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
@@ -57,8 +63,8 @@ class ExposedDataRepository : DataRepository {
         dbQuery {
             UserEntity.new {
                 this.authId = authId.toJavaUuid()
-                this.username = username
-                this.email = email
+                this.username = username.truncateUsername()
+                this.email = email.truncateEmail()
                 this.passwordHash = passwordHash
             }.user
         }
@@ -126,37 +132,43 @@ class ExposedDataRepository : DataRepository {
             .singleOrNull()
 
     override suspend fun upsertSchedule(userId: Int, localId: Short, schedule: Schedule): Boolean = dbQuery {
-        var wasCreated = false
+        try {
+            var wasCreated = false
 
-        // 1. Find existing schedule or create a new one
-        val scheduleEntity = getScheduleEntity(userId, localId)
-            ?.apply {
-                // It exists, so update its properties
-                this.name = schedule.name
+            // 1. Find existing schedule or create a new one
+            val scheduleEntity = getScheduleEntity(userId, localId)
+                ?.apply {
+                    // It exists, so update its properties
+                    this.name = schedule.name.truncateName()
+                    this.termStartDate = schedule.termStartDate.toLocalDate()
+                    this.termEndDate = schedule.termEndDate.toLocalDate()
+                    this.displayWeekends = schedule.displayWeekends
+                    this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
+                    this.deleted = schedule.deleted
+                } ?: ScheduleEntity.new {
+                // It does not exist, so create it
+                wasCreated = true
+                this.user = UserEntity[userId]
+                this.localId = localId
+                this.name = schedule.name.truncateName()
                 this.termStartDate = schedule.termStartDate.toLocalDate()
                 this.termEndDate = schedule.termEndDate.toLocalDate()
                 this.displayWeekends = schedule.displayWeekends
                 this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
-                this.deleted = false
-            } ?: ScheduleEntity.new {
-            // It does not exist, so create it
-            wasCreated = true
-            this.user = UserEntity[userId]
-            this.localId = localId
-            this.name = schedule.name
-            this.termStartDate = schedule.termStartDate.toLocalDate()
-            this.termEndDate = schedule.termEndDate.toLocalDate()
-            this.displayWeekends = schedule.displayWeekends
-            this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
-            this.deleted = false
-        }
+                this.deleted = schedule.deleted
+            }
 
-        // 2. Upsert courses using the helper function
-        schedule.courses.forEach { (courseLocalId, course) ->
-            upsertCourse(scheduleEntity, courseLocalId, course)
-        }
+            // 2. Upsert courses using the helper function
+            // If any course fails, the entire transaction will rollback
+            schedule.courses.forEach { (courseLocalId, course) ->
+                upsertCourse(scheduleEntity, courseLocalId, course)
+            }
 
-        wasCreated
+            wasCreated
+        } catch (e: Exception) {
+            // Log error and rethrow to trigger transaction rollback
+            throw IllegalStateException("Failed to upsert schedule: ${e.message}", e)
+        }
     }
 
     override suspend fun deleteSchedule(userId: Int, localId: Short, permanent: Boolean): Boolean = dbQuery {
@@ -211,27 +223,27 @@ class ExposedDataRepository : DataRepository {
         var wasCreated = false
         getCourseEntity(scheduleEntity, localId)?.apply {
             // Course exists, update it
-            this.name = course.name
-            this.teacher = course.teacher
-            this.classroom = course.classroom
+            this.name = course.name.truncateName()
+            this.teacher = course.teacher.truncateTeacher()
+            this.classroom = course.classroom.truncateClassroom()
             this.time = course.time
             this.weekday = course.weekday
             this.color = course.color
             this.weeks = course.week.weeks
-            this.note = course.note
+            this.note = course.note.truncateNote()
         } ?: CourseEntity.new {
             // Course does not exist, create it
             wasCreated = true
             this.schedule = scheduleEntity
             this.localId = localId
-            this.name = course.name
-            this.teacher = course.teacher
-            this.classroom = course.classroom
+            this.name = course.name.truncateName()
+            this.teacher = course.teacher.truncateTeacher()
+            this.classroom = course.classroom.truncateClassroom()
             this.time = course.time
             this.weekday = course.weekday
             this.color = course.color
             this.weeks = course.week.weeks
-            this.note = course.note
+            this.note = course.note.truncateNote()
         }
         return wasCreated
     }

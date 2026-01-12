@@ -22,6 +22,7 @@ import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.database.DataRepository
+import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.toUuid
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -34,8 +35,8 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email
         get<ApiV1.Auth.CheckEmail> { request ->
-            if (request.email.isBlank()) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email parameter cannot be blank"))
+            InputValidation.validateEmail(request.email)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
                 return@get
             }
 
@@ -47,18 +48,32 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
         post<ApiV1.Auth.Register> { _ ->
             val payload = call.receive<ApiV1.Auth.Register.Payload>()
 
-            // 1. Check if user with this email already exists
+            // 1. Validate input fields
+            InputValidation.validateEmail(payload.email)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@post
+            }
+            InputValidation.validateUsername(payload.username)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@post
+            }
+            InputValidation.validatePassword(payload.password)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@post
+            }
+
+            // 2. Check if user with this email already exists
             if (repository.findUserByEmail(payload.email) != null) {
                 call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
                 return@post
             }
 
-            // TODO: 2. Validate the verification code `payload.code`.
+            // TODO: 3. Validate the verification code `payload.code`.
 
-            // 3. Hash the password with Argon2
+            // 4. Hash the password with Argon2
             val passwordHash = argon2.hash(10, 65536, 1, payload.password.toCharArray())
 
-            // 4. Create a unique authId and save the new user
+            // 5. Create a unique authId and save the new user
             val authId = Uuid.generateV7()
             repository.createUser(authId, payload.username, payload.email, passwordHash)
 
@@ -68,6 +83,12 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
         // POST /api/v1/auth/login
         post<ApiV1.Auth.Login> { _ ->
             val payload = call.receive<ApiV1.Auth.Login.Payload>()
+
+            // Validate email format
+            InputValidation.validateEmail(payload.email)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@post
+            }
 
             val result = repository.findPasswordHashByEmail(payload.email)
             if (result == null) {
@@ -132,6 +153,13 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
     rateLimit(RateLimitName("send_verification_code")) {
         post<ApiV1.Auth.SendVerificationCode> { _ ->
             val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
+
+            // Validate email format
+            InputValidation.validateEmail(payload.email)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@post
+            }
+
             // TODO: Implement real email sending logic.
             if (repository.findUserByEmail(payload.email) != null) {
                 call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))

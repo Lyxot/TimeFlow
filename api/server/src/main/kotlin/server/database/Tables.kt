@@ -19,14 +19,17 @@ import org.jetbrains.exposed.v1.json.jsonb
 import xyz.hyli.timeflow.data.LessonTimePeriodInfo
 import xyz.hyli.timeflow.data.Range
 import xyz.hyli.timeflow.data.Weekday
+import xyz.hyli.timeflow.utils.InputValidation
 
 /**
  * 用户表
  */
 object UsersTable : IntIdTable("users") {
     val authId = uuid("auth_id").uniqueIndex()
-    val username = varchar("username", 50)
-    val email = varchar("email", 255).uniqueIndex()
+    val username = varchar("username", InputValidation.MAX_USERNAME_LENGTH)
+    val email = varchar("email", InputValidation.MAX_EMAIL_LENGTH).uniqueIndex()
+
+    // Argon2 hash is ~167 chars, 255 is sufficient
     val passwordHash = varchar("password_hash", 255)
 }
 
@@ -53,7 +56,7 @@ object SchedulesTable : LongIdTable("schedules") {
         ReferenceOption.CASCADE
     ).index()
     val localId = short("local_id").index()
-    val name = varchar("name", 255)
+    val name = varchar("name", InputValidation.MAX_NAME_LENGTH)
     val termStartDate = date("term_start_date")
     val termEndDate = date("term_end_date")
     val displayWeekends = bool("display_weekends")
@@ -75,14 +78,14 @@ object CoursesTable : LongIdTable("courses") {
         ReferenceOption.CASCADE
     ).index()
     val localId = short("local_id").index()
-    val name = varchar("name", 255)
-    val teacher = varchar("teacher", 128).nullable()
-    val classroom = varchar("classroom", 128).nullable()
+    val name = varchar("name", InputValidation.MAX_NAME_LENGTH)
+    val teacher = varchar("teacher", InputValidation.MAX_TEACHER_LENGTH).nullable()
+    val classroom = varchar("classroom", InputValidation.MAX_CLASSROOM_LENGTH).nullable()
     val time = jsonb<Range>("time", Json.Default)
     val weekday = enumeration("weekday", Weekday::class)
     val color = integer("color")
     val weeks = array<Int>("weeks")
-    val note = text("note").nullable()
+    val note = varchar("note", InputValidation.MAX_NOTE_LENGTH).nullable()
 
     init {
         uniqueIndex(scheduleId, localId)
