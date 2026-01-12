@@ -316,6 +316,19 @@ paths:
       tags: [ Schedules ]
       summary: List all schedules for the current user
       security: [ { bearerAuth: [ ] } ]
+      parameters:
+        - name: deleted
+          in: query
+          description: >
+            Controls which schedules to return based on deletion status.
+            If null or not provided (default), returns only non-deleted schedules.
+            If true, returns only deleted schedules.
+            If false, returns only non-deleted schedules.
+          required: false
+          schema:
+            type: boolean
+            nullable: true
+            default: null
       responses:
         '200':
           description: A map of schedule summaries, keyed by their local IDs.

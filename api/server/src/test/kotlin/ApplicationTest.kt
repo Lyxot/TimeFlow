@@ -308,26 +308,78 @@ class ApplicationTest {
                 assertTrue(body<Map<Short, CourseSummary>>().isEmpty(), "$message Map should be empty")
             }
 
-            // --- Final Cleanup ---
-            
+            // --- Soft Delete Tests ---
+
             /**
-             * Test: DELETE /schedules/{id}
+             * Test: DELETE /schedules/{id} (Soft Delete)
+             * Soft deletes the schedule (default behavior).
+             */
+            client.deleteSchedule(testScheduleId, permanent = false).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[DELETE /schedules/{id}] Soft delete should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: GET /schedules (After Soft Delete)
+             * Non-deleted schedules list should be empty.
+             */
+            client.schedules(deleted = null).apply {
+                val message = "[GET /schedules] After soft delete (default)"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /schedules?deleted=false
+             * Explicitly requesting non-deleted schedules should also return empty.
+             */
+            client.schedules(deleted = false).apply {
+                val message = "[GET /schedules?deleted=false]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /schedules?deleted=true
+             * Should return the soft-deleted schedule.
+             */
+            client.schedules(deleted = true).apply {
+                val message = "[GET /schedules?deleted=true]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<Map<Short, ScheduleSummary>>()
+                assertEquals(1, body.size, "$message Map size should be 1")
+                assertEquals("Updated Schedule Name", body[testScheduleId]?.name, "$message Schedule name should match")
+            }
+
+            // --- Final Cleanup ---
+
+            /**
+             * Test: DELETE /schedules/{id} (Permanent)
              * Permanently deletes the parent schedule.
              */
             client.deleteSchedule(testScheduleId, permanent = true).apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,
-                    "[DELETE /schedules/{id}] Delete should return 204 No Content"
+                    "[DELETE /schedules/{id}] Permanent delete should return 204 No Content"
                 )
             }
 
             /**
-             * Test: Verify Schedule Deletion
-             * The list of schedules should now be empty again.
+             * Test: Verify Permanent Schedule Deletion
+             * Both non-deleted and deleted lists should be empty.
              */
-            client.schedules().apply {
-                val message = "[GET /schedules] After deletion"
+            client.schedules(deleted = null).apply {
+                val message = "[GET /schedules] After permanent deletion"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            client.schedules(deleted = true).apply {
+                val message = "[GET /schedules?deleted=true] After permanent deletion"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
             }

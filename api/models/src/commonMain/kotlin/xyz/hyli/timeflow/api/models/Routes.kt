@@ -86,8 +86,9 @@ class ApiV1 {
 
     @Serializable
     @Resource("schedules")
-    class Schedules(val parent: ApiV1 = ApiV1()) {
-        // GET /schedules
+    class Schedules(val parent: ApiV1 = ApiV1(), val deleted: Boolean? = null) {
+        // GET /schedules?deleted=true to get only deleted schedules
+        // GET /schedules (default) to get only non-deleted schedules
         typealias Response = Map<Short, ScheduleSummary>
 
         @Serializable

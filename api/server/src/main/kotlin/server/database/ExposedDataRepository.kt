@@ -98,11 +98,12 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
-    override suspend fun getSchedules(userId: Int): Map<Short, ScheduleSummary> = dbQuery {
+    override suspend fun getSchedules(userId: Int, deleted: Boolean?): Map<Short, ScheduleSummary> = dbQuery {
+        val deletedStatus = deleted ?: false
         ScheduleEntity
             .find {
                 (SchedulesTable.userId eq userId) and
-                        (SchedulesTable.deleted eq false)
+                        (SchedulesTable.deleted eq deletedStatus)
             }
             .associate { it.localId to it.schedule.summary }
     }

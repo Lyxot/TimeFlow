@@ -24,8 +24,8 @@ import xyz.hyli.timeflow.server.utils.authedPut
 
 fun Route.schedulesRoutes(repository: DataRepository) {
     authenticate("access-auth") {
-        authedGet<ApiV1.Schedules>(repository) { _, user ->
-            val schedules = repository.getSchedules(user.id)
+        authedGet<ApiV1.Schedules>(repository) { resource, user ->
+            val schedules = repository.getSchedules(user.id, resource.deleted)
             call.respond(HttpStatusCode.OK, schedules)
         }
 

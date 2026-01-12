@@ -77,9 +77,10 @@ interface DataRepository {
     /**
      * Retrieves all schedules for a given user.
      * @param userId The ID of the user.
+     * @param deleted If null (default), returns only non-deleted schedules. If true, returns only deleted schedules. If false, returns only non-deleted schedules.
      * @return A map of local schedule IDs to [ScheduleSummary] objects.
      */
-    suspend fun getSchedules(userId: Int): Map<Short, ScheduleSummary>
+    suspend fun getSchedules(userId: Int, deleted: Boolean? = null): Map<Short, ScheduleSummary>
 
     /**
      * Retrieves a single, full schedule for a given user by its local ID.

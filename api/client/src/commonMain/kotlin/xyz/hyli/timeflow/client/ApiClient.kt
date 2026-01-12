@@ -172,7 +172,7 @@ class ApiClient(
 
     suspend fun me() = authenticatedClient.get(ApiV1.Users.Me())
 
-    suspend fun schedules() = authenticatedClient.get(ApiV1.Schedules())
+    suspend fun schedules(deleted: Boolean? = null) = authenticatedClient.get(ApiV1.Schedules(deleted = deleted))
 
     suspend fun getSchedule(scheduleId: Short) =
         authenticatedClient.get(ApiV1.Schedules.ScheduleId(scheduleId = scheduleId))
