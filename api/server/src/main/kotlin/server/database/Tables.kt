@@ -32,6 +32,7 @@ object UsersTable : IntIdTable("users") {
     // Argon2 hash is ~167 chars, 255 is sufficient
     val passwordHash = varchar("password_hash", 255)
     val selectedScheduleId = short("selected_schedule_id").nullable()
+    val selectedScheduleUpdatedAt = timestamp("selected_schedule_updated_at").nullable()
 }
 
 /**
@@ -63,6 +64,8 @@ object SchedulesTable : LongIdTable("schedules") {
     val displayWeekends = bool("display_weekends")
     val lessonTimePeriodInfo = jsonb<LessonTimePeriodInfo>("lesson_time_period_info", Json.Default)
     val deleted = bool("deleted").default(false)
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
 
     init {
         uniqueIndex(userId, localId)

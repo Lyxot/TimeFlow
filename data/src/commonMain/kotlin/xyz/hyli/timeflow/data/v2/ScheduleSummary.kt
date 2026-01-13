@@ -10,14 +10,20 @@
 package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * A summary of a Schedule, containing essential information without the full course list.
  */
+@OptIn(ExperimentalTime::class)
 @Serializable
 data class ScheduleSummary(
     val name: String,
     val deleted: Boolean,
     val termStartDate: Date,
-    val termEndDate: Date
+    val termEndDate: Date,
+    val createdAt: Instant = Clock.System.now(),
+    val updatedAt: Instant = Clock.System.now()
 )

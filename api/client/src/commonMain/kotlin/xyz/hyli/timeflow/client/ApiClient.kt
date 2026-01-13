@@ -174,10 +174,10 @@ class ApiClient(
 
     suspend fun getSelectedSchedule() = authenticatedClient.get(ApiV1.Users.Me.SelectedSchedule())
 
-    suspend fun setSelectedSchedule(scheduleId: Short?) =
+    suspend fun setSelectedSchedule(scheduleId: Short?, updatedAt: kotlin.time.Instant?) =
         authenticatedClient.put(
             ApiV1.Users.Me.SelectedSchedule(),
-            payloadBuilder(ApiV1.Users.Me.SelectedSchedule.Payload(scheduleId))
+            payloadBuilder(ApiV1.Users.Me.SelectedSchedule.Payload(scheduleId, updatedAt))
         )
 
     suspend fun schedules(deleted: Boolean? = null) = authenticatedClient.get(ApiV1.Schedules(deleted = deleted))
@@ -191,12 +191,9 @@ class ApiClient(
             payloadBuilder(payload)
         )
 
-    suspend fun deleteSchedule(scheduleId: Short, permanent: Boolean = false) =
+    suspend fun deleteSchedule(scheduleId: Short) =
         authenticatedClient.delete(
-            ApiV1.Schedules.ScheduleId(
-                scheduleId = scheduleId,
-                permanent = permanent.takeIf { it }
-            )
+            ApiV1.Schedules.ScheduleId(scheduleId = scheduleId)
         )
 
     suspend fun courses(scheduleId: Short) =

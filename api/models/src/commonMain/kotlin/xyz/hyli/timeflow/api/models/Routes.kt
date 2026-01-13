@@ -85,11 +85,8 @@ class ApiV1 {
             @Serializable
             @Resource("selected-schedule")
             class SelectedSchedule(val parent: Me = Me()) {
-                @Serializable
-                data class Response(val scheduleId: Short?)
-
-                @Serializable
-                data class Payload(val scheduleId: Short?)
+                typealias Payload = xyz.hyli.timeflow.api.models.SelectedSchedule
+                typealias Response = xyz.hyli.timeflow.api.models.SelectedSchedule
             }
         }
     }
@@ -103,7 +100,7 @@ class ApiV1 {
 
         @Serializable
         @Resource("{scheduleId}")
-        class ScheduleId(val parent: Schedules = Schedules(), val scheduleId: Short, val permanent: Boolean? = null) {
+        class ScheduleId(val parent: Schedules = Schedules(), val scheduleId: Short) {
             // GET /schedules/{scheduleId}
             typealias Response = Schedule
 

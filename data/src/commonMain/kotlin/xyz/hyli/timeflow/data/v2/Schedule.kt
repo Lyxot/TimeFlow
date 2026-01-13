@@ -17,6 +17,7 @@ import xyz.hyli.timeflow.data.Weekday
 import xyz.hyli.timeflow.data.newShortId
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
 @Serializable
@@ -35,8 +36,10 @@ data class Schedule(
     @ProtoNumber(6) val lessonTimePeriodInfo: LessonTimePeriodInfo = LessonTimePeriodInfo.defaultLessonTimePeriodInfo,
     /** 是否显示周末 */
     @ProtoNumber(7) val displayWeekends: Boolean = false,
-    @ProtoNumber(8) val reserved8: String? = null,
-    @ProtoNumber(9) val reserved9: String? = null,
+    /** 创建时间 */
+    @ProtoNumber(8) val createdAt: Instant = Clock.System.now(),
+    /** 最后更新时间 */
+    @ProtoNumber(9) val updatedAt: Instant = Clock.System.now(),
     @ProtoNumber(10) val reserved10: String? = null,
     @ProtoNumber(11) val reserved11: String? = null,
     @ProtoNumber(12) val reserved12: String? = null,
@@ -69,7 +72,9 @@ data class Schedule(
         name = this.name,
         deleted = this.deleted,
         termStartDate = this.termStartDate,
-        termEndDate = this.termEndDate
+        termEndDate = this.termEndDate,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
     )
 
     /**

@@ -22,6 +22,7 @@ import xyz.hyli.timeflow.data.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 
 class ApplicationTest {
     @Test
@@ -257,7 +258,7 @@ class ApplicationTest {
              * Test: PUT /users/me/selected-schedule
              * Sets the selected schedule to an existing schedule.
              */
-            client.setSelectedSchedule(testScheduleId).apply {
+            client.setSelectedSchedule(testScheduleId, Clock.System.now()).apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,
@@ -283,11 +284,12 @@ class ApplicationTest {
              * Test: Soft delete selected schedule
              * After soft deleting, the selected schedule should return null.
              */
-            client.deleteSchedule(testScheduleId, permanent = false).apply {
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = true, updatedAt = Clock.System.now()))
+                .apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,
-                    "[DELETE /schedules/{id}] Soft delete should return 204 No Content"
+                    "[PUT /schedules/{id}] Soft delete (via upsert with deleted=true) should return 204 No Content"
                 )
             }
 
@@ -317,7 +319,7 @@ class ApplicationTest {
              * Test: Set selected schedule after restore
              * Should be able to select the restored schedule.
              */
-            client.setSelectedSchedule(testScheduleId).apply {
+            client.setSelectedSchedule(testScheduleId, Clock.System.now()).apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,
@@ -411,14 +413,15 @@ class ApplicationTest {
             // --- Soft Delete Tests ---
 
             /**
-             * Test: DELETE /schedules/{id} (Soft Delete)
-             * Soft deletes the schedule (default behavior).
+             * Test: PUT /schedules/{id} (Soft Delete via upsert with deleted=true)
+             * Soft deletes the schedule by setting deleted=true.
              */
-            client.deleteSchedule(testScheduleId, permanent = false).apply {
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = true, updatedAt = Clock.System.now()))
+                .apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,
-                    "[DELETE /schedules/{id}] Soft delete should return 204 No Content"
+                    "[PUT /schedules/{id}] Soft delete (via upsert with deleted=true) should return 204 No Content"
                 )
             }
 
@@ -460,7 +463,7 @@ class ApplicationTest {
              * Test: DELETE /schedules/{id} (Permanent)
              * Permanently deletes the parent schedule.
              */
-            client.deleteSchedule(testScheduleId, permanent = true).apply {
+            client.deleteSchedule(testScheduleId).apply {
                 assertEquals(
                     HttpStatusCode.NoContent,
                     status,

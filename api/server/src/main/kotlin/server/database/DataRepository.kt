@@ -75,19 +75,20 @@ interface DataRepository {
     suspend fun revokeRefreshToken(jti: Uuid)
 
     /**
-     * Gets the selected schedule ID for a user.
+     * Gets the selected schedule ID and its update timestamp for a user.
      * Validates that the schedule exists and is not deleted.
      * @param userId The ID of the user.
-     * @return The selected schedule local ID, or null if not set, doesn't exist, or is deleted.
+     * @return A Pair of (scheduleId, updatedAt), both nullable. ScheduleId is null if not set, doesn't exist, or is deleted.
      */
-    suspend fun getSelectedScheduleId(userId: Int): Short?
+    suspend fun getSelectedScheduleId(userId: Int): Pair<Short?, kotlin.time.Instant?>
 
     /**
      * Sets the selected schedule ID for a user.
      * @param userId The ID of the user.
      * @param scheduleId The local ID of the schedule to select, or null to clear the selection.
+     * @param updatedAt The timestamp when the selection was made.
      */
-    suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?)
+    suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?, updatedAt: kotlin.time.Instant?)
 
     /**
      * Retrieves all schedules for a given user.
@@ -115,13 +116,13 @@ interface DataRepository {
     suspend fun upsertSchedule(userId: Int, localId: Short, schedule: Schedule): Boolean
 
     /**
-     * Deletes a schedule for a given user by its local ID.
+     * Permanently deletes a schedule for a given user by its local ID.
+     * For soft delete, use upsertSchedule with deleted=true.
      * @param userId The ID of the user.
      * @param localId The local ID of the schedule to delete.
-     * @param permanent If true, permanently delete the record; otherwise, performs a soft delete.
-     * @return True if a schedule was found and deleted (soft or hard), false otherwise.
+     * @return True if a schedule was found and deleted, false otherwise.
      */
-    suspend fun deleteSchedule(userId: Int, localId: Short, permanent: Boolean = false): Boolean
+    suspend fun deleteSchedule(userId: Int, localId: Short): Boolean
 
     /**
      * Retrieves all course summaries for a given schedule.

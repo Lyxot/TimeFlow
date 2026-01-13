@@ -27,14 +27,14 @@ fun Route.usersRoutes(repository: DataRepository) {
 
         // GET /users/me/selected-schedule
         authedGet<ApiV1.Users.Me.SelectedSchedule>(repository) { _, user ->
-            val scheduleId = repository.getSelectedScheduleId(user.id)
-            call.respond(HttpStatusCode.OK, ApiV1.Users.Me.SelectedSchedule.Response(scheduleId))
+            val (scheduleId, updatedAt) = repository.getSelectedScheduleId(user.id)
+            call.respond(HttpStatusCode.OK, ApiV1.Users.Me.SelectedSchedule.Response(scheduleId, updatedAt))
         }
 
         // PUT /users/me/selected-schedule
         authedPut<ApiV1.Users.Me.SelectedSchedule>(repository) { _, user ->
             val payload = call.receive<ApiV1.Users.Me.SelectedSchedule.Payload>()
-            repository.setSelectedScheduleId(user.id, payload.scheduleId)
+            repository.setSelectedScheduleId(user.id, payload.scheduleId, payload.updatedAt)
             call.respond(HttpStatusCode.NoContent)
         }
     }

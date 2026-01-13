@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
+import kotlin.time.Instant
 
 // TODO: Use persistent storage
 private val webSettings = MutableStateFlow(Settings())
@@ -53,7 +54,7 @@ class DataRepository : IDataRepository {
         )
     }
 
-    override suspend fun updateSelectedSchedule(id: Short) {
+    override suspend fun updateSelectedScheduleID(id: Short) {
         webSettings.tryEmit(
             webSettings.value.copy(
                 selectedScheduleID = id
@@ -61,19 +62,15 @@ class DataRepository : IDataRepository {
         )
     }
 
-    override suspend fun createSchedule(id: Short, schedule: Schedule) {
-        val currentSchedules = webSettings.value.schedules.toMutableMap().apply {
-            set(id, schedule)
-        }
+    override suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?) {
         webSettings.tryEmit(
             webSettings.value.copy(
-                schedules = currentSchedules,
-                selectedScheduleID = id
+                selectedScheduleUpdatedAt = updatedAt
             )
         )
     }
 
-    override suspend fun updateSchedule(id: Short, schedule: Schedule) {
+    override suspend fun upsertSchedule(id: Short, schedule: Schedule) {
         val currentSchedules = webSettings.value.schedules.toMutableMap().apply {
             set(id, schedule)
         }
@@ -84,7 +81,7 @@ class DataRepository : IDataRepository {
         )
     }
 
-    override suspend fun deleteSchedule(id: Short, permanently: Boolean) {
+    override suspend fun deleteSchedule(id: Short) {
         val currentSchedules = webSettings.value.schedules.toMutableMap().apply {
             remove(id)
         }
@@ -92,6 +89,14 @@ class DataRepository : IDataRepository {
             webSettings.value.copy(
                 schedules = currentSchedules,
                 selectedScheduleID = currentSchedules.keys.firstOrNull() ?: -1
+            )
+        )
+    }
+
+    override suspend fun updateSyncedAt(syncedAt: Instant?) {
+        webSettings.tryEmit(
+            webSettings.value.copy(
+                syncedAt = syncedAt
             )
         )
     }

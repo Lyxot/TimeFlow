@@ -49,7 +49,7 @@ fun Route.schedulesRoutes(repository: DataRepository) {
         }
 
         authedDelete<ApiV1.Schedules.ScheduleId>(repository) { resource, user ->
-            val wasDeleted = repository.deleteSchedule(user.id, resource.scheduleId, resource.permanent ?: false)
+            val wasDeleted = repository.deleteSchedule(user.id, resource.scheduleId)
             if (wasDeleted) {
                 call.respond(HttpStatusCode.NoContent)
             } else {

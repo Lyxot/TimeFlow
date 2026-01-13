@@ -10,6 +10,7 @@
 package xyz.hyli.timeflow.api.models
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -21,4 +22,10 @@ data class User(
     val authId: Uuid,
     val username: String,
     val email: String
+)
+
+@Serializable
+data class SelectedSchedule(
+    val scheduleId: Short?,
+    val updatedAt: Instant?
 )

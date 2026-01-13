@@ -104,6 +104,8 @@ components:
         termEndDate: { $ref: '#/components/schemas/Date' }
         lessonTimePeriodInfo: { $ref: '#/components/schemas/LessonTimePeriodInfo' }
         displayWeekends: { type: boolean }
+        createdAt: { type: string, format: date-time, description: "Timestamp when the schedule was created." }
+        updatedAt: { type: string, format: date-time, description: "Timestamp when the schedule was last updated." }
     ScheduleSummary:
       type: object
       properties:
@@ -112,15 +114,19 @@ components:
         deleted: { type: boolean }
         termStartDate: { $ref: '#/components/schemas/Date' }
         termEndDate: { $ref: '#/components/schemas/Date' }
+        createdAt: { type: string, format: date-time, description: "Timestamp when the schedule was created." }
+        updatedAt: { type: string, format: date-time, description: "Timestamp when the schedule was last updated." }
     # Selected Schedule Schemas
     SelectedScheduleResponse:
       type: object
       properties:
         scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the currently selected schedule, or null if none selected" }
+        updatedAt: { type: string, format: date-time, nullable: true, description: "Timestamp when the selected schedule was last updated, or null if never set" }
     SelectedScheduleRequest:
       type: object
       properties:
         scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the schedule to select, or null to clear selection" }
+        updatedAt: { type: string, format: date-time, nullable: true, description: "Timestamp when the selection was made" }
 
     # Auth Schemas
     VerificationCodeRequest:
@@ -162,28 +168,6 @@ components:
       type: object
       properties:
         exists: { type: boolean }
-
-    # Sync Schemas
-    SyncRequest:
-      type: object
-      properties:
-        lastSyncTimestamp: { type: string, format: date-time }
-        updates:
-          type: object
-          properties:
-            schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
-        deletes:
-          type: object
-          properties:
-            schedules: { type: array, items: { type: integer } }
-    SyncResponse:
-      type: object
-      properties:
-        newSyncTimestamp: { type: string, format: date-time }
-        changes:
-          type: object
-          properties:
-            schedules: { type: array, items: { $ref: '#/components/schemas/Schedule' } }
 
 # API Paths
 paths:
@@ -375,7 +359,8 @@ paths:
         '404': { description: Schedule not found }
     put:
       tags: [ Schedules ]
-      summary: Create or update a schedule
+      summary: Create or update a schedule (including soft delete)
+      description: Use this endpoint to create, update, or soft-delete a schedule by setting deleted=true
       security: [ { bearerAuth: [ ] } ]
       requestBody:
         required: true
@@ -387,16 +372,9 @@ paths:
         '401': { description: Unauthorized }
     delete:
       tags: [ Schedules ]
-      summary: Delete a schedule
+      summary: Permanently delete a schedule
+      description: Permanently deletes a schedule from the database. For soft delete, use PUT with deleted=true.
       security: [ { bearerAuth: [ ] } ]
-      parameters:
-        - name: permanent
-          in: query
-          description: If true, permanently delete the schedule from the database.
-          required: false
-          schema:
-            type: boolean
-            default: false
       responses:
         '204': { description: Schedule deleted successfully }
         '401': { description: Unauthorized }
@@ -467,19 +445,3 @@ paths:
         '401': { description: Unauthorized }
         '404': { description: Schedule or Course not found }
 
-  # Sync Endpoint
-  /sync:
-    post:
-      tags: [ Sync ]
-      summary: Perform a sync operation
-      security: [ { bearerAuth: [ ] } ]
-      requestBody:
-        required: true
-        content:
-          application/json: { schema: { $ref: '#/components/schemas/SyncRequest' } }
-      responses:
-        '200':
-          description: Sync successful
-          content:
-            application/json: { schema: { $ref: '#/components/schemas/SyncResponse' } }
-        '401': { description: Unauthorized }

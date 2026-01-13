@@ -15,6 +15,7 @@ import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.di.IDataRepository
+import kotlin.time.Instant
 
 class FakeDataRepository : IDataRepository {
     private val _settings = MutableStateFlow(Settings())
@@ -36,26 +37,28 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(themeColor = color)
     }
 
-    override suspend fun updateSelectedSchedule(id: Short) {
+    override suspend fun updateSelectedScheduleID(id: Short) {
         _settings.value = _settings.value.copy(selectedScheduleID = id)
     }
 
-    override suspend fun createSchedule(id: Short, schedule: Schedule) {
+    override suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?) {
+        _settings.value = _settings.value.copy(selectedScheduleUpdatedAt = updatedAt)
+    }
+
+    override suspend fun upsertSchedule(id: Short, schedule: Schedule) {
         val newMap = _settings.value.schedules.toMutableMap()
         newMap[id] = schedule
         _settings.value = _settings.value.copy(schedules = newMap)
     }
 
-    override suspend fun updateSchedule(id: Short, schedule: Schedule) {
-        val newMap = _settings.value.schedules.toMutableMap()
-        newMap[id] = schedule
-        _settings.value = _settings.value.copy(schedules = newMap)
-    }
-
-    override suspend fun deleteSchedule(id: Short, permanently: Boolean) {
+    override suspend fun deleteSchedule(id: Short) {
         val newMap = _settings.value.schedules.toMutableMap()
         newMap.remove(id)
         _settings.value = _settings.value.copy(schedules = newMap)
+    }
+
+    override suspend fun updateSyncedAt(syncedAt: Instant?) {
+        _settings.value = _settings.value.copy(syncedAt = syncedAt)
     }
 
     // Helper function for tests to manually set the settings

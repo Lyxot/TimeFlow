@@ -24,6 +24,7 @@ import xyz.hyli.timeflow.utils.InputValidation.truncateNote
 import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
 import xyz.hyli.timeflow.utils.InputValidation.truncateUsername
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -104,16 +105,26 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
-    override suspend fun getSelectedScheduleId(userId: Int): Short? = dbQuery {
-        val selectedId = UserEntity[userId].selectedScheduleId ?: return@dbQuery null
+    override suspend fun getSelectedScheduleId(userId: Int): Pair<Short?, Instant?> = dbQuery {
+        val userEntity = UserEntity[userId]
+        val selectedId = userEntity.selectedScheduleId
+        val updatedAt = userEntity.selectedScheduleUpdatedAt
 
         // Validate that the selected schedule exists and is not deleted
-        if (getScheduleEntity(userId, selectedId, false)?.schedule != null) selectedId else null
+        val validatedId = if (selectedId != null && getScheduleEntity(userId, selectedId, false)?.schedule != null) {
+            selectedId
+        } else {
+            null
+        }
+
+        Pair(validatedId, updatedAt)
     }
 
-    override suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?) {
+    override suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?, updatedAt: kotlin.time.Instant?) {
         dbQuery {
-            UserEntity[userId].selectedScheduleId = scheduleId
+            val userEntity = UserEntity[userId]
+            userEntity.selectedScheduleId = scheduleId
+            userEntity.selectedScheduleUpdatedAt = updatedAt
         }
     }
 
@@ -164,6 +175,8 @@ class ExposedDataRepository : DataRepository {
                     this.displayWeekends = schedule.displayWeekends
                     this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
                     this.deleted = schedule.deleted
+                    this.createdAt = schedule.createdAt
+                    this.updatedAt = schedule.updatedAt
                 } ?: ScheduleEntity.new {
                 // It does not exist, so create it
                 wasCreated = true
@@ -175,10 +188,17 @@ class ExposedDataRepository : DataRepository {
                 this.displayWeekends = schedule.displayWeekends
                 this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
                 this.deleted = schedule.deleted
+                this.createdAt = schedule.createdAt
+                this.updatedAt = schedule.updatedAt
             }
 
             // 2. Upsert courses using the helper function
             // If any course fails, the entire transaction will rollback
+            scheduleEntity.schedule.courses.keys.filter { it !in schedule.courses.keys }.forEach { courseLocalId ->
+                // Delete courses that are no longer present
+                getCourseEntity(scheduleEntity, courseLocalId)?.delete()
+            }
+            // Upsert or create courses
             schedule.courses.forEach { (courseLocalId, course) ->
                 upsertCourse(scheduleEntity, courseLocalId, course)
             }
@@ -190,19 +210,13 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
-    override suspend fun deleteSchedule(userId: Int, localId: Short, permanent: Boolean): Boolean = dbQuery {
+    override suspend fun deleteSchedule(userId: Int, localId: Short): Boolean = dbQuery {
         val scheduleEntity = ScheduleEntity.find {
             (SchedulesTable.userId eq userId) and (SchedulesTable.localId eq localId)
         }.singleOrNull()
 
         if (scheduleEntity != null) {
-            if (permanent) {
-                // Hard delete
-                scheduleEntity.delete()
-            } else {
-                // Soft delete
-                scheduleEntity.deleted = true
-            }
+            scheduleEntity.delete()
             true
         } else {
             false

@@ -34,6 +34,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var email by UsersTable.email
     var passwordHash by UsersTable.passwordHash
     var selectedScheduleId by UsersTable.selectedScheduleId
+    var selectedScheduleUpdatedAt by UsersTable.selectedScheduleUpdatedAt
 
 
     @OptIn(ExperimentalUuidApi::class)
@@ -71,6 +72,8 @@ class ScheduleEntity(id: EntityID<Long>) : LongEntity(id) {
     var displayWeekends by SchedulesTable.displayWeekends
     var lessonTimePeriodInfo by SchedulesTable.lessonTimePeriodInfo
     var deleted by SchedulesTable.deleted
+    var createdAt by SchedulesTable.createdAt
+    var updatedAt by SchedulesTable.updatedAt
 
     // 反向引用，获取属于此课程表的所有课程实体
     val courses by CourseEntity referrersOn CoursesTable.scheduleId
@@ -85,7 +88,9 @@ class ScheduleEntity(id: EntityID<Long>) : LongEntity(id) {
             termEndDate = Date(termEndDate),
             lessonTimePeriodInfo = lessonTimePeriodInfo,
             displayWeekends = displayWeekends,
-            deleted = deleted
+            deleted = deleted,
+            createdAt = createdAt,
+            updatedAt = updatedAt
         )
 }
 

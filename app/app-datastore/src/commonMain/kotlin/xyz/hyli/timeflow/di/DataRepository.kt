@@ -15,6 +15,7 @@ import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.datastore.SettingsDataStore
+import kotlin.time.Instant
 
 class DataRepository(
     private val settingsDataStore: SettingsDataStore,
@@ -37,19 +38,23 @@ class DataRepository(
         settingsDataStore.updateThemeColor(color)
     }
 
-    override suspend fun updateSelectedSchedule(id: Short) {
-        settingsDataStore.updateSelectedSchedule(id)
+    override suspend fun updateSelectedScheduleID(id: Short) {
+        settingsDataStore.updateSelectedScheduleID(id)
     }
 
-    override suspend fun createSchedule(id: Short, schedule: Schedule) {
-        settingsDataStore.createSchedule(id, schedule)
+    override suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?) {
+        settingsDataStore.updateSelectedScheduleUpdatedAt(updatedAt)
     }
 
-    override suspend fun updateSchedule(id: Short, schedule: Schedule) {
-        settingsDataStore.updateSchedule(id, schedule)
+    override suspend fun upsertSchedule(id: Short, schedule: Schedule) {
+        settingsDataStore.upsertSchedule(id, schedule)
     }
 
-    override suspend fun deleteSchedule(id: Short, permanently: Boolean) {
-        settingsDataStore.deleteSchedule(id, permanently)
+    override suspend fun deleteSchedule(id: Short) {
+        settingsDataStore.deleteSchedule(id)
+    }
+
+    override suspend fun updateSyncedAt(syncedAt: Instant?) {
+        settingsDataStore.updateSyncedAt(syncedAt)
     }
 }
