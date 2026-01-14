@@ -72,6 +72,10 @@ class ApiV1 {
             @Serializable
             data class Response(val exists: Boolean)
         }
+
+        @Serializable
+        @Resource("logout")
+        class Logout(val parent: Auth = Auth(), val all: Boolean? = null)
     }
 
     @Serializable

@@ -40,8 +40,9 @@ fun Application.configureSecurity(repository: DataRepository) {
                     .build()
             )
             validate { credential ->
-                if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.ACCESS.name &&
-                    credential.payload.getClaim("authId").asString() != ""
+                if (credential.payload.getClaim("type").asInt() == TokenManager.TokenType.ACCESS.ordinal &&
+                    credential.payload.getClaim("authId").asString() != "" &&
+                    credential.payload.getClaim("refreshJti").asString() != ""
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -63,7 +64,7 @@ fun Application.configureSecurity(repository: DataRepository) {
                 val authId = credential.payload.getClaim("authId").asString().toUuid()
                 val jti = credential.jwtId?.toUuid()
                 val user = repository.findUserByAuthId(authId)
-                if (credential.payload.getClaim("type").asString() == TokenManager.TokenType.REFRESH.name &&
+                if (credential.payload.getClaim("type").asInt() == TokenManager.TokenType.REFRESH.ordinal &&
                     user != null && jti != null && repository.isRefreshTokenValid(user.id, jti)
                 ) {
                     JWTPrincipal(credential.payload)
@@ -81,15 +82,18 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
     private val issuer = config.property("jwt.issuer").getString()
 
     enum class TokenType(val validityInMs: Long) {
-        ACCESS(3_600_000L * 12), // 12 hours
+        ACCESS(600_000L), // 10 minutes
         REFRESH(3_600_000L * 24 * 21) // 21 days
     }
 
     /**
      * Generates a JWT for the given user ID and token type.
+     * @param authId The user's authentication ID.
+     * @param type The type of token to generate (ACCESS or REFRESH).
+     * @param refreshJti For ACCESS tokens only: the JTI of the linked refresh token.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun generateToken(authId: Uuid, type: TokenType): Triple<String, Uuid, Instant> {
+    fun generateToken(authId: Uuid, type: TokenType, refreshJti: Uuid? = null): Triple<String, Uuid, Instant> {
         val jti = Uuid.generateV7()
         val expiresAt = Date(System.currentTimeMillis() + type.validityInMs).toInstant()
         val token = JWT.create()
@@ -97,8 +101,17 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
             .withIssuer(issuer)
             .withJWTId(jti.toString())
             .withClaim("authId", authId.toString())
-            .withClaim("type", type.name)
+            .withClaim("type", type.ordinal)
             .withExpiresAt(expiresAt)
+            .apply {
+                if (type == TokenType.ACCESS) {
+                    if (refreshJti == null) {
+                        throw IllegalArgumentException("refreshJti must be provided for ACCESS tokens")
+                    } else {
+                        withClaim("refreshJti", refreshJti.toString())
+                    }
+                }
+            }
             .sign(Algorithm.HMAC256(secret))
         return Triple(token, jti, expiresAt)
     }

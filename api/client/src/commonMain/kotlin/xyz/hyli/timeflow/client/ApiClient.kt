@@ -22,6 +22,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.serialization.kotlinx.protobuf.*
@@ -130,7 +131,7 @@ class ApiClient(
             .apply {
                 if (status == HttpStatusCode.OK) {
                     val response = body<ApiV1.Auth.Login.Response>()
-                    setTokens(BearerTokens(response.accessToken, response.refreshToken))
+                    setTokens(response)
                 }
             }
 
@@ -149,13 +150,15 @@ class ApiClient(
         }.apply {
             if (status == HttpStatusCode.OK) {
                 val response = body<ApiV1.Auth.Refresh.Response>()
-                setTokens(BearerTokens(response.accessToken, response.refreshToken))
+                setTokens(response)
             }
         }
 
-    private fun setTokens(tokens: BearerTokens) {
+    private fun setTokens(tokens: ApiV1.Auth.Login.Response) {
         tokenManager.setAccessToken(tokens.accessToken)
-        tokens.refreshToken?.let { tokenManager.setRefreshToken(it) }
+        if (tokens.refreshToken != null && tokens.refreshTokenExpiresAt != null) {
+            tokenManager.setRefreshToken(tokens.refreshToken!!, tokens.refreshTokenExpiresAt!!)
+        }
     }
 
     private inline fun <reified T> payloadBuilder(payload: T): HttpRequestBuilder.() -> Unit = {
@@ -163,11 +166,13 @@ class ApiClient(
         setBody(payload)
     }
 
-    suspend fun logout() {
+    suspend fun logout(all: Boolean? = null): HttpResponse? {
+        var response: HttpResponse? = null
         if (!tokenManager.isRefreshTokenExpired()) {
-            TODO("Inform the server to invalidate the refresh token")
+            response = authenticatedClient.post(ApiV1.Auth.Logout(all = all))
         }
         tokenManager.clearTokens()
+        return response
     }
 
     suspend fun me() = authenticatedClient.get(ApiV1.Users.Me())

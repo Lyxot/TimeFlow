@@ -24,6 +24,9 @@ import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.toUuid
+import kotlin.collections.mapOf
+import kotlin.text.toCharArray
+import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -101,18 +104,28 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             // Verify password using Argon2
             if (argon2.verify(storedHash, payload.password.toCharArray())) {
                 // Password is correct, generate tokens
-                val (accessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
-                val (refreshToken, jti, expiresAt) = tokenManager.generateToken(
+                // Generate refresh token first to get its JTI
+                val (refreshToken, refreshJti, expiresAt) = tokenManager.generateToken(
                     user.authId,
                     TokenManager.TokenType.REFRESH
                 )
 
                 // Save the refresh token's JTI to the database
-                repository.addRefreshToken(user.id, jti, expiresAt)
+                repository.addRefreshToken(user.id, refreshJti, expiresAt)
+                // Generate access token with linked refreshJti
+                val (accessToken, _, _) = tokenManager.generateToken(
+                    user.authId,
+                    TokenManager.TokenType.ACCESS,
+                    refreshJti
+                )
 
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiV1.Auth.Login.Response(accessToken = accessToken, refreshToken = refreshToken)
+                    ApiV1.Auth.Login.Response(
+                        accessToken = accessToken,
+                        refreshToken = refreshToken,
+                        refreshTokenExpiresAt = expiresAt.toKotlinInstant()
+                    )
                 )
             } else {
                 // Password is incorrect
@@ -129,21 +142,30 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
                 val user = repository.findUserByAuthId(authId)!!
                 val jti = principal.jwtId!!.toUuid()
 
-                val (newAccessToken, _, _) = tokenManager.generateToken(user.authId, TokenManager.TokenType.ACCESS)
-                val newRefreshToken = if (request.rotate == true) {
-                    // Generate new one and save it
+                val (newRefreshToken, activeRefreshJti, refreshExpiresAt) = if (request.rotate == true) {
+                    // Generate new refresh token and save it
                     val (newRefreshTokenString, newJti, expiresAt) = tokenManager.generateToken(
                         authId,
                         TokenManager.TokenType.REFRESH
                     )
                     repository.addRefreshToken(user.id, newJti, expiresAt)
                     repository.revokeRefreshToken(jti)
-                    newRefreshTokenString
+                    Triple(newRefreshTokenString, newJti, expiresAt.toKotlinInstant())
                 } else {
-                    null
+                    Triple(null, jti, null)
                 }
+                // Generate access token linked to the active refresh token
+                val (newAccessToken, _, _) = tokenManager.generateToken(
+                    user.authId,
+                    TokenManager.TokenType.ACCESS,
+                    activeRefreshJti
+                )
 
-                val response = ApiV1.Auth.Refresh.Response(accessToken = newAccessToken, refreshToken = newRefreshToken)
+                val response = ApiV1.Auth.Refresh.Response(
+                    accessToken = newAccessToken,
+                    refreshToken = newRefreshToken,
+                    refreshTokenExpiresAt = refreshExpiresAt
+                )
                 call.respond(HttpStatusCode.OK, response)
             }
         }
@@ -166,6 +188,27 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             } else {
                 call.respond(HttpStatusCode.Accepted)
             }
+        }
+    }
+
+    // Route protected by ACCESS token validation
+    authenticate("access-auth") {
+        // POST /api/v1/auth/logout
+        post<ApiV1.Auth.Logout> { request ->
+            val principal = call.principal<JWTPrincipal>()!!
+
+            if (request.all == true) {
+                val authId = principal.payload.getClaim("authId").asString().toUuid()
+                val user = repository.findUserByAuthId(authId)!!
+                repository.revokeAllRefreshTokens(user.id)
+            } else {
+                val refreshJti = principal.payload.getClaim("refreshJti").asString()?.toUuid()
+                if (refreshJti != null) {
+                    repository.revokeRefreshToken(refreshJti)
+                }
+            }
+
+            call.respond(HttpStatusCode.OK)
         }
     }
 }

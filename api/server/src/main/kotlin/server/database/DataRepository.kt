@@ -76,6 +76,12 @@ interface DataRepository {
     suspend fun revokeRefreshToken(jti: Uuid)
 
     /**
+     * Revokes all refresh tokens for a user.
+     * @param userId The ID of the user whose tokens should be revoked.
+     */
+    suspend fun revokeAllRefreshTokens(userId: Int)
+
+    /**
      * Gets the selected schedule ID and its update timestamp for a user.
      * Validates that the schedule exists and is not deleted.
      * @param userId The ID of the user.

@@ -509,6 +509,64 @@ class ApplicationTest {
             client.me().apply {
                 assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Auto refresh access token should succeed")
             }
+
+            // --- Logout API Tests ---
+
+            /**
+             * Test: POST /auth/logout (Single device)
+             * Logs out the current device by revoking its refresh token.
+             */
+            client.logout()?.apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/logout] Should return 200 OK")
+            }
+
+            /**
+             * Test: Verify logout invalidates refresh token
+             * After logout, the refresh token should be invalid and cannot be used to get a new access token.
+             */
+            client.refresh(false).apply {
+                assertEquals(
+                    HttpStatusCode.Unauthorized,
+                    status,
+                    "[POST /auth/refresh] After logout should be Unauthorized"
+                )
+            }
+
+            /**
+             * Test: Login again for logout all test
+             * Re-login to get new tokens.
+             */
+            client.login(ApiV1.Auth.Login.Payload(email = "test@test.com", password = "password")).apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/login] Re-login should be OK")
+            }
+
+            /**
+             * Test: Verify logged in
+             * Confirm user is logged in.
+             */
+            client.me().apply {
+                assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Should be accessible after re-login")
+            }
+
+            /**
+             * Test: POST /auth/logout?all=true
+             * Logs out all devices by revoking all refresh tokens for the user.
+             */
+            client.logout(all = true)?.apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/logout?all=true] Should return 200 OK")
+            }
+
+            /**
+             * Test: Verify logout all invalidates refresh token
+             * After logout all, the refresh token should be invalid.
+             */
+            client.refresh(false).apply {
+                assertEquals(
+                    HttpStatusCode.Unauthorized,
+                    status,
+                    "[POST /auth/refresh] After logout all should be Unauthorized"
+                )
+            }
         }
     }
 }

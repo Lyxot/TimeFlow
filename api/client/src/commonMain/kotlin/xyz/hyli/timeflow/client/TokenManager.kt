@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -9,11 +9,13 @@
 
 package xyz.hyli.timeflow.client
 
+import kotlin.time.Instant
+
 interface TokenManager {
     fun getAccessToken(): String
     fun getRefreshToken(): String
     fun setAccessToken(accessToken: String)
-    fun setRefreshToken(refreshToken: String)
+    fun setRefreshToken(refreshToken: String, expiresAt: Instant)
 
     /**
      * 是否需要轮换refresh token

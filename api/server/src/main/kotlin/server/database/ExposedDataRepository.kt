@@ -105,6 +105,14 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
+    override suspend fun revokeAllRefreshTokens(userId: Int) {
+        dbQuery {
+            RefreshTokenEntity
+                .find { RefreshTokensTable.userId eq userId }
+                .forEach { it.delete() }
+        }
+    }
+
     override suspend fun getSelectedScheduleId(userId: Int): SelectedSchedule = dbQuery {
         val userEntity = UserEntity[userId]
         val selectedId = userEntity.selectedScheduleId
