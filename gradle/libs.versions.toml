@@ -24,7 +24,7 @@ ksp = "2.3.4"
 material3 = "1.11.0-alpha01"
 material3-adaptive = "1.2.0"
 material-icons-extended = "1.7.3"
-material-kolor = "4.0.5"
+material-kolor = "4.1.0"
 
 [libraries]
 aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibraries" }
