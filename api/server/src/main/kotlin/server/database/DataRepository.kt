@@ -9,6 +9,7 @@
 
 package xyz.hyli.timeflow.server.database
 
+import xyz.hyli.timeflow.api.models.SelectedSchedule
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.CourseSummary
@@ -78,9 +79,9 @@ interface DataRepository {
      * Gets the selected schedule ID and its update timestamp for a user.
      * Validates that the schedule exists and is not deleted.
      * @param userId The ID of the user.
-     * @return A Pair of (scheduleId, updatedAt), both nullable. ScheduleId is null if not set, doesn't exist, or is deleted.
+     * @return [SelectedSchedule]. ScheduleId is null if not set, doesn't exist, or is deleted.
      */
-    suspend fun getSelectedScheduleId(userId: Int): Pair<Short?, kotlin.time.Instant?>
+    suspend fun getSelectedScheduleId(userId: Int): SelectedSchedule
 
     /**
      * Sets the selected schedule ID for a user.

@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.server.database
 
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import xyz.hyli.timeflow.api.models.SelectedSchedule
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.CourseSummary
@@ -24,7 +25,6 @@ import xyz.hyli.timeflow.utils.InputValidation.truncateNote
 import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
 import xyz.hyli.timeflow.utils.InputValidation.truncateUsername
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -105,7 +105,7 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
-    override suspend fun getSelectedScheduleId(userId: Int): Pair<Short?, Instant?> = dbQuery {
+    override suspend fun getSelectedScheduleId(userId: Int): SelectedSchedule = dbQuery {
         val userEntity = UserEntity[userId]
         val selectedId = userEntity.selectedScheduleId
         val updatedAt = userEntity.selectedScheduleUpdatedAt
@@ -117,7 +117,7 @@ class ExposedDataRepository : DataRepository {
             null
         }
 
-        Pair(validatedId, updatedAt)
+        SelectedSchedule(validatedId, updatedAt)
     }
 
     override suspend fun setSelectedScheduleId(userId: Int, scheduleId: Short?, updatedAt: kotlin.time.Instant?) {

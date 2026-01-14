@@ -27,8 +27,7 @@ fun Route.usersRoutes(repository: DataRepository) {
 
         // GET /users/me/selected-schedule
         authedGet<ApiV1.Users.Me.SelectedSchedule>(repository) { _, user ->
-            val (scheduleId, updatedAt) = repository.getSelectedScheduleId(user.id)
-            call.respond(HttpStatusCode.OK, ApiV1.Users.Me.SelectedSchedule.Response(scheduleId, updatedAt))
+            call.respond(HttpStatusCode.OK, repository.getSelectedScheduleId(user.id))
         }
 
         // PUT /users/me/selected-schedule

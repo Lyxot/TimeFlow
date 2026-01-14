@@ -14,6 +14,9 @@ import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@Serializable
+data class Tokens(val accessToken: String, val refreshToken: String? = null)
+
 // 这个 data class 作为 Service 和 Repository 之间传输用户数据的标准模型
 @OptIn(ExperimentalUuidApi::class)
 @Serializable

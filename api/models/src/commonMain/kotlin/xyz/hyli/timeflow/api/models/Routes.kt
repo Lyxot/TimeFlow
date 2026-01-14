@@ -57,13 +57,13 @@ class ApiV1 {
         class Login(val parent: Auth = Auth()) {
             @Serializable
             data class Payload(val email: String, val password: String)
-            typealias Response = TokenResponse
+            typealias Response = Tokens
         }
 
         @Serializable
         @Resource("refresh")
         class Refresh(val parent: Auth = Auth(), val rotate: Boolean? = false) {
-            typealias Response = TokenResponse
+            typealias Response = Tokens
         }
 
         @Serializable
