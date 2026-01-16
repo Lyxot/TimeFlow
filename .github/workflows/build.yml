@@ -36,7 +36,7 @@ jobs:
       - name: Run ${{ matrix.name }} tests
         run: ${{ matrix.task }}
 
-  build:
+  build-app:
     strategy:
       fail-fast: false
       matrix:
@@ -113,4 +113,45 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: builder/build/artifacts/release/${{ matrix.name }}/*
-    
+
+  build-server:
+    runs-on: ubuntu-24.04-arm
+    needs: build-app
+    name: Build server
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Download wasmJs artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: wasmJs
+          path: builder/build/artifacts/release/wasmJs
+
+      - name: Download js artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: js
+          path: builder/build/artifacts/release/js
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ./gradlew :api:server:buildFatJar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: server
+          path: api/server/build/libs/*.jar

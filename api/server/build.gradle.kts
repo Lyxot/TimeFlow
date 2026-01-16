@@ -7,6 +7,8 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+import xyz.hyli.timeflow.buildsrc.Target
+
 plugins {
     kotlin("jvm")
     alias(libs.plugins.kotlinx.serialization)
@@ -24,6 +26,14 @@ application {
 //            "-XX:+ZGenerational",
         "-XX:SoftMaxHeapSize=512m",
     )
+    applicationName = Target.APP_NAME
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set(Target.Server.artifactName)
+    }
+
 }
 
 dependencies {

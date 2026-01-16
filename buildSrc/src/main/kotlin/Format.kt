@@ -36,4 +36,8 @@ sealed class Format {
     object Zip : Format() {
         override val suffix: String = "zip"
     }
+
+    object Jar : Format() {
+        override val suffix: String = "jar"
+    }
 }
