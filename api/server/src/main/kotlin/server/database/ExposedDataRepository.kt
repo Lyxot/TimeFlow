@@ -25,6 +25,7 @@ import xyz.hyli.timeflow.utils.InputValidation.truncateNote
 import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
 import xyz.hyli.timeflow.utils.InputValidation.truncateUsername
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -109,6 +110,51 @@ class ExposedDataRepository : DataRepository {
         dbQuery {
             RefreshTokenEntity
                 .find { RefreshTokensTable.userId eq userId }
+                .forEach { it.delete() }
+        }
+    }
+
+    override suspend fun createVerificationCode(email: String, code: String, expiresAt: kotlin.time.Instant): Boolean =
+        dbQuery {
+            val now = Clock.System.now()
+            val oneMinuteAgo = now - 1.minutes
+
+            // Check if there's a recent code (sent less than 1 minute ago)
+            val existingCode = VerificationCodeEntity
+                .find { VerificationCodesTable.email eq email }
+
+            if (existingCode.empty() && existingCode.any { it.createdAt > oneMinuteAgo }) {
+                // Rate limited - code was sent less than 1 minute ago
+                false
+            } else {
+                // Delete any existing codes for this email
+                existingCode.forEach {
+                    it.delete()
+                }
+
+                // Create new verification code
+                VerificationCodeEntity.new {
+                    this.email = email
+                    this.code = code
+                    this.expiresAt = expiresAt
+                    this.createdAt = now
+                }
+                true
+            }
+        }
+
+    override suspend fun validateVerificationCode(email: String, code: String): Boolean = dbQuery {
+        val entity = VerificationCodeEntity
+            .find { (VerificationCodesTable.email eq email) and (VerificationCodesTable.code eq code) }
+            .firstOrNull()
+
+        entity != null && entity.expiresAt > Clock.System.now()
+    }
+
+    override suspend fun deleteVerificationCodes(email: String) {
+        dbQuery {
+            VerificationCodeEntity
+                .find { VerificationCodesTable.email eq email }
                 .forEach { it.delete() }
         }
     }

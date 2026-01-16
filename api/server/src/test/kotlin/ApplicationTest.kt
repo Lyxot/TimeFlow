@@ -19,6 +19,7 @@ import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.api.models.Version
 import xyz.hyli.timeflow.client.ApiClient
 import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.server.EmailService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,7 +31,7 @@ class ApplicationTest {
         environment {
             config = ApplicationConfig("application.yaml").mergeWith(
                 MapApplicationConfig(
-                    "postgres.embedded" to "true"
+                    "testing" to "true"
                 )
             )
         }
@@ -92,11 +93,30 @@ class ApplicationTest {
              * Test: POST /auth/send-verification-code
              * Checks if the server accepts a request to send a verification code.
              */
-            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "1@2.com")).apply {
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
                 assertEquals(
                     HttpStatusCode.Accepted,
                     status,
                     "[POST /auth/send-verification-code] Status should be Accepted"
+                )
+            }
+
+            /**
+             * Test: POST /auth/register (Invalid verification code)
+             * Checks if registration fails with an invalid verification code.
+             */
+            client.register(
+                ApiV1.Auth.Register.Payload(
+                    username = "testuser",
+                    email = "test@test.com",
+                    password = "password",
+                    code = "000000"  // Wrong code
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/register] Invalid verification code should return 400 Bad Request"
                 )
             }
 
@@ -109,7 +129,7 @@ class ApplicationTest {
                     username = "testuser",
                     email = "test@test.com",
                     password = "password",
-                    code = "000000"
+                    code = EmailService.TESTING_VERIFICATION_CODE
                 )
             ).apply {
                 assertEquals(HttpStatusCode.Created, status, "[POST /auth/register] Status should be Created")
@@ -144,6 +164,30 @@ class ApplicationTest {
                 val message = "[GET /auth/check-email] Existing email"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertEquals(true, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be true")
+            }
+
+            /**
+             * Test: POST /auth/send-verification-code (Existing user)
+             * Checks if sending verification code for an existing user returns conflict error.
+             */
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
+                assertEquals(
+                    HttpStatusCode.Conflict,
+                    status,
+                    "[POST /auth/send-verification-code] Existing user should return 409 Conflict"
+                )
+            }
+
+            /**
+             * Test: POST /auth/send-verification-code (Rate limiting)
+             * Checks if sending verification code twice within 1 minute is rate limited.
+             */
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
+                assertEquals(
+                    HttpStatusCode.TooManyRequests,
+                    status,
+                    "[POST /auth/send-verification-code] Rate limiting should return 429 Too Many Requests"
+                )
             }
 
             /**

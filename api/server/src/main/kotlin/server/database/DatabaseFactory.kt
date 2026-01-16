@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.server.database
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.ktor.server.config.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -22,10 +23,11 @@ object DatabaseFactory {
     /**
      * 初始化数据库连接。
      * 此方法应在 Ktor 应用启动时调用。
-     * @param testing 如果为 true，则使用 H2 内存数据库进行测试；否则，使用配置文件中的 PostgreSQL。
      * @param config Ktor 的应用配置，用于读取生产数据库的连接参数。
      */
-    fun init(testing: Boolean = false, config: io.ktor.server.config.ApplicationConfig) {
+    fun init(config: ApplicationConfig) {
+        // testing 如果为 true，则使用 H2 内存数据库进行测试；否则，使用配置文件中的 PostgreSQL。
+        val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
         val db = if (testing) {
             Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         } else {
@@ -40,6 +42,7 @@ object DatabaseFactory {
             SchemaUtils.create(
                 UsersTable,
                 RefreshTokensTable,
+                VerificationCodesTable,
                 SchedulesTable,
                 CoursesTable,
             )

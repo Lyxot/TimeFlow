@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Lyxot and contributors.
+ * Copyright (c) 2025-2026 Lyxot and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -19,16 +19,19 @@ fun Application.configureAdministration() {
     routing {
         route("/") {
             install(RateLimit) {
+                val testing = environment.config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
                 global {
                     rateLimiter(limit = 100, refillPeriod = 10.seconds)
                 }
                 // limiter for login/register
                 register(RateLimitName("login")) {
-                    rateLimiter(limit = 6, refillPeriod = 1.minutes)
+                    val limit = if (testing) 12 else 6
+                    rateLimiter(limit = limit, refillPeriod = 1.minutes)
                 }
                 // limiter for email verification code sending
                 register(RateLimitName("send_verification_code")) {
-                    rateLimiter(limit = 1, refillPeriod = 1.minutes)
+                    val limit = if (testing) 2 else 1
+                    rateLimiter(limit = limit, refillPeriod = 1.minutes)
                 }
             }
         }

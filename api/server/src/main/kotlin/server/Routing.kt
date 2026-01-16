@@ -18,10 +18,11 @@ import xyz.hyli.timeflow.server.routes.*
 fun Application.configureRouting(repository: DataRepository) {
     install(Resources)
     val tokenManager = TokenManager(environment.config)
+    val emailService = EmailService(environment.config)
 
     routing {
         utilRoutes()
-        authRoutes(tokenManager, repository)
+        authRoutes(tokenManager, repository, emailService)
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)

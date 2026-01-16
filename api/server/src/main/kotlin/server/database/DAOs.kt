@@ -59,6 +59,18 @@ class RefreshTokenEntity(id: EntityID<Long>) : LongEntity(id) {
 }
 
 /**
+ * 与 VerificationCodesTable 对应的 DAO 实体。
+ */
+class VerificationCodeEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<VerificationCodeEntity>(VerificationCodesTable)
+
+    var email by VerificationCodesTable.email
+    var code by VerificationCodesTable.code
+    var expiresAt by VerificationCodesTable.expiresAt
+    var createdAt by VerificationCodesTable.createdAt
+}
+
+/**
  * 与 SchedulesTable 对应的 DAO 实体。
  */
 class ScheduleEntity(id: EntityID<Long>) : LongEntity(id) {

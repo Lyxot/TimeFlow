@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.exposed.kotlin.datetime)
     implementation(libs.h2)
     implementation(libs.hikaricp)
+    implementation(libs.jakarta.mail)
     implementation(libs.koog.ktor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.protobuf)

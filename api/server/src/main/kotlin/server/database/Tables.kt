@@ -49,6 +49,16 @@ object RefreshTokensTable : LongIdTable("refresh_tokens") {
 }
 
 /**
+ * 验证码表
+ */
+object VerificationCodesTable : IntIdTable("verification_codes") {
+    val email = varchar("email", InputValidation.MAX_EMAIL_LENGTH).index()
+    val code = varchar("code", 6)
+    val expiresAt = timestamp("expires_at")
+    val createdAt = timestamp("created_at")
+}
+
+/**
  * 课程表主表
  */
 object SchedulesTable : LongIdTable("schedules") {

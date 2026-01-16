@@ -20,10 +20,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    // 从配置中读取 `embedded` 标志来决定使用哪个数据库
-    // 如果在测试中运行，可以设置 embedded=true 来使用 H2 内存数据库
-    val embedded = environment.config.propertyOrNull("postgres.embedded")?.getString()?.toBoolean() ?: false
-    DatabaseFactory.init(testing = embedded, config = environment.config)
+    DatabaseFactory.init(config = environment.config)
     val repository = ExposedDataRepository()
 
     configureHTTP()

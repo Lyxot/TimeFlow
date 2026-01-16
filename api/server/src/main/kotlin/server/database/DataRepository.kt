@@ -82,6 +82,31 @@ interface DataRepository {
     suspend fun revokeAllRefreshTokens(userId: Int)
 
     /**
+     * Creates a verification code for an email address if rate limit allows.
+     * Checks if the last verification code was sent at least 1 minute ago.
+     * @param email The email address to send the code to.
+     * @param code The 6-digit verification code.
+     * @param expiresAt The expiration timestamp of the code.
+     * @return True if the code was created, false if rate limited (last code sent less than 1 minute ago).
+     */
+    suspend fun createVerificationCode(email: String, code: String, expiresAt: kotlin.time.Instant): Boolean
+
+    /**
+     * Validates a verification code for an email address.
+     * @param email The email address.
+     * @param code The verification code to validate.
+     * @return True if the code is valid and not expired, false otherwise.
+     */
+    suspend fun validateVerificationCode(email: String, code: String): Boolean
+
+    /**
+     * Deletes all verification codes for an email address.
+     * Should be called after successful registration.
+     * @param email The email address.
+     */
+    suspend fun deleteVerificationCodes(email: String)
+
+    /**
      * Gets the selected schedule ID and its update timestamp for a user.
      * Validates that the schedule exists and is not deleted.
      * @param userId The ID of the user.

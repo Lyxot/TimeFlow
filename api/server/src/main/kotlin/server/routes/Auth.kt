@@ -20,12 +20,15 @@ import io.ktor.server.resources.post
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.server.EmailService
 import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.toUuid
 import kotlin.collections.mapOf
 import kotlin.text.toCharArray
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -33,7 +36,7 @@ import kotlin.uuid.Uuid
 private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
 
 @OptIn(ExperimentalUuidApi::class)
-fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
+fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, emailService: EmailService) {
 
     rateLimit(RateLimitName("login")) {
         // GET /api/v1/auth/check-email
@@ -71,7 +74,11 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
                 return@post
             }
 
-            // TODO: 3. Validate the verification code `payload.code`.
+            // 3. Validate the verification code
+            if (!repository.validateVerificationCode(payload.email, payload.code)) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired verification code."))
+                return@post
+            }
 
             // 4. Hash the password with Argon2
             val passwordHash = argon2.hash(10, 65536, 1, payload.password.toCharArray())
@@ -79,6 +86,9 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
             // 5. Create a unique authId and save the new user
             val authId = Uuid.generateV7()
             repository.createUser(authId, payload.username, payload.email, passwordHash)
+
+            // 6. Delete the verification code after successful registration
+            repository.deleteVerificationCodes(payload.email)
 
             call.respond(HttpStatusCode.Created, mapOf("message" to "User created successfully"))
         }
@@ -175,6 +185,7 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
     rateLimit(RateLimitName("send_verification_code")) {
         post<ApiV1.Auth.SendVerificationCode> { _ ->
             val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
+            // TODO: add CAPTCHA verification here (Cloudflare Turnstile)
 
             // Validate email format
             InputValidation.validateEmail(payload.email)?.let { error ->
@@ -182,11 +193,28 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository) {
                 return@post
             }
 
-            // TODO: Implement real email sending logic.
+            // Check if user with this email already exists
             if (repository.findUserByEmail(payload.email) != null) {
                 call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
-            } else {
+                return@post
+            }
+
+            // Generate and store verification code (with 1-minute rate limit)
+            val code = emailService.generateCode()
+            val expiresAt = Clock.System.now() + emailService.codeExpirationMinutes.minutes
+            val created = repository.createVerificationCode(payload.email, code, expiresAt)
+
+            if (!created) {
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "Please wait 1 minute before requesting a new code."))
+                return@post
+            }
+
+            // Send verification email
+            try {
+                emailService.sendVerificationCode(payload.email, code)
                 call.respond(HttpStatusCode.Accepted)
+            } catch (_: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send verification email."))
             }
         }
     }
