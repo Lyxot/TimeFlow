@@ -71,3 +71,62 @@ dependencies {
     testImplementation(ktorLibs.server.testHost)
     testImplementation(project(":api:client"))
 }
+
+val copyWebBuilds by tasks.registering {
+    description = "Copy web build zip files to server resources"
+    group = "build"
+
+    val resourcesStaticDir = file("src/main/resources/static")
+    val jsZipTarget = file("$resourcesStaticDir/app-js.zip")
+    val wasmJsZipTarget = file("$resourcesStaticDir/app-wasmJs.zip")
+    val jsArtifactDir = rootProject.file("builder/build/artifacts/release/js")
+    val wasmJsArtifactDir = rootProject.file("builder/build/artifacts/release/wasmJs")
+
+    outputs.files(jsZipTarget, wasmJsZipTarget)
+
+    // Check if builds are needed and add dependencies
+    val jsZipFiles = jsArtifactDir.listFiles { file -> file.extension == "zip" }
+    val wasmJsZipFiles = wasmJsArtifactDir.listFiles { file -> file.extension == "zip" }
+
+    if (jsZipFiles.isNullOrEmpty() && !jsZipTarget.exists()) {
+        dependsOn(":builder:buildJsReleaseZip")
+    }
+    if (wasmJsZipFiles.isNullOrEmpty() && !wasmJsZipTarget.exists()) {
+        dependsOn(":builder:buildWasmJsReleaseZip")
+    }
+
+    doLast {
+        // Ensure target directory exists
+        resourcesStaticDir.mkdirs()
+
+        // Copy app-js.zip if needed
+        if (!jsZipTarget.exists()) {
+            val jsFiles = jsArtifactDir.listFiles { file -> file.extension == "zip" }
+            if (!jsFiles.isNullOrEmpty()) {
+                jsFiles.first().copyTo(jsZipTarget, overwrite = true)
+                logger.lifecycle("Copied ${jsFiles.first().name} to app-js.zip")
+            } else {
+                logger.error("No JS zip file found in ${jsArtifactDir.absolutePath}")
+            }
+        } else {
+            logger.lifecycle("app-js.zip already exists, skipping")
+        }
+
+        // Copy app-wasmJs.zip if needed
+        if (!wasmJsZipTarget.exists()) {
+            val wasmFiles = wasmJsArtifactDir.listFiles { file -> file.extension == "zip" }
+            if (!wasmFiles.isNullOrEmpty()) {
+                wasmFiles.first().copyTo(wasmJsZipTarget, overwrite = true)
+                logger.lifecycle("Copied ${wasmFiles.first().name} to app-wasmJs.zip")
+            } else {
+                logger.error("No WasmJS zip file found in ${wasmJsArtifactDir.absolutePath}")
+            }
+        } else {
+            logger.lifecycle("app-wasmJs.zip already exists, skipping")
+        }
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn(copyWebBuilds)
+}
