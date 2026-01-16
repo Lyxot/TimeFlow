@@ -17,11 +17,15 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import okio.*
 import okio.Path.Companion.toPath
 import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.Instant
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
-    override val defaultValue = Settings()
+    override val defaultValue = Settings(
+        themeDynamicColor = currentPlatform().supportDynamicColor()
+    )
 
     override suspend fun readFrom(source: BufferedSource) =
         readSettingsFromByteArray(source.readByteArray()) ?: defaultValue
@@ -115,7 +119,7 @@ class SettingsDataStore(
 
     suspend fun reset() {
         db.updateData { _ ->
-            Settings()
+            SettingsProtobufSerializer.defaultValue
         }
     }
 }

@@ -38,10 +38,6 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(libs.filekit.core)
-            implementation(libs.korlibs.compression)
-        }
         webMain.dependencies {
             implementation(libs.kotlinx.browser)
         }

@@ -13,8 +13,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import xyz.hyli.timeflow.data.newShortId
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.supportDynamicColor
 import kotlin.time.Instant
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -35,7 +33,7 @@ data class Settings(
     /**
      * 是否启用动态取色，仅适用于 Android 12 及以上版本或 Windows
      */
-    @ProtoNumber(3) val themeDynamicColor: Boolean = currentPlatform().supportDynamicColor(),
+    @ProtoNumber(3) val themeDynamicColor: Boolean = false,
     /**
      * RGB 格式的主题颜色
      */

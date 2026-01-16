@@ -13,8 +13,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
-import xyz.hyli.timeflow.utils.gzipCompress
-import xyz.hyli.timeflow.utils.gzipDecompress
 
 /**
  * 通用的 ProtoBuf 反序列化函数，支持压缩和未压缩的数据
@@ -55,14 +53,3 @@ inline fun <reified T> T.toProtoBufByteArray(
         it
     }
 }
-
-fun readSettingsFromByteArray(bytes: ByteArray): Settings? {
-    return bytes.toProtoBufData<SettingsV2>(null)
-        ?: bytes.toProtoBufData<SettingsV1>(null)?.toV2()
-}
-
-fun readScheduleFromByteArray(bytes: ByteArray): Schedule? {
-    return bytes.toProtoBufData<ScheduleV2>(null)
-        ?: bytes.toProtoBufData<ScheduleV1>(null)?.toV2()
-}
-

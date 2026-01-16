@@ -41,6 +41,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":data"))
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.korlibs.compression)
             implementation(libs.kotlinx.serialization.protobuf)
         }
 

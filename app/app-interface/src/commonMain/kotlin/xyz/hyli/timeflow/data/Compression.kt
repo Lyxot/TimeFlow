@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.utils
+package xyz.hyli.timeflow.data
 
 import korlibs.io.compression.compress
 import korlibs.io.compression.deflate.GZIP
