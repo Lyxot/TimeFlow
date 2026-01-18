@@ -65,12 +65,9 @@ jobs:
           - name: windows-arm64
             runner: windows-11-arm
             task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe && ./gradlew.bat :builder:buildWindowsReleasePortable
-          - name: js
+          - name: webCompat
             runner: ubuntu-24.04-arm
-            task: ./gradlew :builder:buildJsReleaseZip
-          - name: wasmJs
-            runner: ubuntu-24.04-arm
-            task: ./gradlew :builder:buildWasmJsReleaseZip
+            task: ./gradlew :builder:buildWebCompatReleaseZip
 
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
@@ -123,17 +120,11 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Download wasmJs artifact
+      - name: Download webCompat artifact
         uses: actions/download-artifact@v6
         with:
-          name: wasmJs
-          path: builder/build/artifacts/release/wasmJs
-
-      - name: Download js artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: js
-          path: builder/build/artifacts/release/js
+          name: webCompat
+          path: builder/build/artifacts/release/webCompat
 
       - name: Validate Gradle Wrapper
         uses: gradle/actions/wrapper-validation@v5

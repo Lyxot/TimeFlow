@@ -21,7 +21,7 @@ internal fun extractResourceToTemp(resourcePath: String): Path {
     val inputStream = object {}.javaClass.getResourceAsStream(resourcePath)
         ?: throw IllegalArgumentException("Resource not found: $resourcePath")
 
-    val tempFile = Files.createTempFile("timeflow-", ".zip")
+    val tempFile = Files.createTempFile("timeflow-", resourcePath.substringAfterLast("."))
     tempFile.toFile().deleteOnExit()
 
     inputStream.use { input ->

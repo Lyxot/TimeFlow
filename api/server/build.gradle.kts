@@ -87,52 +87,37 @@ val copyWebBuilds by tasks.registering {
     group = "build"
 
     val resourcesStaticDir = file("src/main/resources/static")
-    val jsZipTarget = file("$resourcesStaticDir/app-js.zip")
-    val wasmJsZipTarget = file("$resourcesStaticDir/app-wasmJs.zip")
+    val appZipTarget = file("$resourcesStaticDir/app.zip")
     val jsArtifactDir = rootProject.file("builder/build/artifacts/release/js")
     val wasmJsArtifactDir = rootProject.file("builder/build/artifacts/release/wasmJs")
+    val webCompatArtifactDir = rootProject.file("builder/build/artifacts/release/webCompat")
 
-    outputs.files(jsZipTarget, wasmJsZipTarget)
+    outputs.files(appZipTarget)
 
     // Check if builds are needed and add dependencies
-    val jsZipFiles = jsArtifactDir.listFiles { file -> file.extension == "zip" }
-    val wasmJsZipFiles = wasmJsArtifactDir.listFiles { file -> file.extension == "zip" }
+    val webCompatZipFiles = webCompatArtifactDir.listFiles { file -> file.extension == "zip" }
 
-    if (jsZipFiles.isNullOrEmpty() && !jsZipTarget.exists()) {
-        dependsOn(":builder:buildJsReleaseZip")
-    }
-    if (wasmJsZipFiles.isNullOrEmpty() && !wasmJsZipTarget.exists()) {
-        dependsOn(":builder:buildWasmJsReleaseZip")
+    if (webCompatZipFiles.isNullOrEmpty() && !appZipTarget.exists()) {
+        dependsOn(":builder:buildWebCompatReleaseZip")
     }
 
     doLast {
         // Ensure target directory exists
         resourcesStaticDir.mkdirs()
 
-        // Copy app-js.zip if needed
-        if (!jsZipTarget.exists()) {
-            val jsFiles = jsArtifactDir.listFiles { file -> file.extension == "zip" }
-            if (!jsFiles.isNullOrEmpty()) {
-                jsFiles.first().copyTo(jsZipTarget, overwrite = true)
-                logger.lifecycle("Copied ${jsFiles.first().name} to app-js.zip")
-            } else {
-                logger.error("No JS zip file found in ${jsArtifactDir.absolutePath}")
+        // Copy app.zip if needed
+        if (!appZipTarget.exists()) {
+            listOf(webCompatArtifactDir, wasmJsArtifactDir, jsArtifactDir).forEach { dir ->
+                val zipFiles = dir.listFiles { file -> file.extension == "zip" }
+                if (!zipFiles.isNullOrEmpty()) {
+                    zipFiles.first().copyTo(appZipTarget, overwrite = true)
+                    logger.lifecycle("Copied ${zipFiles.first().name} to app.zip")
+                    return@doLast
+                }
             }
+            logger.error("No zip file found in ${webCompatArtifactDir.absolutePath} or ${jsArtifactDir.absolutePath} or ${wasmJsArtifactDir.absolutePath}")
         } else {
-            logger.lifecycle("app-js.zip already exists, skipping")
-        }
-
-        // Copy app-wasmJs.zip if needed
-        if (!wasmJsZipTarget.exists()) {
-            val wasmFiles = wasmJsArtifactDir.listFiles { file -> file.extension == "zip" }
-            if (!wasmFiles.isNullOrEmpty()) {
-                wasmFiles.first().copyTo(wasmJsZipTarget, overwrite = true)
-                logger.lifecycle("Copied ${wasmFiles.first().name} to app-wasmJs.zip")
-            } else {
-                logger.error("No WasmJS zip file found in ${wasmJsArtifactDir.absolutePath}")
-            }
-        } else {
-            logger.lifecycle("app-wasmJs.zip already exists, skipping")
+            logger.lifecycle("app.zip already exists, skipping")
         }
     }
 }

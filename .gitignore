@@ -18,4 +18,4 @@ Pods/
 !/kotlin-js-store/
 libraries.json
 /test
-/api/server/src/main/resources/static/app-*.zip
+/api/server/src/main/resources/static/app.zip

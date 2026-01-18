@@ -10,19 +10,22 @@
 package xyz.hyli.timeflow.server.routes
 
 import io.ktor.server.http.content.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.server.utils.extractResourceToTemp
 
 fun Route.appRoutes() {
-    staticResources("/app", "static") {
-        exclude { file -> file.path.endsWith(".zip") }
+    // Serve app
+    val appZipPath = extractResourceToTemp("/static/app.zip")
+    staticZip("/app/", "TimeFlow", appZipPath) {
+        enableAutoHeadResponse()
+        etag(ETagProvider.StrongSha256)
     }
 
-    // Serve wasmJs app
-    val wasmJsZipPath = extractResourceToTemp("/static/app-wasmJs.zip")
-    staticZip("/app-wasmJs", "TimeFlow", wasmJsZipPath)
-
-    // Serve JS app
-    val jsZipPath = extractResourceToTemp("/static/app-js.zip")
-    staticZip("/app-js", "TimeFlow", jsZipPath)
+    route("/app") {
+        // Redirect /app to /app/
+        handle {
+            call.respondRedirect("/app/")
+        }
+    }
 }
