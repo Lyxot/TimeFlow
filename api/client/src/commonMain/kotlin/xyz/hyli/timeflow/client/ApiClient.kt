@@ -141,6 +141,9 @@ class ApiClient(
     suspend fun checkEmail(email: String) =
         httpClient.get(ApiV1.Auth.CheckEmail(email = email))
 
+    suspend fun emailVerification() =
+        httpClient.get(ApiV1.Auth.EmailVerification())
+
     suspend fun sendVerificationCode(payload: ApiV1.Auth.SendVerificationCode.Payload) =
         httpClient.post(ApiV1.Auth.SendVerificationCode(), payloadBuilder(payload))
 

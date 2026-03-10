@@ -89,6 +89,12 @@ class ApplicationTest {
                 assertEquals(false, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be false")
             }
 
+            client.emailVerification().apply {
+                val message = "[GET /auth/email-verification]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(true, body<ApiV1.Auth.EmailVerification.Response>().enabled, "$message should be enabled")
+            }
+
             /**
              * Test: POST /auth/send-verification-code
              * Checks if the server accepts a request to send a verification code.
@@ -613,5 +619,69 @@ class ApplicationTest {
             }
         }
     }
-}
 
+    @Test
+    fun `test register without verification when disabled`() = testApplication {
+        environment {
+            config = ApplicationConfig("application.yaml").mergeWith(
+                MapApplicationConfig(
+                    "testing" to "true",
+                    "email.verificationEnabled" to "false"
+                )
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.emailVerification().apply {
+                assertEquals(
+                    HttpStatusCode.OK,
+                    status,
+                    "[GET /auth/email-verification] should succeed when email verification is disabled"
+                )
+                assertEquals(
+                    false,
+                    body<ApiV1.Auth.EmailVerification.Response>().enabled,
+                    "[GET /auth/email-verification] should report disabled"
+                )
+            }
+
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "novalidation@test.com"))
+                .apply {
+                    assertEquals(
+                        HttpStatusCode.BadRequest,
+                        status,
+                        "[POST /auth/send-verification-code] should be rejected when email verification is disabled"
+                    )
+                }
+
+            client.register(
+                ApiV1.Auth.Register.Payload(
+                    username = "noverify",
+                    email = "novalidation@test.com",
+                    password = "password",
+                    code = null
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.Created,
+                    status,
+                    "[POST /auth/register] should allow missing code when email verification is disabled"
+                )
+            }
+
+            client.login(ApiV1.Auth.Login.Payload(email = "novalidation@test.com", password = "password")).apply {
+                assertEquals(
+                    HttpStatusCode.OK,
+                    status,
+                    "[POST /auth/login] should work for a user registered without email verification"
+                )
+            }
+        }
+    }
+}

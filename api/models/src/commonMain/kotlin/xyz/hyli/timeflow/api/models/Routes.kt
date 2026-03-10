@@ -49,7 +49,12 @@ class ApiV1 {
         @Resource("register")
         class Register(val parent: Auth = Auth()) {
             @Serializable
-            data class Payload(val username: String, val email: String, val password: String, val code: String)
+            data class Payload(
+                val username: String,
+                val email: String,
+                val password: String,
+                val code: String? = null
+            )
         }
 
         @Serializable
@@ -71,6 +76,13 @@ class ApiV1 {
         class CheckEmail(val parent: Auth = Auth(), val email: String = "") {
             @Serializable
             data class Response(val exists: Boolean)
+        }
+
+        @Serializable
+        @Resource("email-verification")
+        class EmailVerification(val parent: Auth = Auth()) {
+            @Serializable
+            data class Response(val enabled: Boolean)
         }
 
         @Serializable

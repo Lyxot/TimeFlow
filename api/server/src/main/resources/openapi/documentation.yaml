@@ -136,12 +136,15 @@ components:
         email: { type: string, format: email }
     UserRegistrationRequest:
       type: object
-      required: [ username, email, password, code ]
+      required: [ username, email, password ]
       properties:
         username: { type: string }
         email: { type: string, format: email }
         password: { type: string, format: password }
-        code: { type: string, description: "The 6-digit verification code sent to the user's email." }
+        code:
+          type: string
+          nullable: true
+          description: "The 6-digit verification code sent to the user's email when email verification is enabled."
     UserLoginRequest:
       type: object
       required: [ email, password ]
@@ -168,6 +171,10 @@ components:
       type: object
       properties:
         exists: { type: boolean }
+    EmailVerificationResponse:
+      type: object
+      properties:
+        enabled: { type: boolean, description: "Whether email verification is enabled for registration." }
 
 # API Paths
 paths:
@@ -205,23 +212,34 @@ paths:
           content:
             application/json: { schema: { $ref: '#/components/schemas/CheckEmailResponse' } }
         '400': { description: Email parameter is missing or invalid }
+  /auth/email-verification:
+    get:
+      tags: [ Auth ]
+      summary: Get email verification availability
+      responses:
+        '200':
+          description: Returns whether email verification is enabled for registration.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/EmailVerificationResponse' } }
   /auth/send-verification-code:
     post:
       tags: [ Auth ]
       summary: Send a registration verification code
+      description: Available only when email verification is enabled in server configuration.
       requestBody:
         required: true
         content:
           application/json: { schema: { $ref: '#/components/schemas/VerificationCodeRequest' } }
       responses:
         '202': { description: Successfully accepted the request to send an email. }
-        '400': { description: The email format is invalid. }
+        '400': { description: The email format is invalid, or email verification is disabled. }
         '409': { description: The email address is already registered. }
         '429': { description: Too many requests. Please try again later. }
   /auth/register:
     post:
       tags: [ Auth ]
       summary: Register a new user
+      description: The verification `code` is required only when email verification is enabled in server configuration.
       requestBody:
         required: true
         content:
@@ -444,4 +462,3 @@ paths:
         '204': { description: Course deleted successfully }
         '401': { description: Unauthorized }
         '404': { description: Schedule or Course not found }
-

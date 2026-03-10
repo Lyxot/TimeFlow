@@ -19,6 +19,7 @@ postgres:
   user: username
   password: password
 email:
+  verificationEnabled: true
   host: "smtp.example.com"
   port: "465"
   username: "your-email@example.com"

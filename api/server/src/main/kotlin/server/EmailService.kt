@@ -19,6 +19,8 @@ import java.util.*
 
 class EmailService(private val config: ApplicationConfig) {
     private val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
+    val verificationEnabled =
+        config.propertyOrNull("email.verificationEnabled")?.getString()?.toBoolean() ?: true
     val codeExpirationMinutes = config.propertyOrNull("email.codeExpirationMinutes")?.getString()?.toInt() ?: 10
 
     private val session: Session by lazy {

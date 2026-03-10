@@ -26,6 +26,7 @@ import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.toUuid
 import kotlin.collections.mapOf
+import kotlin.text.isNullOrBlank
 import kotlin.text.toCharArray
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -37,8 +38,14 @@ private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, emailService: EmailService) {
+    val verificationEnabled = emailService.verificationEnabled
 
     rateLimit(RateLimitName("login")) {
+        // GET /api/v1/auth/email-verification
+        get<ApiV1.Auth.EmailVerification> {
+            call.respond(HttpStatusCode.OK, ApiV1.Auth.EmailVerification.Response(enabled = verificationEnabled))
+        }
+
         // GET /api/v1/auth/check-email
         get<ApiV1.Auth.CheckEmail> { request ->
             InputValidation.validateEmail(request.email)?.let { error ->
@@ -74,10 +81,17 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, ema
                 return@post
             }
 
-            // 3. Validate the verification code
-            if (!repository.validateVerificationCode(payload.email, payload.code)) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired verification code."))
-                return@post
+            // 3. Validate the verification code when email verification is enabled
+            if (verificationEnabled) {
+                val code = payload.code
+                if (code.isNullOrBlank()) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Verification code is required."))
+                    return@post
+                }
+                if (!repository.validateVerificationCode(payload.email, code)) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired verification code."))
+                    return@post
+                }
             }
 
             // 4. Hash the password with Argon2
@@ -186,6 +200,11 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, ema
         post<ApiV1.Auth.SendVerificationCode> { _ ->
             val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
             // TODO: add CAPTCHA verification here (Cloudflare Turnstile)
+
+            if (!verificationEnabled) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email verification is disabled."))
+                return@post
+            }
 
             // Validate email format
             InputValidation.validateEmail(payload.email)?.let { error ->
