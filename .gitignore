@@ -19,3 +19,4 @@ Pods/
 libraries.json
 /test
 /api/server/src/main/resources/static/app.zip
+*.pem

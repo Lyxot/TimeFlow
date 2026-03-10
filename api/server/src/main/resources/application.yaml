@@ -8,8 +8,12 @@ jwt:
   domain: "https://jwt-provider-domain/"
   audience: "jwt-audience"
   realm: "ktor sample app"
-  secret: "jwt-secret"
   issuer: "jwt-issuer"
+  # Generate keys with:
+  # openssl genpkey -algorithm RSA -out jwt-private.pem -pkeyopt rsa_keygen_bits:4096
+  # openssl rsa -pubout -in jwt-private.pem -out jwt-public.pem
+  privateKeyPath: "jwt-private.pem"
+  publicKeyPath: "jwt-public.pem"
 postgres:
   url: "jdbc:postgresql://localhost/default"
   user: username

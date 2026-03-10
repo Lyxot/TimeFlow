@@ -10,7 +10,6 @@
 package xyz.hyli.timeflow.server
 
 import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -23,8 +22,7 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 fun Application.configureSecurity(repository: DataRepository) {
-
-    val jwtSecret = environment.config.property("jwt.secret").getString()
+    val jwtKeys = JwtKeysLoader.load(environment.config)
     val jwtIssuer = environment.config.property("jwt.issuer").getString()
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
@@ -34,7 +32,7 @@ fun Application.configureSecurity(repository: DataRepository) {
         jwt("access-auth") {
             realm = jwtRealm
             verifier(
-                JWT.require(Algorithm.HMAC256(jwtSecret))
+                JWT.require(jwtKeys.algorithm)
                     .withAudience(jwtAudience)
                     .withIssuer(jwtIssuer)
                     .build()
@@ -55,7 +53,7 @@ fun Application.configureSecurity(repository: DataRepository) {
         jwt("refresh-auth") {
             realm = jwtRealm
             verifier(
-                JWT.require(Algorithm.HMAC256(jwtSecret))
+                JWT.require(jwtKeys.algorithm)
                     .withAudience(jwtAudience)
                     .withIssuer(jwtIssuer)
                     .build()
@@ -78,8 +76,8 @@ fun Application.configureSecurity(repository: DataRepository) {
 
 class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
     private val audience = config.property("jwt.audience").getString()
-    private val secret = config.property("jwt.secret").getString()
     private val issuer = config.property("jwt.issuer").getString()
+    private val jwtKeys = JwtKeysLoader.load(config)
 
     enum class TokenType(val validityInMs: Long) {
         ACCESS(600_000L), // 10 minutes
@@ -112,7 +110,7 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
                     }
                 }
             }
-            .sign(Algorithm.HMAC256(secret))
+            .sign(jwtKeys.algorithm)
         return Triple(token, jti, expiresAt)
     }
 }
