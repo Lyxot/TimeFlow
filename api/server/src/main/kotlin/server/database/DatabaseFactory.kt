@@ -14,6 +14,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.config.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
@@ -38,19 +39,32 @@ object DatabaseFactory {
             val password = config.property("postgres.password").getString()
             val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 3
             val url = "jdbc:postgresql://$host:$port/$database"
-            Database.connect(createHikariDataSource(url, user, password, maximumPoolSize))
+            val dataSource = createHikariDataSource(url, user, password, maximumPoolSize)
+            migratePostgres(dataSource)
+            Database.connect(dataSource)
         }
 
-        // 在一个事务中，创建所有数据表（如果它们不存在的话）
-        transaction(db) {
-            SchemaUtils.create(
-                UsersTable,
-                RefreshTokensTable,
-                VerificationCodesTable,
-                SchedulesTable,
-                CoursesTable,
-            )
+        // Tests still use an in-memory H2 database; bootstrap its schema directly.
+        if (testing) {
+            transaction(db) {
+                SchemaUtils.create(
+                    UsersTable,
+                    RefreshTokensTable,
+                    VerificationCodesTable,
+                    SchedulesTable,
+                    CoursesTable,
+                )
+            }
         }
+    }
+
+    private fun migratePostgres(dataSource: HikariDataSource) {
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/migration")
+            .baselineOnMigrate(true)
+            .load()
+            .migrate()
     }
 
     /**
