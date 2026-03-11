@@ -20,6 +20,7 @@ import xyz.hyli.timeflow.api.models.Version
 import xyz.hyli.timeflow.client.ApiClient
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.server.EmailService
+import xyz.hyli.timeflow.server.TurnstileService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -680,6 +681,102 @@ class ApplicationTest {
                     HttpStatusCode.OK,
                     status,
                     "[POST /auth/login] should work for a user registered without email verification"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code with turnstile enabled`() = testApplication {
+        environment {
+            config = ApplicationConfig("application.yaml").mergeWith(
+                MapApplicationConfig(
+                    "testing" to "true",
+                    "turnstile.enabled" to "true"
+                )
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(email = "turnstile@test.com")
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/send-verification-code] should require a Turnstile token when enabled"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code rejects invalid turnstile token`() = testApplication {
+        environment {
+            config = ApplicationConfig("application.yaml").mergeWith(
+                MapApplicationConfig(
+                    "testing" to "true",
+                    "turnstile.enabled" to "true"
+                )
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(
+                    email = "turnstile-invalid@test.com",
+                    turnstileToken = "invalid-token"
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/send-verification-code] should reject an invalid Turnstile token"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code accepts testing turnstile token`() = testApplication {
+        environment {
+            config = ApplicationConfig("application.yaml").mergeWith(
+                MapApplicationConfig(
+                    "testing" to "true",
+                    "turnstile.enabled" to "true"
+                )
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(
+                    email = "turnstile-success@test.com",
+                    turnstileToken = TurnstileService.TESTING_TOKEN
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.Accepted,
+                    status,
+                    "[POST /auth/send-verification-code] should accept the testing Turnstile token"
                 )
             }
         }

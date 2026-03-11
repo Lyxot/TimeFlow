@@ -134,6 +134,10 @@ components:
       required: [ email ]
       properties:
         email: { type: string, format: email }
+        turnstileToken:
+          type: string
+          nullable: true
+          description: "Required when Cloudflare Turnstile is enabled on the server."
     UserRegistrationRequest:
       type: object
       required: [ username, email, password ]
@@ -225,16 +229,17 @@ paths:
     post:
       tags: [ Auth ]
       summary: Send a registration verification code
-      description: Available only when email verification is enabled in server configuration.
+      description: Available only when email verification is enabled in server configuration. When Turnstile is enabled, `turnstileToken` is also required.
       requestBody:
         required: true
         content:
           application/json: { schema: { $ref: '#/components/schemas/VerificationCodeRequest' } }
       responses:
         '202': { description: Successfully accepted the request to send an email. }
-        '400': { description: The email format is invalid, or email verification is disabled. }
+        '400': { description: The email format is invalid, email verification is disabled, or Turnstile validation failed. }
         '409': { description: The email address is already registered. }
         '429': { description: Too many requests. Please try again later. }
+        '503': { description: Turnstile verification service is unavailable. }
   /auth/register:
     post:
       tags: [ Auth ]

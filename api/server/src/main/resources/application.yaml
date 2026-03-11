@@ -27,3 +27,7 @@ email:
   from: "noreply@example.com"
   ssl: true
   codeExpirationMinutes: 10
+turnstile:
+  enabled: false
+  secretKey: ""
+  siteVerifyUrl: "https://challenges.cloudflare.com/turnstile/v0/siteverify"

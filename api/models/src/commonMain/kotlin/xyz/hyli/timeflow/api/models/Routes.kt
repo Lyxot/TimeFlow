@@ -42,7 +42,10 @@ class ApiV1 {
         @Resource("send-verification-code")
         class SendVerificationCode(val parent: Auth = Auth()) {
             @Serializable
-            data class Payload(val email: String)
+            data class Payload(
+                val email: String,
+                val turnstileToken: String? = null
+            )
         }
 
         @Serializable

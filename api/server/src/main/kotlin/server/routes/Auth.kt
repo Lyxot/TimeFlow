@@ -22,6 +22,7 @@ import io.ktor.server.routing.Route
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.EmailService
 import xyz.hyli.timeflow.server.TokenManager
+import xyz.hyli.timeflow.server.TurnstileService
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.toUuid
@@ -37,7 +38,12 @@ import kotlin.uuid.Uuid
 private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
 
 @OptIn(ExperimentalUuidApi::class)
-fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, emailService: EmailService) {
+fun Route.authRoutes(
+    tokenManager: TokenManager,
+    repository: DataRepository,
+    emailService: EmailService,
+    turnstileService: TurnstileService
+) {
     val verificationEnabled = emailService.verificationEnabled
 
     rateLimit(RateLimitName("login")) {
@@ -199,11 +205,42 @@ fun Route.authRoutes(tokenManager: TokenManager, repository: DataRepository, ema
     rateLimit(RateLimitName("send_verification_code")) {
         post<ApiV1.Auth.SendVerificationCode> { _ ->
             val payload = call.receive<ApiV1.Auth.SendVerificationCode.Payload>()
-            // TODO: add CAPTCHA verification here (Cloudflare Turnstile)
 
             if (!verificationEnabled) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email verification is disabled."))
                 return@post
+            }
+
+            if (turnstileService.enabled) {
+                val turnstileToken = payload.turnstileToken
+                if (turnstileToken.isNullOrBlank()) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Turnstile token is required."))
+                    return@post
+                }
+
+                when (
+                    val result = turnstileService.verify(
+                        token = turnstileToken,
+                        remoteIp = call.request.local.remoteHost
+                    )
+                ) {
+                    TurnstileService.VerificationResult.Success -> Unit
+                    is TurnstileService.VerificationResult.Rejected -> {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Turnstile verification failed.")
+                        )
+                        return@post
+                    }
+
+                    is TurnstileService.VerificationResult.Failure -> {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            mapOf("error" to "Turnstile verification is unavailable.")
+                        )
+                        return@post
+                    }
+                }
             }
 
             // Validate email format

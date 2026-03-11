@@ -19,10 +19,11 @@ fun Application.configureRouting(repository: DataRepository) {
     install(Resources)
     val tokenManager = TokenManager(environment.config)
     val emailService = EmailService(environment.config)
+    val turnstileService = TurnstileService(environment.config)
 
     routing {
         utilRoutes()
-        authRoutes(tokenManager, repository, emailService)
+        authRoutes(tokenManager, repository, emailService, turnstileService)
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)
