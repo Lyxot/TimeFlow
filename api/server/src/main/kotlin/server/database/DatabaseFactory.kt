@@ -31,10 +31,14 @@ object DatabaseFactory {
         val db = if (testing) {
             Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         } else {
-            val url = config.property("postgres.url").getString()
+            val host = config.property("postgres.host").getString()
+            val port = config.property("postgres.port").getString()
+            val database = config.property("postgres.database").getString()
             val user = config.property("postgres.user").getString()
             val password = config.property("postgres.password").getString()
-            Database.connect(createHikariDataSource(url, user, password))
+            val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 3
+            val url = "jdbc:postgresql://$host:$port/$database"
+            Database.connect(createHikariDataSource(url, user, password, maximumPoolSize))
         }
 
         // 在一个事务中，创建所有数据表（如果它们不存在的话）
@@ -55,13 +59,14 @@ object DatabaseFactory {
     private fun createHikariDataSource(
         url: String,
         user: String,
-        password: String
+        password: String,
+        maximumPoolSize: Int
     ) = HikariDataSource(HikariConfig().apply {
         driverClassName = "org.postgresql.Driver"
         jdbcUrl = url
         username = user
         this.password = password
-        maximumPoolSize = 3 // TODO: 在配置文件中调整
+        this.maximumPoolSize = maximumPoolSize
         isAutoCommit = false
         transactionIsolation = "TRANSACTION_REPEATABLE_READ"
         validate()
