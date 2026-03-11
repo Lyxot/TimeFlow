@@ -29,11 +29,13 @@ import kotlin.time.Clock
 class ApplicationTest {
     @Test
     fun `test api`() = testApplication {
+        application {
+            module()
+        }
+
         environment {
-            config = ApplicationConfig("application.yaml").mergeWith(
-                MapApplicationConfig(
-                    "testing" to "true"
-                )
+            config = testConfig(
+                "testing" to "true"
             )
         }
 
@@ -623,12 +625,14 @@ class ApplicationTest {
 
     @Test
     fun `test register without verification when disabled`() = testApplication {
+        application {
+            module()
+        }
+
         environment {
-            config = ApplicationConfig("application.yaml").mergeWith(
-                MapApplicationConfig(
-                    "testing" to "true",
-                    "email.verificationEnabled" to "false"
-                )
+            config = testConfig(
+                "testing" to "true",
+                "email.verificationEnabled" to "false"
             )
         }
 
@@ -688,12 +692,14 @@ class ApplicationTest {
 
     @Test
     fun `test send verification code with turnstile enabled`() = testApplication {
+        application {
+            module()
+        }
+
         environment {
-            config = ApplicationConfig("application.yaml").mergeWith(
-                MapApplicationConfig(
-                    "testing" to "true",
-                    "turnstile.enabled" to "true"
-                )
+            config = testConfig(
+                "testing" to "true",
+                "turnstile.enabled" to "true"
             )
         }
 
@@ -718,12 +724,14 @@ class ApplicationTest {
 
     @Test
     fun `test send verification code rejects invalid turnstile token`() = testApplication {
+        application {
+            module()
+        }
+
         environment {
-            config = ApplicationConfig("application.yaml").mergeWith(
-                MapApplicationConfig(
-                    "testing" to "true",
-                    "turnstile.enabled" to "true"
-                )
+            config = testConfig(
+                "testing" to "true",
+                "turnstile.enabled" to "true"
             )
         }
 
@@ -751,12 +759,14 @@ class ApplicationTest {
 
     @Test
     fun `test send verification code accepts testing turnstile token`() = testApplication {
+        application {
+            module()
+        }
+
         environment {
-            config = ApplicationConfig("application.yaml").mergeWith(
-                MapApplicationConfig(
-                    "testing" to "true",
-                    "turnstile.enabled" to "true"
-                )
+            config = testConfig(
+                "testing" to "true",
+                "turnstile.enabled" to "true"
             )
         }
 
@@ -780,5 +790,36 @@ class ApplicationTest {
                 )
             }
         }
+    }
+
+    private fun testConfig(vararg overrides: Pair<String, String>): ApplicationConfig {
+        return MapApplicationConfig(
+            *listOf(
+                "ktor.deployment.port" to "8080",
+                "jwt.domain" to "http://localhost:8080",
+                "jwt.audience" to "timeflow-client",
+                "jwt.realm" to "TimeFlow API",
+                "jwt.issuer" to "timeflow-api",
+                "jwt.privateKeyPath" to ".tmp/test-jwt-private.pem",
+                "jwt.publicKeyPath" to ".tmp/test-jwt-public.pem",
+                "postgres.host" to "localhost",
+                "postgres.port" to "5432",
+                "postgres.database" to "timeflow",
+                "postgres.user" to "username",
+                "postgres.password" to "password",
+                "postgres.maximumPoolSize" to "3",
+                "email.verificationEnabled" to "true",
+                "email.host" to "smtp.example.com",
+                "email.port" to "465",
+                "email.username" to "your-email@example.com",
+                "email.password" to "your-password",
+                "email.from" to "noreply@example.com",
+                "email.ssl" to "true",
+                "email.codeExpirationMinutes" to "10",
+                "turnstile.enabled" to "false",
+                "turnstile.secretKey" to "",
+                "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+            ).plus(overrides).toTypedArray()
+        )
     }
 }

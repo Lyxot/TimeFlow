@@ -19,4 +19,6 @@ Pods/
 libraries.json
 /test
 /api/server/src/main/resources/static/app.zip
+/server.yml
 *.pem
+/data

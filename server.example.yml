@@ -1,14 +1,11 @@
 ktor:
-  application:
-    modules:
-      - xyz.hyli.timeflow.ApplicationKt.module
   deployment:
     port: 8080
 jwt:
-  domain: "https://jwt-provider-domain/"
-  audience: "jwt-audience"
-  realm: "ktor sample app"
-  issuer: "jwt-issuer"
+  domain: "http://localhost:8080"
+  audience: "timeflow-client"
+  realm: "TimeFlow API"
+  issuer: "timeflow-api"
   # Generate keys with:
   # openssl genpkey -algorithm RSA -out jwt-private.pem -pkeyopt rsa_keygen_bits:4096
   # openssl rsa -pubout -in jwt-private.pem -out jwt-public.pem

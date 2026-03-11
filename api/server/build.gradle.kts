@@ -20,7 +20,7 @@ kotlin {
 }
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass = "xyz.hyli.timeflow.ApplicationKt"
     applicationDefaultJvmArgs += listOf(
         "-XX:+UseZGC",
 //            "-XX:+ZGenerational",
