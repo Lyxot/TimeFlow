@@ -13,6 +13,8 @@ Table Users as U {
   username varchar(50) [not null]
   email varchar(255) [unique, not null]
   password_hash varchar(255) [not null]
+  selected_schedule_id smallint [note: 'Currently selected schedule local_id']
+  selected_schedule_updated_at timestamp [note: 'When selected_schedule_id was last changed']
 }
 
 Table RefreshTokens as RT {
@@ -20,6 +22,18 @@ Table RefreshTokens as RT {
   user_id int [not null]
   jti uuid [unique, not null, note: 'The unique ID (JWT ID) of the refresh token']
   expires_at timestamp [not null]
+}
+
+Table VerificationCodes as VC {
+  id int [pk, increment]
+  email varchar(255) [not null]
+  code varchar(6) [not null]
+  expires_at timestamp [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    email
+  }
 }
 
 Table Schedules as S {
@@ -32,7 +46,9 @@ Table Schedules as S {
   display_weekends bool [not null]
   lesson_time_period_info jsonb [not null, note: 'Serialized LessonTimePeriodInfo object']
   deleted bool [not null, default: false]
-  
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
   indexes {
     (user_id, local_id) [unique]
   }
@@ -46,14 +62,20 @@ Table Courses as C {
   teacher varchar(128)
   classroom varchar(128)
   time jsonb [not null, note: 'Serialized Range object']
-  weekday int [not null, note: 'Stores ordinal of Weekday enum, as requested']
+  weekday int [not null, note: 'Stores ordinal of Weekday enum']
   color int [not null]
   weeks integer[] [not null, note: 'List of week numbers for the course']
-  note text
-  
+  note varchar(1000)
+
   indexes {
     (schedule_id, local_id) [unique]
   }
+}
+
+Table AccessTokenBlacklist as ATB {
+  id long [pk, increment]
+  jti varchar(36) [unique, not null, note: 'The unique ID (JWT ID) of the blacklisted access token']
+  expires_at timestamp [not null]
 }
 
 // --- Relationship Definitions ---
