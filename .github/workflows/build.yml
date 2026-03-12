@@ -133,7 +133,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Download webCompat artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: webCompat
           path: builder/build/artifacts/release/webCompat

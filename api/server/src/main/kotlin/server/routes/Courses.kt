@@ -27,7 +27,7 @@ fun Route.coursesRoutes(repository: DataRepository) {
             if (courses != null) {
                 call.respond(HttpStatusCode.OK, courses)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Schedule or Course not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Schedule or Course not found"))
             }
         }
 
@@ -38,7 +38,7 @@ fun Route.coursesRoutes(repository: DataRepository) {
             if (course != null) {
                 call.respond(HttpStatusCode.OK, course)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Schedule or Course not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Schedule or Course not found"))
             }
         }
 
@@ -50,7 +50,7 @@ fun Route.coursesRoutes(repository: DataRepository) {
             when (wasCreated) {
                 true -> call.respond(HttpStatusCode.Created)
                 false -> call.respond(HttpStatusCode.NoContent)
-                null -> call.respond(HttpStatusCode.NotFound, "Schedule not found")
+                null -> call.respond(HttpStatusCode.NotFound, mapOf("error" to "Schedule not found"))
             }
         }
 
@@ -61,7 +61,7 @@ fun Route.coursesRoutes(repository: DataRepository) {
             if (wasDeleted) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Course not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Course not found"))
             }
         }
     }
