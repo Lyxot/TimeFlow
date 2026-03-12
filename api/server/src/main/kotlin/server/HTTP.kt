@@ -12,6 +12,8 @@ package xyz.hyli.timeflow.server
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.conditionalheaders.*
@@ -22,6 +24,19 @@ import io.ktor.server.plugins.httpsredirect.*
 
 fun Application.configureHTTP() {
     val config = environment.config
+
+    // Reject request bodies larger than 1 MB
+    intercept(ApplicationCallPipeline.Plugins) {
+        val contentLength = call.request.contentLength()
+        if (contentLength != null && contentLength > 10_485_760L) {
+            call.respondText(
+                """{"error":"Request body too large"}""",
+                ContentType.Application.Json,
+                HttpStatusCode.PayloadTooLarge
+            )
+            finish()
+        }
+    }
 
     install(Compression) {
         gzip()
