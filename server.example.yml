@@ -1,57 +1,114 @@
-ktor:
-  deployment:
-    port: 8080
+# 服务监听主机，默认对外监听所有网卡
+host: "0.0.0.0"
+
+# HTTP 监听端口
+port: 8080
+
+# JWT 鉴权配置
 jwt:
+  # JWT 域名，通常用于生成和校验 token 时的上下文信息
   domain: "http://localhost:8080"
+  # JWT 目标受众，客户端在校验 token 时应与此值一致
   audience: "timeflow-client"
+  # JWT 认证域，会出现在认证失败提示中
   realm: "TimeFlow API"
+  # JWT 签发者标识
   issuer: "timeflow-api"
-  # Generate keys with:
+  # 使用 OpenSSL 生成 RSA 私钥：
   # openssl genpkey -algorithm RSA -out jwt-private.pem -pkeyopt rsa_keygen_bits:4096
+  # 从私钥导出对应的公钥：
   # openssl rsa -pubout -in jwt-private.pem -out jwt-public.pem
+  # JWT 私钥文件路径；文件不存在时服务可按当前逻辑自动生成
   privateKeyPath: "jwt-private.pem"
+  # JWT 公钥文件路径；用于校验访问令牌
   publicKeyPath: "jwt-public.pem"
+
+# PostgreSQL 数据库配置
 postgres:
+  # 数据库主机名或 IP
   host: "localhost"
+  # 数据库端口
   port: "5432"
+  # 数据库名称
   database: "timeflow"
-  user: username
-  password: password
-  maximumPoolSize: 3
+  # 数据库用户名
+  user: ""
+  # 数据库密码
+  password: ""
+  # 数据库连接池最大连接数
+  maximumPoolSize: 10
+
+# 邮件发送与邮箱验证码配置
 email:
+  # 是否启用邮箱验证码校验；关闭后注册时无需提交验证码
   verificationEnabled: true
-  host: "smtp.example.com"
+  # SMTP 服务器地址
+  host: ""
+  # SMTP 服务器端口
   port: "465"
-  username: "your-email@example.com"
-  password: "your-password"
-  from: "noreply@example.com"
+  # SMTP 登录用户名
+  username: ""
+  # SMTP 登录密码或授权码
+  password: ""
+  # 发件人邮箱地址
+  from: ""
+  # 是否启用 SSL 直连 SMTP
   ssl: true
+  # 验证码有效期，单位为分钟
   codeExpirationMinutes: 10
+
+# HTTP 相关中间件与安全策略
 http:
+  # 标准 Forwarded 请求头支持，通常在反向代理后启用
   forwardedHeaders:
+    # 是否启用 ForwardedHeaders
     enabled: true
+  # 兼容 X-Forwarded-* 请求头，通常在 Nginx 或 Cloudflare 后启用
   xForwardedHeaders:
+    # 是否启用 XForwardedHeaders
     enabled: true
+  # CORS 跨域配置
   cors:
+    # 是否启用 CORS
     enabled: false
+    # 是否允许任意来源访问；生产环境通常应保持为 false
     anyHost: false
+    # 允许访问的来源列表；多个来源时按服务支持的格式填写
     allowedHosts: ""
+    # 是否允许跨域请求携带凭据（如 Cookie、Authorization）
     allowCredentials: false
+  # HSTS 配置，要求浏览器后续始终使用 HTTPS
   hsts:
+    # 是否启用 HSTS
     enabled: false
+    # 是否对子域名一并生效
     includeSubDomains: true
+    # 是否声明允许加入浏览器 HSTS preload 列表
     preload: false
+    # HSTS 最大缓存时间，单位为秒
     maxAgeInSeconds: 31536000
+  # HTTP 到 HTTPS 的自动重定向配置
   httpsRedirect:
+    # 是否启用 HTTPS 重定向
     enabled: false
+    # HTTPS 服务端口
     sslPort: 443
+    # 是否使用永久重定向（301/308）
     permanentRedirect: true
+
+# Web 应用静态包配置
 webApp:
+  # 是否由后端直接托管前端 Web 应用
   serveEnabled: true
-  # Leave empty to use the bundled zip in the bundled-web server build.
-  # Set a filesystem path here when running the plain server build with an external web app zip.
+  # 留空时：若当前构建包含内置 web zip，则直接使用内置资源。
+  # 非空时：直接使用这里指定的文件系统路径中的 web app zip。
   zipPath: ""
+
+# Cloudflare Turnstile 人机校验配置
 turnstile:
+  # 是否启用 Turnstile 校验
   enabled: false
+  # Turnstile 服务端密钥
   secretKey: ""
+  # Turnstile 校验接口地址，通常无需修改
   siteVerifyUrl: "https://challenges.cloudflare.com/turnstile/v0/siteverify"

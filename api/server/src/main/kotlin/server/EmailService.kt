@@ -15,10 +15,12 @@ import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.security.SecureRandom
 import java.util.*
 
 class EmailService(private val config: ApplicationConfig) {
-    private val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
+    private val secureRandom = SecureRandom()
+    private val testing = isTestMode
     val verificationEnabled =
         config.propertyOrNull("email.verificationEnabled")?.getString()?.toBoolean() ?: true
     val codeExpirationMinutes = config.propertyOrNull("email.codeExpirationMinutes")?.getString()?.toInt() ?: 10
@@ -98,7 +100,7 @@ class EmailService(private val config: ApplicationConfig) {
      */
     fun generateCode(): String {
         return if (testing) TESTING_VERIFICATION_CODE
-        else (100000..999999).random().toString()
+        else (100000 + secureRandom.nextInt(900000)).toString()
     }
 
     companion object {

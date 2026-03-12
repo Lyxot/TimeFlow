@@ -11,8 +11,10 @@ package xyz.hyli.timeflow.server
 
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.config.*
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.PosixFilePermissions
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
@@ -42,7 +44,7 @@ object JwtKeysLoader {
     }
 
     fun load(config: ApplicationConfig): JwtKeys {
-        val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
+        val testing = isTestMode
         val privateKeyText = loadPem(config, "jwt.privateKeyPem", "jwt.privateKeyPath")
         val publicKeyText = loadPem(config, "jwt.publicKeyPem", "jwt.publicKeyPath")
 
@@ -102,8 +104,13 @@ object JwtKeysLoader {
         writePem(publicKeyPath, "PUBLIC KEY", pair.public.encoded)
     }
 
+    private val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix")
+
     private fun writePem(path: java.nio.file.Path, type: String, encoded: ByteArray) {
         path.parent?.let(Files::createDirectories)
+        if (isPosix && !Files.exists(path)) {
+            Files.createFile(path, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
+        }
         Files.writeString(
             path,
             encodePem(type, encoded),

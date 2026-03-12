@@ -34,7 +34,7 @@ class TurnstileService(
         }
     }
 ) : AutoCloseable {
-    private val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
+    private val testing = isTestMode
     val enabled = config.propertyOrNull("turnstile.enabled")?.getString()?.toBoolean() ?: false
     private val secretKey = config.propertyOrNull("turnstile.secretKey")?.getString()?.takeIf { it.isNotBlank() }
     private val siteVerifyUrl =
