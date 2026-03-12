@@ -27,6 +27,25 @@ email:
   from: "noreply@example.com"
   ssl: true
   codeExpirationMinutes: 10
+http:
+  forwardedHeaders:
+    enabled: true
+  xForwardedHeaders:
+    enabled: true
+  cors:
+    enabled: false
+    anyHost: false
+    allowedHosts: ""
+    allowCredentials: false
+  hsts:
+    enabled: false
+    includeSubDomains: true
+    preload: false
+    maxAgeInSeconds: 31536000
+  httpsRedirect:
+    enabled: false
+    sslPort: 443
+    permanentRedirect: true
 webApp:
   serveEnabled: true
   # Leave empty to use the bundled zip in the bundled-web server build.

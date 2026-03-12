@@ -11,47 +11,84 @@ package xyz.hyli.timeflow.server
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.config.*
 import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.conditionalheaders.*
-import io.ktor.server.plugins.defaultheaders.*
+import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.forwardedheaders.*
+import io.ktor.server.plugins.hsts.*
+import io.ktor.server.plugins.httpsredirect.*
 
 fun Application.configureHTTP() {
+    val config = environment.config
+
     install(Compression) {
         gzip()
         deflate()
     }
     install(ConditionalHeaders)
-    install(DefaultHeaders) {
-        header("X-Engine", "Ktor") // will send this header with each response
-    }
     install(CallId) {
         retrieveFromHeader(HttpHeaders.XRequestId)
         header(HttpHeaders.XRequestId)
     }
-    install(ForwardedHeaders) // WARNING: for security, do not include this if not behind a reverse proxy
-    install(XForwardedHeaders) // WARNING: for security, do not include this if not behind a reverse proxy
-    // TODO: Enable these according to configuration
-//    install(CORS) {
-//        allowMethod(HttpMethod.Options)
-//        allowMethod(HttpMethod.Put)
-//        allowMethod(HttpMethod.Delete)
-//        allowMethod(HttpMethod.Patch)
-//        allowHeader(HttpHeaders.Authorization)
-//        allowHeader("MyCustomHeader")
-//        anyHost() // Don't do this in production if possible. Try to limit it.
-//    }
-//    install(HSTS) {
-//        includeSubDomains = true
-//    }
-//    install(HttpsRedirect) {
-//        // The port to redirect to. By default 443, the default HTTPS port.
-//        sslPort = 443
-//        // 301 Moved Permanently, or 302 Found redirect.
-//        permanentRedirect = true
-//    }
-//    routing {
-//        openAPI(path = "openapi")
-//    }
+    if (config.booleanProperty("http.forwardedHeaders.enabled")) {
+        install(ForwardedHeaders)
+    }
+    if (config.booleanProperty("http.xForwardedHeaders.enabled")) {
+        install(XForwardedHeaders)
+    }
+
+    if (config.booleanProperty("http.cors.enabled")) {
+        install(CORS) {
+            allowMethod(HttpMethod.Get)
+            allowMethod(HttpMethod.Post)
+            allowMethod(HttpMethod.Options)
+            allowMethod(HttpMethod.Put)
+            allowMethod(HttpMethod.Delete)
+            allowHeader(HttpHeaders.Authorization)
+            allowHeader(HttpHeaders.ContentType)
+            allowHeader(HttpHeaders.XRequestId)
+            allowNonSimpleContentTypes = true
+            allowCredentials = config.booleanProperty("http.cors.allowCredentials")
+
+            if (config.booleanProperty("http.cors.anyHost")) {
+                anyHost()
+            } else {
+                config.csvProperty("http.cors.allowedHosts").forEach { host ->
+                    allowHost(host, listOf("http", "https"))
+                }
+            }
+        }
+    }
+
+    if (config.booleanProperty("http.hsts.enabled")) {
+        install(HSTS) {
+            includeSubDomains = config.booleanProperty("http.hsts.includeSubDomains")
+            preload = config.booleanProperty("http.hsts.preload")
+            maxAgeInSeconds = config.longProperty("http.hsts.maxAgeInSeconds")
+        }
+    }
+
+    if (config.booleanProperty("http.httpsRedirect.enabled")) {
+        install(HttpsRedirect) {
+            sslPort = config.intProperty("http.httpsRedirect.sslPort")
+            permanentRedirect = config.booleanProperty("http.httpsRedirect.permanentRedirect")
+        }
+    }
 }
+
+private fun ApplicationConfig.booleanProperty(path: String): Boolean =
+    property(path).getString().toBoolean()
+
+private fun ApplicationConfig.intProperty(path: String): Int =
+    property(path).getString().toInt()
+
+private fun ApplicationConfig.longProperty(path: String): Long =
+    property(path).getString().toLong()
+
+private fun ApplicationConfig.csvProperty(path: String): List<String> =
+    property(path).getString()
+        .split(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
