@@ -18,6 +18,7 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
+import org.slf4j.LoggerFactory
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
@@ -32,6 +33,8 @@ data class JwtKeys(
 }
 
 object JwtKeysLoader {
+    private val log = LoggerFactory.getLogger(JwtKeysLoader::class.java)
+
     private val testingKeys by lazy {
         val generator = KeyPairGenerator.getInstance("RSA").apply {
             initialize(4096)
@@ -94,6 +97,8 @@ object JwtKeysLoader {
         if (Files.exists(privateKeyPath) && Files.exists(publicKeyPath)) {
             return
         }
+
+        log.warn("JWT key files not found at {} and {}. Auto-generating new RSA-4096 key pair. All existing tokens will be invalidated.", privateKeyPath, publicKeyPath)
 
         val generator = KeyPairGenerator.getInstance("RSA").apply {
             initialize(4096)

@@ -26,7 +26,6 @@ import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
 import xyz.hyli.timeflow.utils.InputValidation.truncateUsername
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
@@ -71,11 +70,13 @@ class ExposedDataRepository : DataRepository {
             }.user
         }
 
-    override suspend fun addRefreshToken(userId: Int, jti: Uuid, expiresAt: java.time.Instant) = dbQuery {
-        RefreshTokenEntity.new {
-            this.user = UserEntity[userId]
-            this.jti = jti.toJavaUuid()
-            this.expiresAt = expiresAt.toKotlinInstant()
+    override suspend fun addRefreshToken(userId: Int, jti: Uuid, expiresAt: kotlin.time.Instant) {
+        dbQuery {
+            RefreshTokenEntity.new {
+                this.user = UserEntity[userId]
+                this.jti = jti.toJavaUuid()
+                this.expiresAt = expiresAt
+            }
         }
     }
 
@@ -115,6 +116,23 @@ class ExposedDataRepository : DataRepository {
         }
     }
 
+    override suspend fun blacklistAccessToken(jti: String, expiresAt: kotlin.time.Instant) {
+        dbQuery {
+            // Clean up expired entries
+            AccessTokenBlacklistEntity.all().forEach {
+                if (it.expiresAt <= Clock.System.now()) it.delete()
+            }
+            AccessTokenBlacklistEntity.new {
+                this.jti = jti
+                this.expiresAt = expiresAt
+            }
+        }
+    }
+
+    override suspend fun isAccessTokenBlacklisted(jti: String): Boolean = dbQuery {
+        !AccessTokenBlacklistEntity.find { AccessTokenBlacklistTable.jti eq jti }.empty()
+    }
+
     override suspend fun createVerificationCode(email: String, code: String, expiresAt: kotlin.time.Instant): Boolean =
         dbQuery {
             val now = Clock.System.now()
@@ -144,19 +162,19 @@ class ExposedDataRepository : DataRepository {
             }
         }
 
-    override suspend fun validateVerificationCode(email: String, code: String): Boolean = dbQuery {
+    override suspend fun consumeVerificationCode(email: String, code: String): Boolean = dbQuery {
         val entity = VerificationCodeEntity
             .find { (VerificationCodesTable.email eq email) and (VerificationCodesTable.code eq code) }
             .firstOrNull()
 
-        entity != null && entity.expiresAt > Clock.System.now()
-    }
-
-    override suspend fun deleteVerificationCodes(email: String) {
-        dbQuery {
+        if (entity != null && entity.expiresAt > Clock.System.now()) {
+            // Delete all verification codes for this email to prevent reuse
             VerificationCodeEntity
                 .find { VerificationCodesTable.email eq email }
                 .forEach { it.delete() }
+            true
+        } else {
+            false
         }
     }
 
@@ -217,26 +235,12 @@ class ExposedDataRepository : DataRepository {
             .singleOrNull()
 
     override suspend fun upsertSchedule(userId: Int, localId: Short, schedule: Schedule): Boolean = dbQuery {
-        try {
-            var wasCreated = false
+        var wasCreated = false
 
-            // 1. Find existing schedule (including soft-deleted) or create a new one
-            val scheduleEntity = getScheduleEntity(userId, localId, deleted = null)
-                ?.apply {
-                    // It exists, so update its properties
-                    this.name = schedule.name.truncateName()
-                    this.termStartDate = schedule.termStartDate.toLocalDate()
-                    this.termEndDate = schedule.termEndDate.toLocalDate()
-                    this.displayWeekends = schedule.displayWeekends
-                    this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
-                    this.deleted = schedule.deleted
-                    this.createdAt = schedule.createdAt
-                    this.updatedAt = schedule.updatedAt
-                } ?: ScheduleEntity.new {
-                // It does not exist, so create it
-                wasCreated = true
-                this.user = UserEntity[userId]
-                this.localId = localId
+        // 1. Find existing schedule (including soft-deleted) or create a new one
+        val scheduleEntity = getScheduleEntity(userId, localId, deleted = null)
+            ?.apply {
+                // It exists, so update its properties
                 this.name = schedule.name.truncateName()
                 this.termStartDate = schedule.termStartDate.toLocalDate()
                 this.termEndDate = schedule.termEndDate.toLocalDate()
@@ -245,24 +249,33 @@ class ExposedDataRepository : DataRepository {
                 this.deleted = schedule.deleted
                 this.createdAt = schedule.createdAt
                 this.updatedAt = schedule.updatedAt
-            }
-
-            // 2. Upsert courses using the helper function
-            // If any course fails, the entire transaction will rollback
-            scheduleEntity.schedule.courses.keys.filter { it !in schedule.courses.keys }.forEach { courseLocalId ->
-                // Delete courses that are no longer present
-                getCourseEntity(scheduleEntity, courseLocalId)?.delete()
-            }
-            // Upsert or create courses
-            schedule.courses.forEach { (courseLocalId, course) ->
-                upsertCourse(scheduleEntity, courseLocalId, course)
-            }
-
-            wasCreated
-        } catch (e: Exception) {
-            // Log error and rethrow to trigger transaction rollback
-            throw IllegalStateException("Failed to upsert schedule: ${e.message}", e)
+            } ?: ScheduleEntity.new {
+            // It does not exist, so create it
+            wasCreated = true
+            this.user = UserEntity[userId]
+            this.localId = localId
+            this.name = schedule.name.truncateName()
+            this.termStartDate = schedule.termStartDate.toLocalDate()
+            this.termEndDate = schedule.termEndDate.toLocalDate()
+            this.displayWeekends = schedule.displayWeekends
+            this.lessonTimePeriodInfo = schedule.lessonTimePeriodInfo
+            this.deleted = schedule.deleted
+            this.createdAt = schedule.createdAt
+            this.updatedAt = schedule.updatedAt
         }
+
+        // 2. Upsert courses using the helper function
+        // If any course fails, the entire transaction will rollback
+        scheduleEntity.schedule.courses.keys.filter { it !in schedule.courses.keys }.forEach { courseLocalId ->
+            // Delete courses that are no longer present
+            getCourseEntity(scheduleEntity, courseLocalId)?.delete()
+        }
+        // Upsert or create courses
+        schedule.courses.forEach { (courseLocalId, course) ->
+            upsertCourse(scheduleEntity, courseLocalId, course)
+        }
+
+        wasCreated
     }
 
     override suspend fun deleteSchedule(userId: Int, localId: Short): Boolean = dbQuery {

@@ -19,9 +19,10 @@ import io.ktor.server.resources.*
 import io.ktor.server.resources.post
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import xyz.hyli.timeflow.api.models.ApiV1
-import xyz.hyli.timeflow.server.AccessTokenBlacklist
 import xyz.hyli.timeflow.server.EmailService
 import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.TurnstileService
@@ -46,7 +47,6 @@ fun Route.authRoutes(
     repository: DataRepository,
     emailService: EmailService,
     turnstileService: TurnstileService,
-    accessTokenBlacklist: AccessTokenBlacklist
 ) {
     val verificationEnabled = emailService.verificationEnabled
 
@@ -93,28 +93,27 @@ fun Route.authRoutes(
                 return@post
             }
 
-            // 3. Validate the verification code when email verification is enabled
+            // 3. Validate and consume the verification code when email verification is enabled
             if (verificationEnabled) {
                 val code = payload.code
                 if (code.isNullOrBlank()) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Verification code is required."))
                     return@post
                 }
-                if (!repository.validateVerificationCode(payload.email, code)) {
+                if (!repository.consumeVerificationCode(payload.email, code)) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired verification code."))
                     return@post
                 }
             }
 
             // 4. Hash the password with Argon2
-            val passwordHash = argon2.hash(10, 65536, 1, payload.password.toCharArray())
+            val passwordHash = withContext(Dispatchers.IO) {
+                argon2.hash(10, 65536, 1, payload.password.toCharArray())
+            }
 
             // 5. Create a unique authId and save the new user
             val authId = Uuid.generateV7()
             repository.createUser(authId, payload.username, payload.email, passwordHash)
-
-            // 6. Delete the verification code after successful registration
-            repository.deleteVerificationCodes(payload.email)
 
             authLogger.info("User registered: email={}, remoteHost={}", payload.email, call.request.local.remoteHost)
             call.respond(HttpStatusCode.Created, mapOf("message" to "User created successfully"))
@@ -141,7 +140,9 @@ fun Route.authRoutes(
 
             // Verify password using Argon2
             val passwordMatches = try {
-                argon2.verify(storedHash, payload.password.toCharArray())
+                withContext(Dispatchers.IO) {
+                    argon2.verify(storedHash, payload.password.toCharArray())
+                }
             } catch (e: Exception) {
                 authLogger.error("Argon2 verification error: email={}, error={}", payload.email, e.message)
                 false
@@ -169,7 +170,7 @@ fun Route.authRoutes(
                     ApiV1.Auth.Login.Response(
                         accessToken = accessToken,
                         refreshToken = refreshToken,
-                        refreshTokenExpiresAt = expiresAt.toKotlinInstant()
+                        refreshTokenExpiresAt = expiresAt
                     )
                 )
             } else {
@@ -213,7 +214,7 @@ fun Route.authRoutes(
                     )
                     repository.addRefreshToken(user.id, newJti, expiresAt)
                     repository.revokeRefreshToken(jti)
-                    Triple(newRefreshTokenString, newJti, expiresAt.toKotlinInstant())
+                    Triple(newRefreshTokenString, newJti, expiresAt)
                 } else {
                     Triple(null, jti, null)
                 }
@@ -323,7 +324,7 @@ fun Route.authRoutes(
             // Blacklist the current access token so it can't be reused after logout
             principal.jwtId?.let { jti ->
                 principal.expiresAt?.toInstant()?.toKotlinInstant()?.let { expiresAt ->
-                    accessTokenBlacklist.add(jti, expiresAt)
+                    repository.blacklistAccessToken(jti, expiresAt)
                 }
             }
 

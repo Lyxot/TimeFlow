@@ -55,12 +55,12 @@ interface DataRepository {
     suspend fun createUser(authId: Uuid, username: String, email: String, passwordHash: String): User
 
     /**
-     * Adds a new refresh token JTI to the database. 
+     * Adds a new refresh token JTI to the database.
      * @param userId The ID of the user owning the token.
      * @param jti The unique ID (JTI) of the JWT refresh token.
      * @param expiresAt The expiration timestamp of the refresh token.
      */
-    suspend fun addRefreshToken(userId: Int, jti: Uuid, expiresAt: java.time.Instant): RefreshTokenEntity
+    suspend fun addRefreshToken(userId: Int, jti: Uuid, expiresAt: kotlin.time.Instant)
 
     /**
      * Checks if a given refresh token JTI is valid (i.e., exists in the database).
@@ -82,6 +82,17 @@ interface DataRepository {
     suspend fun revokeAllRefreshTokens(userId: Int)
 
     /**
+     * Blacklists an access token JTI until it naturally expires.
+     * Expired entries are cleaned up automatically.
+     */
+    suspend fun blacklistAccessToken(jti: String, expiresAt: kotlin.time.Instant)
+
+    /**
+     * Checks if an access token JTI has been blacklisted.
+     */
+    suspend fun isAccessTokenBlacklisted(jti: String): Boolean
+
+    /**
      * Creates a verification code for an email address if rate limit allows.
      * Checks if the last verification code was sent at least 1 minute ago.
      * @param email The email address to send the code to.
@@ -92,19 +103,13 @@ interface DataRepository {
     suspend fun createVerificationCode(email: String, code: String, expiresAt: kotlin.time.Instant): Boolean
 
     /**
-     * Validates a verification code for an email address.
+     * Validates and consumes a verification code for an email address.
+     * If the code is valid, all codes for the email are deleted atomically.
      * @param email The email address.
      * @param code The verification code to validate.
-     * @return True if the code is valid and not expired, false otherwise.
+     * @return True if the code was valid and consumed, false otherwise.
      */
-    suspend fun validateVerificationCode(email: String, code: String): Boolean
-
-    /**
-     * Deletes all verification codes for an email address.
-     * Should be called after successful registration.
-     * @param email The email address.
-     */
-    suspend fun deleteVerificationCodes(email: String)
+    suspend fun consumeVerificationCode(email: String, code: String): Boolean
 
     /**
      * Gets the selected schedule ID and its update timestamp for a user.

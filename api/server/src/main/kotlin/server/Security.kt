@@ -15,14 +15,14 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.utils.toUuid
-import java.time.Instant
-import java.util.*
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun Application.configureSecurity(repository: DataRepository, accessTokenBlacklist: AccessTokenBlacklist) {
-    val jwtKeys = JwtKeysLoader.load(environment.config)
+fun Application.configureSecurity(repository: DataRepository, jwtKeys: JwtKeys) {
     val jwtIssuer = environment.config.property("jwt.issuer").getString()
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
@@ -45,7 +45,7 @@ fun Application.configureSecurity(repository: DataRepository, accessTokenBlackli
                     !authId.isNullOrBlank() &&
                     !refreshJti.isNullOrBlank() &&
                     !jti.isNullOrBlank() &&
-                    !accessTokenBlacklist.isBlacklisted(jti)
+                    !repository.isAccessTokenBlacklisted(jti)
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -86,10 +86,9 @@ fun Application.configureSecurity(repository: DataRepository, accessTokenBlackli
     }
 }
 
-class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
+class TokenManager(config: io.ktor.server.config.ApplicationConfig, private val jwtKeys: JwtKeys) {
     private val audience = config.property("jwt.audience").getString()
     private val issuer = config.property("jwt.issuer").getString()
-    private val jwtKeys = JwtKeysLoader.load(config)
 
     enum class TokenType(val validityInMs: Long) {
         ACCESS(600_000L), // 10 minutes
@@ -103,16 +102,18 @@ class TokenManager(config: io.ktor.server.config.ApplicationConfig) {
      * @param refreshJti For ACCESS tokens only: the JTI of the linked refresh token.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun generateToken(authId: Uuid, type: TokenType, refreshJti: Uuid? = null): Triple<String, Uuid, Instant> {
+    fun generateToken(authId: Uuid, type: TokenType, refreshJti: Uuid? = null): Triple<String, Uuid, kotlin.time.Instant> {
         val jti = Uuid.generateV7()
-        val expiresAt = Date(System.currentTimeMillis() + type.validityInMs).toInstant()
+        val now = Clock.System.now()
+        val expiresAt = now + type.validityInMs.milliseconds
         val token = JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
             .withJWTId(jti.toString())
             .withClaim("authId", authId.toString())
             .withClaim("type", type.ordinal)
-            .withExpiresAt(expiresAt)
+            .withIssuedAt(now.toJavaInstant())
+            .withExpiresAt(expiresAt.toJavaInstant())
             .apply {
                 if (type == TokenType.ACCESS) {
                     if (refreshJti == null) {

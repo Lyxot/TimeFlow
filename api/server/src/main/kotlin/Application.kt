@@ -56,16 +56,17 @@ fun Application.module() {
     validateConfig(environment.config)
     DatabaseFactory.init(config = environment.config)
     val repository = ExposedDataRepository()
-    val accessTokenBlacklist = AccessTokenBlacklist()
 
+    val jwtKeys = JwtKeysLoader.load(environment.config)
+    val tokenManager = TokenManager(environment.config, jwtKeys)
     val turnstileService = TurnstileService(environment.config)
 
     configureHTTP()
     configureSerialization()
     configureMonitoring()
     configureAdministration()
-    configureSecurity(repository, accessTokenBlacklist)
-    configureRouting(repository, accessTokenBlacklist, turnstileService)
+    configureSecurity(repository, jwtKeys)
+    configureRouting(repository, turnstileService, tokenManager)
 
     monitor.subscribe(ApplicationStopping) {
         log.info("Server shutting down, closing resources...")
