@@ -11,29 +11,29 @@ package xyz.hyli.timeflow.server
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.ratelimit.*
-import io.ktor.server.routing.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureAdministration() {
-    routing {
-        route("/") {
-            install(RateLimit) {
-                val testing = environment.config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
-                global {
-                    rateLimiter(limit = 100, refillPeriod = 10.seconds)
-                }
-                // limiter for login/register
-                register(RateLimitName("login")) {
-                    val limit = if (testing) 12 else 6
-                    rateLimiter(limit = limit, refillPeriod = 1.minutes)
-                }
-                // limiter for email verification code sending
-                register(RateLimitName("send_verification_code")) {
-                    val limit = if (testing) 2 else 1
-                    rateLimiter(limit = limit, refillPeriod = 1.minutes)
-                }
-            }
+    val testing = isTestMode
+    install(RateLimit) {
+        global {
+            rateLimiter(limit = 100, refillPeriod = 10.seconds)
+        }
+        // limiter for login/register
+        register(RateLimitName("login")) {
+            val limit = if (testing) 12 else 6
+            rateLimiter(limit = limit, refillPeriod = 1.minutes)
+        }
+        // stricter limiter for email existence checks to prevent account enumeration
+        register(RateLimitName("check_email")) {
+            val limit = if (testing) 10 else 5
+            rateLimiter(limit = limit, refillPeriod = 1.minutes)
+        }
+        // limiter for email verification code sending
+        register(RateLimitName("send_verification_code")) {
+            val limit = if (testing) 2 else 1
+            rateLimiter(limit = limit, refillPeriod = 1.minutes)
         }
     }
 }

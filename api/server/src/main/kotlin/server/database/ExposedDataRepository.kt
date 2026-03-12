@@ -81,20 +81,21 @@ class ExposedDataRepository : DataRepository {
 
 
     override suspend fun isRefreshTokenValid(userId: Int, jti: Uuid): Boolean = dbQuery {
-        RefreshTokenEntity
+        val token = RefreshTokenEntity
             .find {
                 (RefreshTokensTable.userId eq userId) and
                         (RefreshTokensTable.jti eq jti.toJavaUuid())
             }
             .firstOrNull()
-            ?.expiresAt
-            ?.let {
-                if (it > Clock.System.now()) true
-                else {
-                    revokeRefreshToken(jti)
-                    false
-                }
-            } ?: false
+
+        when {
+            token == null -> false
+            token.expiresAt > Clock.System.now() -> true
+            else -> {
+                token.delete()
+                false
+            }
+        }
     }
 
     override suspend fun revokeRefreshToken(jti: Uuid) {
@@ -123,7 +124,7 @@ class ExposedDataRepository : DataRepository {
             val existingCode = VerificationCodeEntity
                 .find { VerificationCodesTable.email eq email }
 
-            if (existingCode.empty() && existingCode.any { it.createdAt > oneMinuteAgo }) {
+            if (!existingCode.empty() && existingCode.any { it.createdAt > oneMinuteAgo }) {
                 // Rate limited - code was sent less than 1 minute ago
                 false
             } else {

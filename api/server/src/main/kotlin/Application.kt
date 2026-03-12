@@ -9,19 +9,24 @@
 
 package xyz.hyli.timeflow
 
+import io.ktor.events.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.config.yaml.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import org.slf4j.LoggerFactory
 import xyz.hyli.timeflow.server.*
 import xyz.hyli.timeflow.server.database.DatabaseFactory
 import xyz.hyli.timeflow.server.database.ExposedDataRepository
+import xyz.hyli.timeflow.server.isTestMode
 import java.io.File
 
 fun main(args: Array<String>) {
     val commandLine = CommandLineArgs.parse(args)
     val deploymentConfig = loadConfig(commandLine)
+    val ktorDeployment = runCatching { deploymentConfig.config("ktor.deployment") }
+        .getOrElse { MapApplicationConfig() }
     val environment = applicationEnvironment {
         config = deploymentConfig
     }
@@ -30,13 +35,14 @@ fun main(args: Array<String>) {
         factory = Netty,
         environment = environment,
         configure = {
-            val ktorDeployment = deploymentConfig.config("ktor.deployment")
             loadCommonConfiguration(ktorDeployment)
+            shutdownGracePeriod = 2000
+            shutdownTimeout = 5000
             connectors.clear()
             connectors.add(
                 EngineConnectorBuilder().apply {
-                    host = commandLine.host ?: ktorDeployment.propertyOrNull("host")?.getString() ?: "0.0.0.0"
-                    port = commandLine.port ?: ktorDeployment.property("port").getString().toInt()
+                    host = commandLine.host ?: deploymentConfig.propertyOrNull("host")?.getString() ?: "0.0.0.0"
+                    port = commandLine.port ?: deploymentConfig.property("port").getString().toInt()
                 }
             )
         },
@@ -45,15 +51,60 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    val log = LoggerFactory.getLogger("xyz.hyli.timeflow.Application")
+
+    validateConfig(environment.config)
     DatabaseFactory.init(config = environment.config)
     val repository = ExposedDataRepository()
+    val accessTokenBlacklist = AccessTokenBlacklist()
+
+    val turnstileService = TurnstileService(environment.config)
 
     configureHTTP()
     configureSerialization()
     configureMonitoring()
     configureAdministration()
-    configureSecurity(repository)
-    configureRouting(repository)
+    configureSecurity(repository, accessTokenBlacklist)
+    configureRouting(repository, accessTokenBlacklist, turnstileService)
+
+    monitor.subscribe(ApplicationStopping) {
+        log.info("Server shutting down, closing resources...")
+        turnstileService.close()
+        DatabaseFactory.close()
+        log.info("Resources closed")
+    }
+}
+
+private fun validateConfig(config: ApplicationConfig) {
+    if (isTestMode) return
+
+    val errors = mutableListOf<String>()
+
+    fun requireNonBlank(key: String, description: String) {
+        val value = config.propertyOrNull(key)?.getString()
+        if (value.isNullOrBlank()) {
+            errors += "$description ($key) must be configured"
+        }
+    }
+
+    // PostgreSQL credentials are always required in production
+    requireNonBlank("postgres.user", "Database user")
+    requireNonBlank("postgres.password", "Database password")
+
+    // Email credentials are required when email verification is enabled
+    val emailEnabled = config.propertyOrNull("email.verificationEnabled")?.getString()?.toBoolean() ?: true
+    if (emailEnabled) {
+        requireNonBlank("email.host", "Email SMTP host")
+        requireNonBlank("email.username", "Email username")
+        requireNonBlank("email.password", "Email password")
+        requireNonBlank("email.from", "Email from address")
+    }
+
+    if (errors.isNotEmpty()) {
+        throw IllegalStateException(
+            "Server configuration is incomplete:\n" + errors.joinToString("\n") { "  - $it" }
+        )
+    }
 }
 
 private fun loadConfig(commandLine: CommandLineArgs): ApplicationConfig {
@@ -121,7 +172,8 @@ private fun toEnvironmentVariableName(key: String): String = buildString {
 }
 
 private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
-    "ktor.deployment.port" to "8080",
+    "host" to "0.0.0.0",
+    "port" to "8080",
     "jwt.domain" to "http://localhost:8080",
     "jwt.audience" to "timeflow-client",
     "jwt.realm" to "TimeFlow API",
@@ -131,15 +183,15 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "postgres.host" to "localhost",
     "postgres.port" to "5432",
     "postgres.database" to "timeflow",
-    "postgres.user" to "username",
-    "postgres.password" to "password",
-    "postgres.maximumPoolSize" to "3",
+    "postgres.user" to "",
+    "postgres.password" to "",
+    "postgres.maximumPoolSize" to "10",
     "email.verificationEnabled" to "true",
-    "email.host" to "smtp.example.com",
+    "email.host" to "",
     "email.port" to "465",
-    "email.username" to "your-email@example.com",
-    "email.password" to "your-password",
-    "email.from" to "noreply@example.com",
+    "email.username" to "",
+    "email.password" to "",
+    "email.from" to "",
     "email.ssl" to "true",
     "email.codeExpirationMinutes" to "10",
     "http.forwardedHeaders.enabled" to "true",
@@ -159,8 +211,7 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "webApp.zipPath" to "",
     "turnstile.enabled" to "false",
     "turnstile.secretKey" to "",
-    "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    "testing" to "true"
+    "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 )
 
 private fun loadConfigFileOrNull(path: String): ApplicationConfig? = try {

@@ -15,15 +15,14 @@ import io.ktor.server.routing.*
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.routes.*
 
-fun Application.configureRouting(repository: DataRepository) {
+fun Application.configureRouting(repository: DataRepository, accessTokenBlacklist: AccessTokenBlacklist, turnstileService: TurnstileService) {
     install(Resources)
     val tokenManager = TokenManager(environment.config)
     val emailService = EmailService(environment.config)
-    val turnstileService = TurnstileService(environment.config)
 
     routing {
         utilRoutes()
-        authRoutes(tokenManager, repository, emailService, turnstileService)
+        authRoutes(tokenManager, repository, emailService, turnstileService, accessTokenBlacklist)
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)

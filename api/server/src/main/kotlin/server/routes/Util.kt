@@ -9,16 +9,22 @@
 
 package xyz.hyli.timeflow.server.routes
 
+import io.ktor.http.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.hyli.timeflow.BuildConfig
 import xyz.hyli.timeflow.api.models.Ping
 import xyz.hyli.timeflow.api.models.Version
+import xyz.hyli.timeflow.server.database.DatabaseFactory
 
 fun Route.utilRoutes() {
     get<Ping> {
-        call.respond(Ping.Response())
+        if (DatabaseFactory.isHealthy()) {
+            call.respond(Ping.Response())
+        } else {
+            call.respond(HttpStatusCode.ServiceUnavailable, Ping.Response(status = "database unavailable"))
+        }
     }
     get<Version> {
         call.respond(

@@ -19,17 +19,19 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import xyz.hyli.timeflow.server.isTestMode
 
 object DatabaseFactory {
+    private var dataSource: HikariDataSource? = null
+
     /**
      * 初始化数据库连接。
      * 此方法应在 Ktor 应用启动时调用。
      * @param config Ktor 的应用配置，用于读取生产数据库的连接参数。
      */
     fun init(config: ApplicationConfig) {
-        // testing 如果为 true，则使用 H2 内存数据库进行测试；否则，使用配置文件中的 PostgreSQL。
-        val testing = config.propertyOrNull("testing")?.getString()?.toBoolean() ?: false
-        val db = if (testing) {
+        // isTestMode 如果为 true，则使用 H2 内存数据库进行测试；否则，使用配置文件中的 PostgreSQL。
+        val db = if (isTestMode) {
             Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         } else {
             val host = config.property("postgres.host").getString()
@@ -37,15 +39,16 @@ object DatabaseFactory {
             val database = config.property("postgres.database").getString()
             val user = config.property("postgres.user").getString()
             val password = config.property("postgres.password").getString()
-            val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 3
+            val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 10
             val url = "jdbc:postgresql://$host:$port/$database"
-            val dataSource = createHikariDataSource(url, user, password, maximumPoolSize)
-            migratePostgres(dataSource)
-            Database.connect(dataSource)
+            val hikariDataSource = createHikariDataSource(url, user, password, maximumPoolSize)
+            dataSource = hikariDataSource
+            migratePostgres(hikariDataSource)
+            Database.connect(hikariDataSource)
         }
 
         // Tests still use an in-memory H2 database; bootstrap its schema directly.
-        if (testing) {
+        if (isTestMode) {
             transaction(db) {
                 SchemaUtils.create(
                     UsersTable,
@@ -85,6 +88,24 @@ object DatabaseFactory {
         transactionIsolation = "TRANSACTION_REPEATABLE_READ"
         validate()
     })
+
+    /**
+     * Returns true if the database connection pool is running and a connection can be obtained.
+     */
+    fun isHealthy(): Boolean = try {
+        dataSource?.connection?.use { it.isValid(2) } ?: isTestMode
+    } catch (_: Exception) {
+        false
+    }
+
+    /**
+     * Closes the database connection pool.
+     * Should be called during application shutdown.
+     */
+    fun close() {
+        dataSource?.close()
+        dataSource = null
+    }
 
     /**
      * A helper function to execute database queries in a suspended transaction
