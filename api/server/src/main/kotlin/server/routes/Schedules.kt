@@ -34,7 +34,7 @@ fun Route.schedulesRoutes(repository: DataRepository) {
             if (schedule != null) {
                 call.respond(HttpStatusCode.OK, schedule)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Schedule not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Schedule not found"))
             }
         }
 
@@ -53,7 +53,7 @@ fun Route.schedulesRoutes(repository: DataRepository) {
             if (wasDeleted) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Schedule not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Schedule not found"))
             }
         }
     }

@@ -15,7 +15,7 @@ package xyz.hyli.timeflow.utils
 object InputValidation {
     // RFC 5322 simplified email regex
     private val EMAIL_REGEX = Regex(
-        "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$"
+        "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,63}$"
     )
 
     // User field limits

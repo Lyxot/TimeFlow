@@ -58,7 +58,6 @@ dependencies {
     implementation(libs.exposed.kotlin.datetime)
     implementation(libs.flyway.core)
     implementation(libs.flyway.database.postgresql)
-    implementation(libs.h2)
     implementation(libs.hikaricp)
     implementation(libs.jakarta.mail)
     implementation(libs.koog.ktor)
@@ -92,6 +91,7 @@ dependencies {
     implementation(ktorLibs.server.resources)
     implementation(ktorLibs.server.sessions)
 
+    testImplementation(libs.h2)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(ktorLibs.server.testHost)
     testImplementation(project(":api:client"))
@@ -101,7 +101,9 @@ sourceSets {
     main {
         resources {
             srcDir(layout.buildDirectory.dir("generated/webAppResources/main"))
-            exclude("static/app.zip")
+            if (!bundleWebAppZip.get()) {
+                exclude("static/app.zip")
+            }
         }
     }
 }

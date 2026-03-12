@@ -28,6 +28,12 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 
 class ApplicationTest {
+    companion object {
+        init {
+            System.setProperty("timeflow.testing", "true")
+        }
+    }
+
     @Test
     fun `test api`() = testApplication {
         application {
@@ -35,9 +41,7 @@ class ApplicationTest {
         }
 
         environment {
-            config = testConfig(
-                "testing" to "true"
-            )
+            config = testConfig()
         }
 
         val tokenManager = FakeTokenManager()
@@ -178,19 +182,19 @@ class ApplicationTest {
 
             /**
              * Test: POST /auth/send-verification-code (Existing user)
-             * Checks if sending verification code for an existing user returns conflict error.
+             * Returns 202 Accepted regardless to prevent account enumeration.
              */
             client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
                 assertEquals(
-                    HttpStatusCode.Conflict,
+                    HttpStatusCode.Accepted,
                     status,
-                    "[POST /auth/send-verification-code] Existing user should return 409 Conflict"
+                    "[POST /auth/send-verification-code] Existing user should return 202 Accepted to prevent enumeration"
                 )
             }
 
             /**
              * Test: POST /auth/send-verification-code (Rate limiting)
-             * Checks if sending verification code twice within 1 minute is rate limited.
+             * Checks if sending verification code too many times is rate limited.
              */
             client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
                 assertEquals(
@@ -632,7 +636,6 @@ class ApplicationTest {
 
         environment {
             config = testConfig(
-                "testing" to "true",
                 "email.verificationEnabled" to "false"
             )
         }
@@ -699,7 +702,6 @@ class ApplicationTest {
 
         environment {
             config = testConfig(
-                "testing" to "true",
                 "turnstile.enabled" to "true"
             )
         }
@@ -731,7 +733,6 @@ class ApplicationTest {
 
         environment {
             config = testConfig(
-                "testing" to "true",
                 "turnstile.enabled" to "true"
             )
         }
@@ -766,7 +767,6 @@ class ApplicationTest {
 
         environment {
             config = testConfig(
-                "testing" to "true",
                 "turnstile.enabled" to "true"
             )
         }
@@ -801,7 +801,6 @@ class ApplicationTest {
 
         environment {
             config = testConfig(
-                "testing" to "true",
                 "webApp.serveEnabled" to "false"
             )
         }
@@ -818,7 +817,8 @@ class ApplicationTest {
     private fun testConfig(vararg overrides: Pair<String, String>): ApplicationConfig {
         return MapApplicationConfig(
             *listOf(
-                "ktor.deployment.port" to "8080",
+                "host" to "0.0.0.0",
+                "port" to "8080",
                 "jwt.domain" to "http://localhost:8080",
                 "jwt.audience" to "timeflow-client",
                 "jwt.realm" to "TimeFlow API",

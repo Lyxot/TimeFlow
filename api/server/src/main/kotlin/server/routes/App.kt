@@ -21,6 +21,9 @@ import xyz.hyli.timeflow.server.utils.resolveZipPath
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 
+private val FINGERPRINTED_REGEX =
+    Regex(".*[0-9a-f]{16,}.*\\.(js|wasm|css|png|jpg|jpeg|webp|svg|mjs)$", RegexOption.IGNORE_CASE)
+
 fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
     val serveWebApp = config.property("webApp.serveEnabled").getString().toBoolean()
     if (!serveWebApp) {
@@ -52,9 +55,7 @@ fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
 
             // 形如 e780302d66126f393091.wasm / b3831c7563128a6b300a.wasm 的“指纹文件”
             // 这里用：包含 >=16 位十六进制串 + 常见扩展名 来判断
-            val isFingerprinted =
-                Regex(".*[0-9a-f]{16,}.*\\.(js|wasm|css|png|jpg|jpeg|webp|svg|mjs)$", RegexOption.IGNORE_CASE)
-                    .matches(name)
+            val isFingerprinted = FINGERPRINTED_REGEX.matches(name)
 
             val isSourceMap = name.endsWith(".map", ignoreCase = true)
             val isLicenseTxt = name.endsWith(".LICENSE.txt", ignoreCase = true)
