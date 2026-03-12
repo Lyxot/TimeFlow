@@ -19,7 +19,9 @@ import io.ktor.server.resources.*
 import io.ktor.server.resources.post
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
+import org.slf4j.LoggerFactory
 import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.server.AccessTokenBlacklist
 import xyz.hyli.timeflow.server.EmailService
 import xyz.hyli.timeflow.server.TokenManager
 import xyz.hyli.timeflow.server.TurnstileService
@@ -35,6 +37,7 @@ import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+private val authLogger = LoggerFactory.getLogger("xyz.hyli.timeflow.server.Auth")
 private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 32, 64)
 
 @OptIn(ExperimentalUuidApi::class)
@@ -42,7 +45,8 @@ fun Route.authRoutes(
     tokenManager: TokenManager,
     repository: DataRepository,
     emailService: EmailService,
-    turnstileService: TurnstileService
+    turnstileService: TurnstileService,
+    accessTokenBlacklist: AccessTokenBlacklist
 ) {
     val verificationEnabled = emailService.verificationEnabled
 
@@ -52,15 +56,17 @@ fun Route.authRoutes(
             call.respond(HttpStatusCode.OK, ApiV1.Auth.EmailVerification.Response(enabled = verificationEnabled))
         }
 
-        // GET /api/v1/auth/check-email
-        get<ApiV1.Auth.CheckEmail> { request ->
-            InputValidation.validateEmail(request.email)?.let { error ->
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
-                return@get
-            }
+        // GET /api/v1/auth/check-email (stricter rate limit to prevent account enumeration)
+        rateLimit(RateLimitName("check_email")) {
+            get<ApiV1.Auth.CheckEmail> { request ->
+                InputValidation.validateEmail(request.email)?.let { error ->
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                    return@get
+                }
 
-            val user = repository.findUserByEmail(request.email)
-            call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = user != null))
+                val user = repository.findUserByEmail(request.email)
+                call.respond(HttpStatusCode.OK, ApiV1.Auth.CheckEmail.Response(exists = user != null))
+            }
         }
 
         // POST /api/v1/auth/register
@@ -110,6 +116,7 @@ fun Route.authRoutes(
             // 6. Delete the verification code after successful registration
             repository.deleteVerificationCodes(payload.email)
 
+            authLogger.info("User registered: email={}, remoteHost={}", payload.email, call.request.local.remoteHost)
             call.respond(HttpStatusCode.Created, mapOf("message" to "User created successfully"))
         }
 
@@ -125,6 +132,7 @@ fun Route.authRoutes(
 
             val result = repository.findPasswordHashByEmail(payload.email)
             if (result == null) {
+                authLogger.warn("Login failed (unknown email): email={}, remoteHost={}", payload.email, call.request.local.remoteHost)
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
                 return@post
             }
@@ -132,7 +140,13 @@ fun Route.authRoutes(
             val (storedHash, user) = result
 
             // Verify password using Argon2
-            if (argon2.verify(storedHash, payload.password.toCharArray())) {
+            val passwordMatches = try {
+                argon2.verify(storedHash, payload.password.toCharArray())
+            } catch (e: Exception) {
+                authLogger.error("Argon2 verification error: email={}, error={}", payload.email, e.message)
+                false
+            }
+            if (passwordMatches) {
                 // Password is correct, generate tokens
                 // Generate refresh token first to get its JTI
                 val (refreshToken, refreshJti, expiresAt) = tokenManager.generateToken(
@@ -149,6 +163,7 @@ fun Route.authRoutes(
                     refreshJti
                 )
 
+                authLogger.info("Login successful: email={}, remoteHost={}", payload.email, call.request.local.remoteHost)
                 call.respond(
                     HttpStatusCode.OK,
                     ApiV1.Auth.Login.Response(
@@ -159,6 +174,7 @@ fun Route.authRoutes(
                 )
             } else {
                 // Password is incorrect
+                authLogger.warn("Login failed (wrong password): email={}, remoteHost={}", payload.email, call.request.local.remoteHost)
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Email or Password"))
             }
         }
@@ -168,9 +184,26 @@ fun Route.authRoutes(
             // POST /api/v1/auth/refresh
             post<ApiV1.Auth.Refresh> { request ->
                 val principal = call.principal<JWTPrincipal>()
-                val authId = principal!!.payload.getClaim("authId").asString().toUuid()
-                val user = repository.findUserByAuthId(authId)!!
-                val jti = principal.jwtId!!.toUuid()
+                if (principal == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Missing or invalid token"))
+                    return@post
+                }
+                val authId = principal.payload.getClaim("authId")?.asString()
+                    ?.runCatching { toUuid() }?.getOrNull()
+                if (authId == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token"))
+                    return@post
+                }
+                val user = repository.findUserByAuthId(authId)
+                if (user == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "User not found"))
+                    return@post
+                }
+                val jti = principal.jwtId?.runCatching { toUuid() }?.getOrNull()
+                if (jti == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token"))
+                    return@post
+                }
 
                 val (newRefreshToken, activeRefreshJti, refreshExpiresAt) = if (request.rotate == true) {
                     // Generate new refresh token and save it
@@ -250,8 +283,9 @@ fun Route.authRoutes(
             }
 
             // Check if user with this email already exists
+            // Return 202 regardless to prevent account enumeration
             if (repository.findUserByEmail(payload.email) != null) {
-                call.respond(HttpStatusCode.Conflict, mapOf("error" to "User with this email already exists."))
+                call.respond(HttpStatusCode.Accepted)
                 return@post
             }
 
@@ -269,7 +303,8 @@ fun Route.authRoutes(
             try {
                 emailService.sendVerificationCode(payload.email, code)
                 call.respond(HttpStatusCode.Accepted)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                authLogger.error("Failed to send verification email: email={}, error={}", payload.email, e.message)
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send verification email."))
             }
         }
@@ -279,17 +314,40 @@ fun Route.authRoutes(
     authenticate("access-auth") {
         // POST /api/v1/auth/logout
         post<ApiV1.Auth.Logout> { request ->
-            val principal = call.principal<JWTPrincipal>()!!
+            val principal = call.principal<JWTPrincipal>()
+            if (principal == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Missing or invalid token"))
+                return@post
+            }
 
+            // Blacklist the current access token so it can't be reused after logout
+            principal.jwtId?.let { jti ->
+                principal.expiresAt?.toInstant()?.toKotlinInstant()?.let { expiresAt ->
+                    accessTokenBlacklist.add(jti, expiresAt)
+                }
+            }
+
+            val authIdStr = principal.payload.getClaim("authId")?.asString()
+            val authId = authIdStr?.runCatching { toUuid() }?.getOrNull()
             if (request.all == true) {
-                val authId = principal.payload.getClaim("authId").asString().toUuid()
-                val user = repository.findUserByAuthId(authId)!!
+                if (authId == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token"))
+                    return@post
+                }
+                val user = repository.findUserByAuthId(authId)
+                if (user == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "User not found"))
+                    return@post
+                }
                 repository.revokeAllRefreshTokens(user.id)
+                authLogger.info("Logout (all sessions): authId={}, remoteHost={}", authIdStr, call.request.local.remoteHost)
             } else {
-                val refreshJti = principal.payload.getClaim("refreshJti").asString()?.toUuid()
+                val refreshJti = principal.payload.getClaim("refreshJti")?.asString()
+                    ?.runCatching { toUuid() }?.getOrNull()
                 if (refreshJti != null) {
                     repository.revokeRefreshToken(refreshJti)
                 }
+                authLogger.info("Logout: authId={}, remoteHost={}", authIdStr, call.request.local.remoteHost)
             }
 
             call.respond(HttpStatusCode.OK)

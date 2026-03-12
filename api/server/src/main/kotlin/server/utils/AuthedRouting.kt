@@ -9,12 +9,14 @@
 
 package xyz.hyli.timeflow.server.utils
 
+import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.resources.delete
 import io.ktor.server.resources.get
 import io.ktor.server.resources.post
 import io.ktor.server.resources.put
+import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import xyz.hyli.timeflow.api.models.User
@@ -32,11 +34,23 @@ inline fun <reified T : Any> authedRoutingBody(
     repository: DataRepository,
     noinline body: suspend RoutingContext.(T, User) -> Unit
 ): suspend RoutingContext.(T) -> Unit = { resource ->
-    val principal = call.principal<JWTPrincipal>()!!
-    val authId = principal.payload.getClaim("authId").asString().toUuid()
-    val user = repository.findUserByAuthId(authId)!!
-
-    body(resource, user)
+    val principal = call.principal<JWTPrincipal>()
+    if (principal == null) {
+        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Missing or invalid token"))
+    } else {
+        val authId = principal.payload.getClaim("authId")?.asString()
+            ?.runCatching { toUuid() }?.getOrNull()
+        if (authId == null) {
+            call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token"))
+        } else {
+            val user = repository.findUserByAuthId(authId)
+            if (user == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "User not found"))
+            } else {
+                body(resource, user)
+            }
+        }
+    }
 }
 
 /**

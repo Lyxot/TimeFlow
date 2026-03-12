@@ -21,7 +21,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun Application.configureSecurity(repository: DataRepository) {
+fun Application.configureSecurity(repository: DataRepository, accessTokenBlacklist: AccessTokenBlacklist) {
     val jwtKeys = JwtKeysLoader.load(environment.config)
     val jwtIssuer = environment.config.property("jwt.issuer").getString()
     val jwtAudience = environment.config.property("jwt.audience").getString()
@@ -38,9 +38,14 @@ fun Application.configureSecurity(repository: DataRepository) {
                     .build()
             )
             validate { credential ->
-                if (credential.payload.getClaim("type").asInt() == TokenManager.TokenType.ACCESS.ordinal &&
-                    credential.payload.getClaim("authId").asString() != "" &&
-                    credential.payload.getClaim("refreshJti").asString() != ""
+                val jti = credential.jwtId
+                val authId = credential.payload.getClaim("authId")?.asString()
+                val refreshJti = credential.payload.getClaim("refreshJti")?.asString()
+                if (credential.payload.getClaim("type")?.asInt() == TokenManager.TokenType.ACCESS.ordinal &&
+                    !authId.isNullOrBlank() &&
+                    !refreshJti.isNullOrBlank() &&
+                    !jti.isNullOrBlank() &&
+                    !accessTokenBlacklist.isBlacklisted(jti)
                 ) {
                     JWTPrincipal(credential.payload)
                 } else {
@@ -59,14 +64,21 @@ fun Application.configureSecurity(repository: DataRepository) {
                     .build()
             )
             validate { credential ->
-                val authId = credential.payload.getClaim("authId").asString().toUuid()
-                val jti = credential.jwtId?.toUuid()
-                val user = repository.findUserByAuthId(authId)
-                if (credential.payload.getClaim("type").asInt() == TokenManager.TokenType.REFRESH.ordinal &&
-                    user != null && jti != null && repository.isRefreshTokenValid(user.id, jti)
-                ) {
-                    JWTPrincipal(credential.payload)
-                } else {
+                try {
+                    val authIdStr = credential.payload.getClaim("authId")?.asString()
+                    val jtiStr = credential.jwtId
+                    if (authIdStr.isNullOrBlank() || jtiStr.isNullOrBlank()) return@validate null
+                    val authId = authIdStr.toUuid()
+                    val jti = jtiStr.toUuid()
+                    val user = repository.findUserByAuthId(authId)
+                    if (credential.payload.getClaim("type")?.asInt() == TokenManager.TokenType.REFRESH.ordinal &&
+                        user != null && repository.isRefreshTokenValid(user.id, jti)
+                    ) {
+                        JWTPrincipal(credential.payload)
+                    } else {
+                        null
+                    }
+                } catch (_: Exception) {
                     null
                 }
             }
