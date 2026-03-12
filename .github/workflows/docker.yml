@@ -52,6 +52,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Build Docker image tarball
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew :api:server:buildImage
 
       - name: Login to Docker Hub

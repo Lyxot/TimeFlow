@@ -56,6 +56,7 @@ object DatabaseFactory {
                     VerificationCodesTable,
                     SchedulesTable,
                     CoursesTable,
+                    AccessTokenBlacklistTable,
                 )
             }
         }
@@ -85,7 +86,7 @@ object DatabaseFactory {
         this.password = password
         this.maximumPoolSize = maximumPoolSize
         isAutoCommit = false
-        transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+        transactionIsolation = "TRANSACTION_READ_COMMITTED"
         validate()
     })
 

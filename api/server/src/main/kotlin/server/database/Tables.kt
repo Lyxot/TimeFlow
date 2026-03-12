@@ -105,3 +105,11 @@ object CoursesTable : LongIdTable("courses") {
         uniqueIndex(scheduleId, localId)
     }
 }
+
+/**
+ * 访问令牌黑名单表
+ */
+object AccessTokenBlacklistTable : LongIdTable("access_token_blacklist") {
+    val jti = varchar("jti", 36).uniqueIndex()
+    val expiresAt = timestamp("expires_at")
+}

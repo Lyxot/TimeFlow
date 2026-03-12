@@ -136,3 +136,13 @@ class CourseEntity(id: EntityID<Long>) : LongEntity(id) {
             note = note ?: ""
         )
 }
+
+/**
+ * 与 AccessTokenBlacklistTable 对应的 DAO 实体。
+ */
+class AccessTokenBlacklistEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<AccessTokenBlacklistEntity>(AccessTokenBlacklistTable)
+
+    var jti by AccessTokenBlacklistTable.jti
+    var expiresAt by AccessTokenBlacklistTable.expiresAt
+}

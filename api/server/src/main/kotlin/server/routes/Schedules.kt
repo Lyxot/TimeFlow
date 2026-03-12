@@ -21,6 +21,7 @@ import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.utils.authedDelete
 import xyz.hyli.timeflow.server.utils.authedGet
 import xyz.hyli.timeflow.server.utils.authedPut
+import xyz.hyli.timeflow.utils.InputValidation
 
 fun Route.schedulesRoutes(repository: DataRepository) {
     authenticate("access-auth") {
@@ -40,6 +41,10 @@ fun Route.schedulesRoutes(repository: DataRepository) {
 
         authedPut<ApiV1.Schedules.ScheduleId>(repository) { resource, user ->
             val scheduleData = call.receive<ApiV1.Schedules.ScheduleId.Payload>()
+            InputValidation.validateName(scheduleData.name, "Schedule name")?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@authedPut
+            }
             val wasCreated = repository.upsertSchedule(user.id, resource.scheduleId, scheduleData)
             if (wasCreated) {
                 call.respond(HttpStatusCode.Created)

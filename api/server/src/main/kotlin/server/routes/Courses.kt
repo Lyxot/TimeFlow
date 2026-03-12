@@ -19,6 +19,7 @@ import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.utils.authedDelete
 import xyz.hyli.timeflow.server.utils.authedGet
 import xyz.hyli.timeflow.server.utils.authedPut
+import xyz.hyli.timeflow.utils.InputValidation
 
 fun Route.coursesRoutes(repository: DataRepository) {
     authenticate("access-auth") {
@@ -44,6 +45,22 @@ fun Route.coursesRoutes(repository: DataRepository) {
 
         authedPut<ApiV1.Schedules.ScheduleId.Courses.CourseId>(repository) { resource, user ->
             val courseData = call.receive<xyz.hyli.timeflow.data.Course>()
+            InputValidation.validateName(courseData.name, "Course name")?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@authedPut
+            }
+            InputValidation.validateTeacher(courseData.teacher)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@authedPut
+            }
+            InputValidation.validateClassroom(courseData.classroom)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@authedPut
+            }
+            InputValidation.validateNote(courseData.note)?.let { error ->
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
+                return@authedPut
+            }
             val wasCreated = repository.upsertCourse(
                 user.id, resource.parent.parent.scheduleId, resource.courseId, courseData
             )
