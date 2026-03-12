@@ -20,10 +20,10 @@ components:
   # Data models (schemas)
   schemas:
     # Primitive Types
-    Error:
+    ErrorResponse:
       type: object
       properties:
-        message:
+        error:
           type: string
           description: A human-readable error message.
     PingResponse:
@@ -34,7 +34,8 @@ components:
       type: object
       properties:
         version: { type: string, description: "Application version" }
-        buildTime: { type: string, description: "The timestamp when the application was built" }
+        buildTime: { type: integer, format: int64, description: "The timestamp when the application was built" }
+        commitHash: { type: string, description: "Short git commit hash" }
     Date:
       type: object
       properties:
@@ -92,8 +93,8 @@ components:
         teacher: { type: string }
     Schedule:
       type: object
+      description: Schedule object. The local ID is not a field; it is the map key in GET /schedules or the path parameter in /schedules/{scheduleId}.
       properties:
-        id: { type: integer, description: "The unique ID of the schedule." }
         name: { type: string }
         deleted: { type: boolean }
         courses:
@@ -108,8 +109,8 @@ components:
         updatedAt: { type: string, format: date-time, description: "Timestamp when the schedule was last updated." }
     ScheduleSummary:
       type: object
+      description: Summary of a schedule. The local ID is not a field; it is the map key in the response.
       properties:
-        id: { type: integer, description: "The unique ID of the schedule." }
         name: { type: string }
         deleted: { type: boolean }
         termStartDate: { $ref: '#/components/schemas/Date' }
@@ -160,15 +161,12 @@ components:
       properties:
         accessToken: { type: string, description: "Short-lived JWT Access Token" }
         refreshToken: { type: string, description: "Long-lived JWT Refresh Token. Conditionally returned.", nullable: true }
-    RefreshTokenRequest:
-      type: object
-      properties:
-        rotate: { type: boolean, description: "If true, the server will return a new refresh token (rotation).", default: false }
+        refreshTokenExpiresAt: { type: string, format: date-time, description: "Expiry time of the refresh token. Returned alongside refreshToken.", nullable: true }
     UserInfoResponse:
       type: object
       properties:
         id: { type: integer }
-        authId: { type: string }
+        authId: { type: string, format: uuid }
         username: { type: string }
         email: { type: string, format: email }
     CheckEmailResponse:
@@ -183,6 +181,8 @@ components:
 # API Paths
 paths:
   /ping:
+    servers:
+      - url: /
     get:
       tags: [ Health ]
       summary: Check service status
@@ -191,7 +191,13 @@ paths:
           description: Service is running and healthy
           content:
             application/json: { schema: { $ref: '#/components/schemas/PingResponse' } }
+        '503':
+          description: Service is running but database is unavailable
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/PingResponse' } }
   /version:
+    servers:
+      - url: /
     get:
       tags: [ Health ]
       summary: Get application build information
@@ -215,7 +221,10 @@ paths:
           description: Returns whether the email exists
           content:
             application/json: { schema: { $ref: '#/components/schemas/CheckEmailResponse' } }
-        '400': { description: Email parameter is missing or invalid }
+        '400':
+          description: Email parameter is missing or invalid
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
   /auth/email-verification:
     get:
       tags: [ Auth ]
@@ -236,10 +245,22 @@ paths:
           application/json: { schema: { $ref: '#/components/schemas/VerificationCodeRequest' } }
       responses:
         '202': { description: Successfully accepted the request to send an email. }
-        '400': { description: The email format is invalid, email verification is disabled, or Turnstile validation failed. }
-        '409': { description: The email address is already registered. }
-        '429': { description: Too many requests. Please try again later. }
-        '503': { description: Turnstile verification service is unavailable. }
+        '400':
+          description: The email format is invalid, email verification is disabled, or Turnstile validation failed.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '409':
+          description: The email address is already registered.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429':
+          description: Too many requests. Please try again later.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '503':
+          description: Turnstile verification service is unavailable.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
   /auth/register:
     post:
       tags: [ Auth ]
@@ -251,7 +272,14 @@ paths:
           application/json: { schema: { $ref: '#/components/schemas/UserRegistrationRequest' } }
       responses:
         '201': { description: User created successfully }
-        '400': { description: Invalid input or user already exists }
+        '400':
+          description: Invalid input (email, username, password, or verification code)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '409':
+          description: User with this email already exists
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
         '429': { description: Too many requests }
   /auth/login:
     post:
@@ -266,7 +294,10 @@ paths:
           description: Successful login, returns access and refresh tokens
           content:
             application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
-        '401': { description: Invalid credentials }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
         '429': { description: Too many requests }
   /auth/logout:
     post:
@@ -274,11 +305,20 @@ paths:
       summary: Log out and revoke refresh token
       security: [ { bearerAuth: [ ] } ]
       description: >
-        Revokes the current refresh token, effectively logging out the user.
-        The access token will still be valid until it expires naturally.
+        Revokes the current refresh token and blacklists the access token.
+        Use `?all=true` to revoke all refresh tokens for the user.
+      parameters:
+        - name: all
+          in: query
+          required: false
+          description: If true, revokes all refresh tokens for the user (logout all sessions).
+          schema: { type: boolean, nullable: true }
       responses:
-        '204': { description: Successfully logged out and refresh token revoked }
-        '401': { description: Unauthorized or invalid refresh token }
+        '200': { description: Successfully logged out }
+        '401':
+          description: Unauthorized or invalid token
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
   /auth/refresh:
     post:
       tags: [ Auth ]
@@ -286,17 +326,22 @@ paths:
       security: [ { bearerAuth: [ ] } ]
       description: >
         Provides a new access token by validating a JWT of type 'REFRESH' sent in the Authorization header.
-        The client can optionally request to rotate the refresh token as well by sending `rotate: true` in the body.
-      requestBody:
-        required: false
-        content:
-          application/json: { schema: { $ref: '#/components/schemas/RefreshTokenRequest' } }
+        The client can optionally request to rotate the refresh token by passing `?rotate=true`.
+      parameters:
+        - name: rotate
+          in: query
+          required: false
+          description: If true, the server will return a new refresh token (rotation).
+          schema: { type: boolean, default: false }
       responses:
         '200':
           description: Successfully refreshed. The response will always contain a new `accessToken`. It will conditionally contain a new `refreshToken` if rotation was requested.
           content:
             application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
-        '401': { description: Invalid or expired refresh token }
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
         '429': { description: Too many requests }
   /users/me:
     get:
@@ -308,7 +353,10 @@ paths:
           description: User profile
           content:
             application/json: { schema: { $ref: '#/components/schemas/UserInfoResponse' } }
-        '401': { description: Unauthorized }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
   /users/me/selected-schedule:
     get:
@@ -321,7 +369,10 @@ paths:
           description: The selected schedule ID
           content:
             application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleResponse' } }
-        '401': { description: Unauthorized }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
     put:
       tags: [ Users ]
       summary: Set the currently selected schedule
@@ -332,7 +383,10 @@ paths:
           application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleRequest' } }
       responses:
         '204': { description: Selected schedule updated successfully }
-        '401': { description: Unauthorized }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
   # Schedules Endpoints
   /schedules:
@@ -362,13 +416,16 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/ScheduleSummary'
-        '401': { description: Unauthorized }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
   /schedules/{scheduleId}:
     parameters:
       - name: scheduleId
         in: path
         required: true
-        schema: { type: integer }
+        schema: { type: integer, format: int16 }
     get:
       tags: [ Schedules ]
       summary: Get a single schedule by ID
@@ -378,8 +435,14 @@ paths:
           description: The full schedule object
           content:
             application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
-        '401': { description: Unauthorized }
-        '404': { description: Schedule not found }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
     put:
       tags: [ Schedules ]
       summary: Create or update a schedule (including soft delete)
@@ -392,7 +455,14 @@ paths:
       responses:
         '201': { description: Schedule created successfully. }
         '204': { description: Schedule updated successfully. }
-        '401': { description: Unauthorized }
+        '400':
+          description: Invalid input (e.g. schedule name too long)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
     delete:
       tags: [ Schedules ]
       summary: Permanently delete a schedule
@@ -400,8 +470,14 @@ paths:
       security: [ { bearerAuth: [ ] } ]
       responses:
         '204': { description: Schedule deleted successfully }
-        '401': { description: Unauthorized }
-        '404': { description: Schedule not found }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
   # Courses Endpoints
   /schedules/{scheduleId}/courses:
@@ -409,7 +485,7 @@ paths:
       - name: scheduleId
         in: path
         required: true
-        schema: { type: integer }
+        schema: { type: integer, format: int16 }
     get:
       tags: [ Courses ]
       summary: List all course summaries for a schedule
@@ -423,18 +499,25 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/CourseSummary'
-        '401': { description: Unauthorized }
-        '404': { description: Schedule not found }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
   /schedules/{scheduleId}/courses/{courseId}:
     parameters:
       - name: scheduleId
         in: path
         required: true
-        schema: { type: integer }
+        schema: { type: integer, format: int16 }
       - name: courseId
         in: path
         required: true
-        schema: { type: integer }
+        schema: { type: integer, format: int16 }
     get:
       tags: [ Courses ]
       summary: Get a single course by ID
@@ -444,8 +527,14 @@ paths:
           description: The full course object
           content:
             application/json: { schema: { $ref: '#/components/schemas/Course' } }
-        '401': { description: Unauthorized }
-        '404': { description: Schedule or Course not found }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule or Course not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
     put:
       tags: [ Courses ]
       summary: Create or update a specific course
@@ -457,13 +546,29 @@ paths:
       responses:
         '201': { description: Course created successfully. }
         '204': { description: Course updated successfully. }
-        '401': { description: Unauthorized }
-        '404': { description: Schedule not found }
+        '400':
+          description: Invalid input (e.g. name, teacher, classroom, or note too long)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
     delete:
       tags: [ Courses ]
       summary: Delete a course from a schedule
       security: [ { bearerAuth: [ ] } ]
       responses:
         '204': { description: Course deleted successfully }
-        '401': { description: Unauthorized }
-        '404': { description: Schedule or Course not found }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule or Course not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
