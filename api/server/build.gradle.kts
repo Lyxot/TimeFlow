@@ -29,6 +29,16 @@ application {
     applicationName = Target.APP_NAME
 }
 
+val bundleWebAppZip = providers.gradleProperty("bundleWebAppZip")
+    .map { it.toBoolean() }
+    .orElse(
+        provider {
+            gradle.startParameter.taskNames.any { taskName ->
+                taskName == "buildFatJar" || taskName.endsWith(":buildFatJar")
+            }
+        }
+    )
+
 ktor {
     fatJar {
         archiveFileName.set(Target.Server.artifactName)
@@ -87,46 +97,46 @@ dependencies {
     testImplementation(project(":api:client"))
 }
 
-val copyWebBuilds by tasks.registering {
-    description = "Copy web build zip files to server resources"
-    group = "build"
-
-    val resourcesStaticDir = file("src/main/resources/static")
-    val appZipTarget = file("$resourcesStaticDir/app.zip")
-    val jsArtifactDir = rootProject.file("builder/build/artifacts/release/js")
-    val wasmJsArtifactDir = rootProject.file("builder/build/artifacts/release/wasmJs")
-    val webCompatArtifactDir = rootProject.file("builder/build/artifacts/release/webCompat")
-
-    outputs.files(appZipTarget)
-
-    // Check if builds are needed and add dependencies
-    val webCompatZipFiles = webCompatArtifactDir.listFiles { file -> file.extension == "zip" }
-
-    if (webCompatZipFiles.isNullOrEmpty() && !appZipTarget.exists()) {
-        dependsOn(":builder:buildWebCompatReleaseZip")
-    }
-
-    doLast {
-        // Ensure target directory exists
-        resourcesStaticDir.mkdirs()
-
-        // Copy app.zip if needed
-        if (!appZipTarget.exists()) {
-            listOf(webCompatArtifactDir, wasmJsArtifactDir, jsArtifactDir).forEach { dir ->
-                val zipFiles = dir.listFiles { file -> file.extension == "zip" }
-                if (!zipFiles.isNullOrEmpty()) {
-                    zipFiles.first().copyTo(appZipTarget, overwrite = true)
-                    logger.lifecycle("Copied ${zipFiles.first().name} to app.zip")
-                    return@doLast
-                }
-            }
-            logger.error("No zip file found in ${webCompatArtifactDir.absolutePath} or ${jsArtifactDir.absolutePath} or ${wasmJsArtifactDir.absolutePath}")
-        } else {
-            logger.lifecycle("app.zip already exists, skipping")
+sourceSets {
+    main {
+        resources {
+            srcDir(layout.buildDirectory.dir("generated/webAppResources/main"))
+            exclude("static/app.zip")
         }
     }
 }
 
+val prepareWebAppResources by tasks.registering(Sync::class) {
+    description = "Prepare the optional bundled web app zip for server resources"
+    group = "build"
+
+    val generatedResourcesDir = layout.buildDirectory.dir("generated/webAppResources/main/static")
+    val jsArtifactDir = rootProject.file("builder/build/artifacts/release/js")
+    val wasmJsArtifactDir = rootProject.file("builder/build/artifacts/release/wasmJs")
+    val webCompatArtifactDir = rootProject.file("builder/build/artifacts/release/webCompat")
+
+    if (bundleWebAppZip.get() && webCompatArtifactDir.listFiles { file -> file.extension == "zip" }.isNullOrEmpty()) {
+        dependsOn(":builder:buildWebCompatReleaseZip")
+    }
+
+    into(generatedResourcesDir)
+    rename { "app.zip" }
+    from(
+        provider {
+            if (!bundleWebAppZip.get()) {
+                emptyList<File>()
+            } else {
+                val sourceZip = listOf(webCompatArtifactDir, wasmJsArtifactDir, jsArtifactDir)
+                    .firstNotNullOfOrNull { dir -> dir.listFiles { file -> file.extension == "zip" }?.firstOrNull() }
+                    ?: throw GradleException(
+                        "No web app zip file found in ${webCompatArtifactDir.absolutePath}, ${wasmJsArtifactDir.absolutePath}, or ${jsArtifactDir.absolutePath}"
+                    )
+                listOf(sourceZip)
+            }
+        }
+    )
+}
+
 tasks.named("processResources") {
-    dependsOn(copyWebBuilds)
+    dependsOn(prepareWebAppResources)
 }

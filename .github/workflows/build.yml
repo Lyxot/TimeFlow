@@ -112,9 +112,21 @@ jobs:
           path: builder/build/artifacts/release/${{ matrix.name }}/*
 
   build-server:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: server
+            bundle_web_app_zip: false
+            artifact_name: server
+            output_name: timeflow-server.jar
+          - name: server-web
+            bundle_web_app_zip: true
+            artifact_name: server-web
+            output_name: timeflow-server-web.jar
     runs-on: ubuntu-24.04-arm
     needs: build-app
-    name: Build server
+    name: Build ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -139,10 +151,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Build
-        run: ./gradlew :api:server:buildFatJar
+        run: ./gradlew :api:server:buildFatJar -PbundleWebAppZip=${{ matrix.bundle_web_app_zip }}
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p release_files
+          JAR_PATH=$(ls -t api/server/build/libs/TimeFlow-*.jar | head -n 1)
+          cp "$JAR_PATH" "release_files/${{ matrix.output_name }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: server
-          path: api/server/build/libs/*.jar
+          name: ${{ matrix.artifact_name }}
+          path: release_files/${{ matrix.output_name }}

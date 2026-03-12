@@ -27,6 +27,6 @@ fun Application.configureRouting(repository: DataRepository) {
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)
-        appRoutes()
+        appRoutes(environment.config, log)
     }
 }

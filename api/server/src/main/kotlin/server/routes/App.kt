@@ -10,16 +10,37 @@
 package xyz.hyli.timeflow.server.routes
 
 import io.ktor.http.*
+import io.ktor.server.config.*
 import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import xyz.hyli.timeflow.server.utils.extractResourceToTemp
+import org.slf4j.Logger
+import xyz.hyli.timeflow.BuildConfig
+import xyz.hyli.timeflow.server.utils.resolveBundledZipPath
+import xyz.hyli.timeflow.server.utils.resolveZipPath
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 
-fun Route.appRoutes() {
-    // Serve app
-    val appZipPath = extractResourceToTemp("/static/app.zip")
+fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
+    val serveWebApp = config.property("webApp.serveEnabled").getString().toBoolean()
+    if (!serveWebApp) {
+        log.info("Web app serving is disabled")
+        return
+    }
+
+    val configuredZipPath = config.property("webApp.zipPath").getString().takeIf { it.isNotBlank() }
+    val appZipPath = when {
+        configuredZipPath != null -> resolveZipPath(configuredZipPath)
+        BuildConfig.BUNDLED_WEB_APP_ZIP -> resolveBundledZipPath("/static/app.zip")
+        else -> null
+    }
+
+    if (appZipPath == null) {
+        val expectedLocation = configuredZipPath ?: "/static/app.zip"
+        log.warn("Web app serving is enabled but no zip was found at '{}'", expectedLocation)
+        return
+    }
+
     staticZip("/app/", "TimeFlow", appZipPath) {
         enableAutoHeadResponse()
         etag(ETagProvider.StrongSha256)

@@ -9,26 +9,31 @@
 
 package xyz.hyli.timeflow.server.utils
 
-import java.nio.file.Files
+import java.net.URI
+import java.nio.file.FileSystemAlreadyExistsException
+import java.nio.file.FileSystems
 import java.nio.file.Path
+import kotlin.io.path.exists
 
-/**
- * Extracts a resource file to a temporary location and returns its path.
- * @param resourcePath Path to the resource (e.g., "/static/TimeFlow-wasmJs.zip")
- * @return Path to the extracted temporary file
- */
-internal fun extractResourceToTemp(resourcePath: String): Path {
-    val inputStream = object {}.javaClass.getResourceAsStream(resourcePath)
-        ?: throw IllegalArgumentException("Resource not found: $resourcePath")
+internal fun resolveZipPath(path: String): Path? {
+    val filePath = Path.of(path)
+    return filePath.takeIf { it.exists() }
+}
 
-    val tempFile = Files.createTempFile("timeflow-", resourcePath.substringAfterLast("."))
-    tempFile.toFile().deleteOnExit()
+internal fun resolveBundledZipPath(resourcePath: String): Path? {
+    val resourceUri = object {}.javaClass.getResource(resourcePath)?.toURI() ?: return null
+    return resourceUri.toBundledPath()
+}
 
-    inputStream.use { input ->
-        Files.newOutputStream(tempFile).use { output ->
-            input.copyTo(output)
+private fun URI.toBundledPath(): Path? = when (scheme) {
+    "file" -> Path.of(this)
+    "jar" -> {
+        try {
+            FileSystems.newFileSystem(this, emptyMap<String, Any>())
+        } catch (_: FileSystemAlreadyExistsException) {
         }
+        runCatching { Path.of(this) }.getOrNull()
     }
 
-    return tempFile
+    else -> null
 }

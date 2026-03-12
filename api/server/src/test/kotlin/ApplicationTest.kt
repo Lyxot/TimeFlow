@@ -10,6 +10,7 @@
 package xyz.hyli.timeflow
 
 import io.ktor.client.call.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
@@ -792,6 +793,28 @@ class ApplicationTest {
         }
     }
 
+    @Test
+    fun `test app route disabled`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "testing" to "true",
+                "webApp.serveEnabled" to "false"
+            )
+        }
+
+        client.get("/app").apply {
+            assertEquals(
+                HttpStatusCode.NotFound,
+                status,
+                "[GET /app] should not be served when web app serving is disabled"
+            )
+        }
+    }
+
     private fun testConfig(vararg overrides: Pair<String, String>): ApplicationConfig {
         return MapApplicationConfig(
             *listOf(
@@ -816,6 +839,8 @@ class ApplicationTest {
                 "email.from" to "noreply@example.com",
                 "email.ssl" to "true",
                 "email.codeExpirationMinutes" to "10",
+                "webApp.serveEnabled" to "true",
+                "webApp.zipPath" to "/static/app.zip",
                 "turnstile.enabled" to "false",
                 "turnstile.secretKey" to "",
                 "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"

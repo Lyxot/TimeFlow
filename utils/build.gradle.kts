@@ -50,6 +50,10 @@ val portable: Boolean = gradle.startParameter.taskNames.any { taskName ->
             taskName.contains("PortableDistributable", ignoreCase = true)
 } || (project.findProperty("portable") as? String)?.toBoolean() ?: false
 
+val bundledWebAppZip: Boolean = gradle.startParameter.taskNames.any { taskName ->
+    taskName == "buildFatJar" || taskName.endsWith(":buildFatJar")
+} || (project.findProperty("bundleWebAppZip") as? String)?.toBoolean() ?: false
+
 buildConfig {
     // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
@@ -62,4 +66,5 @@ buildConfig {
     buildConfigField("GIT_COMMIT_HASH", rootProject.ext.get("commitHash") as String)
     buildConfigField("AUTHOR", "Lyxot")
     buildConfigField("PORTABLE", portable)
+    buildConfigField("BUNDLED_WEB_APP_ZIP", bundledWebAppZip)
 }

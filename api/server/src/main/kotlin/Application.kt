@@ -142,6 +142,8 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "email.from" to "noreply@example.com",
     "email.ssl" to "true",
     "email.codeExpirationMinutes" to "10",
+    "webApp.serveEnabled" to BuildConfig.BUNDLED_WEB_APP_ZIP.toString(),
+    "webApp.zipPath" to "",
     "turnstile.enabled" to "false",
     "turnstile.secretKey" to "",
     "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify",

@@ -1,0 +1,143 @@
+name: Docker
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  publish-docker:
+    runs-on: ${{ matrix.runner }}
+    name: Publish Docker image (${{ matrix.arch }})
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: 'recursive'
+
+      - name: Get tags
+        id: tags
+        run: |
+          NEW_TAG=$(git describe --tags --abbrev=0)
+          NEW_TAG_CLEAN=${NEW_TAG#v}
+          echo "new_tag=$NEW_TAG_CLEAN" >> $GITHUB_OUTPUT
+          echo "New tag: $NEW_TAG_CLEAN"
+
+      - name: Download webCompat artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: webCompat
+          path: builder/build/artifacts/release/webCompat
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build Docker image tarball
+        run: ./gradlew :api:server:buildImage
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Load and push Docker image
+        env:
+          ARCH: ${{ matrix.arch }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          VERSION: ${{ steps.tags.outputs.new_tag }}
+        run: |
+          LOAD_OUTPUT=$(docker load -i api/server/build/jib-image.tar)
+          echo "$LOAD_OUTPUT"
+          SOURCE_IMAGE=$(printf '%s\n' "$LOAD_OUTPUT" | sed -n 's/^Loaded image: //p' | head -n 1)
+          SOURCE_IMAGE=${SOURCE_IMAGE:-ktor-docker-image:latest}
+          TARGET_IMAGE="${DOCKERHUB_USERNAME}/timeflow-server"
+          docker tag "$SOURCE_IMAGE" "${TARGET_IMAGE}:${VERSION}-${ARCH}"
+          docker tag "$SOURCE_IMAGE" "${TARGET_IMAGE}:latest-${ARCH}"
+          docker push "${TARGET_IMAGE}:${VERSION}-${ARCH}"
+          docker push "${TARGET_IMAGE}:latest-${ARCH}"
+
+      - name: Build and push bundled web image
+        env:
+          ARCH: ${{ matrix.arch }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          VERSION: ${{ steps.tags.outputs.new_tag }}
+        run: |
+          WEB_ZIP=$(find builder/build/artifacts/release/webCompat -maxdepth 1 -type f -name '*.zip' | head -n 1)
+          test -n "$WEB_ZIP"
+          TARGET_IMAGE="${DOCKERHUB_USERNAME}/timeflow-server"
+          WEB_CONTEXT=$(mktemp -d)
+          cp "$WEB_ZIP" "${WEB_CONTEXT}/app.zip"
+          docker build \
+            --file .github/docker/server-web.Dockerfile \
+            --build-arg "BASE_IMAGE=${TARGET_IMAGE}:${VERSION}-${ARCH}" \
+            --tag "${TARGET_IMAGE}:${VERSION}-web-${ARCH}" \
+            --tag "${TARGET_IMAGE}:latest-web-${ARCH}" \
+            "${WEB_CONTEXT}"
+          docker push "${TARGET_IMAGE}:${VERSION}-web-${ARCH}"
+          docker push "${TARGET_IMAGE}:latest-web-${ARCH}"
+
+  publish-docker-manifest:
+    needs: publish-docker
+    runs-on: ubuntu-latest
+    name: Publish Docker manifest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get tags
+        id: tags
+        run: |
+          NEW_TAG=$(git describe --tags --abbrev=0)
+          NEW_TAG_CLEAN=${NEW_TAG#v}
+          echo "new_tag=$NEW_TAG_CLEAN" >> $GITHUB_OUTPUT
+          echo "New tag: $NEW_TAG_CLEAN"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Create and push multi-arch manifests
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          VERSION: ${{ steps.tags.outputs.new_tag }}
+        run: |
+          TARGET_IMAGE="${DOCKERHUB_USERNAME}/timeflow-server"
+          docker buildx imagetools create \
+            --tag "${TARGET_IMAGE}:${VERSION}" \
+            --tag "${TARGET_IMAGE}:latest" \
+            "${TARGET_IMAGE}:${VERSION}-amd64" \
+            "${TARGET_IMAGE}:${VERSION}-arm64"
+          docker buildx imagetools create \
+            --tag "${TARGET_IMAGE}:${VERSION}-web" \
+            --tag "${TARGET_IMAGE}:latest-web" \
+            "${TARGET_IMAGE}:${VERSION}-web-amd64" \
+            "${TARGET_IMAGE}:${VERSION}-web-arm64"

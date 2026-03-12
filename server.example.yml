@@ -27,6 +27,11 @@ email:
   from: "noreply@example.com"
   ssl: true
   codeExpirationMinutes: 10
+webApp:
+  serveEnabled: true
+  # Leave empty to use the bundled zip in the bundled-web server build.
+  # Set a filesystem path here when running the plain server build with an external web app zip.
+  zipPath: ""
 turnstile:
   enabled: false
   secretKey: ""
