@@ -38,6 +38,14 @@ fun Application.configureHTTP() {
         }
     }
 
+    // Security headers for API responses (skip /app/ static files)
+    intercept(ApplicationCallPipeline.Plugins) {
+        if (!call.request.path().startsWith("/app/")) {
+            call.response.header("X-Content-Type-Options", "nosniff")
+            call.response.header("X-Frame-Options", "DENY")
+            call.response.header("Cache-Control", "no-store")
+        }
+    }
     install(Compression) {
         gzip()
         deflate()
