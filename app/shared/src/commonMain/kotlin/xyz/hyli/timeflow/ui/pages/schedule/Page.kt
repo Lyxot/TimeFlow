@@ -249,7 +249,7 @@ fun ScheduleScreen(
                 state = pagerState,
                 modifier = Modifier
                     .verticalScroll(scrollState)
-                    .bottomPadding()
+                    .bottomPadding(extra = 56.dp)
             ) { page ->
                 // 课程表表格
                 ScheduleTable(

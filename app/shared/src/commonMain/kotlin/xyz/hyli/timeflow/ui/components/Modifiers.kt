@@ -47,12 +47,12 @@ fun Modifier.navigationBarHorizontalPadding(): Modifier {
 }
 
 @Composable
-fun Modifier.bottomPadding(): Modifier = this.padding(
+fun Modifier.bottomPadding(extra: Dp = 0.dp): Modifier = this.padding(
     bottom = maxOf(
         WindowInsets.navigationBars.asPaddingValues()
             .calculateBottomPadding(),
         24.dp
-    )
+    ) + extra
 )
 
 /**
