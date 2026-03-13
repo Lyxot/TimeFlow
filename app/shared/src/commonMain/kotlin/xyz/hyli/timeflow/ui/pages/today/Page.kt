@@ -97,7 +97,11 @@ fun TodayScreen(
                     today.month.number,
                     today.day,
                     stringResource(weekdays[today.dayOfWeek.ordinal])
-                ) + " " + stringResource(Res.string.schedule_value_course_week, currentWeek),
+                ) + " " +
+                        if (currentWeek > (schedule?.totalWeeks
+                                ?: 0)
+                        ) stringResource(Res.string.schedule_title_week_vacation)
+                        else stringResource(Res.string.schedule_value_course_week, currentWeek),
             )
         }
     ) {
