@@ -237,9 +237,27 @@ data class Schedule(
      * @return 一个 Map，键为时间范围 [Range]，值为该时间段内的所有课程 Map。
      */
     fun getOverviewTimeSlotsFor(weekday: Weekday): Map<Range, Map<Short, Course>> {
-        return getCoursesOfWeekday(weekday).entries
+        val coursesByTime = getCoursesOfWeekday(weekday).entries
             .groupBy({ it.value.time }, { it.key to it.value })
             .mapValues { it.value.toMap() }
+
+        if (coursesByTime.isEmpty()) return emptyMap()
+
+        // Merge overlapping ranges (e.g. Range(1,2) and Range(2,3) → Range(1,3))
+        val sorted = coursesByTime.entries.sortedBy { it.key.start }
+        val merged = mutableListOf<Pair<Range, MutableMap<Short, Course>>>()
+
+        for ((range, courses) in sorted) {
+            val last = merged.lastOrNull()
+            if (last == null || last.first.end < range.start) {
+                merged.add(Range(range.start, range.end) to courses.toMutableMap())
+            } else {
+                val newRange = Range(last.first.start, maxOf(last.first.end, range.end))
+                merged[merged.lastIndex] = newRange to last.second.apply { putAll(courses) }
+            }
+        }
+
+        return merged.associate { it }
     }
 
     /**
