@@ -120,7 +120,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: builder/build/artifacts/release/${{ matrix.name }}/*
@@ -176,7 +176,7 @@ jobs:
           cp "$JAR_PATH" "release_files/${{ matrix.artifact }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: release_files/${{ matrix.artifact }}
