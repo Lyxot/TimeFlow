@@ -160,3 +160,26 @@ listOf(
         }
     }
 }
+
+// Web Compatibility Archive Builder (combines wasmJs and js with automatic fallback)
+run {
+    val target = Target.WebCompat
+    val projectName = ":app:web"
+    val webProject = project(projectName)
+    val capitalizedName = target.system.name.capitalize()
+
+    // Only support release build as composeCompatibilityBrowserDistribution only builds release
+    val buildType = BuildType.Release
+    val capitalizedType = buildType.capitalized
+
+    tasks.register("build${capitalizedName}${capitalizedType}Zip", BuildArchiveTask::class) {
+        description = "Builds the ${target.system.name} $buildType archive with automatic wasm/js fallback."
+        group = "build"
+
+        sourceDir.set(webProject.layout.buildDirectory.dir("dist/composeWebCompatibility/productionExecutable"))
+        prepareDir.set(layout.buildDirectory.dir("tmp/${target.system.name}/${buildType}"))
+        archiveFolderName.set(Target.APP_NAME)
+        outputFile.set(layout.buildDirectory.file("artifacts/${buildType}/${target.system.name}/${target.artifactName}"))
+        dependsOn("${projectName}:composeCompatibilityBrowserDistribution")
+    }
+}

@@ -9,6 +9,8 @@
 
 rootProject.name = "TimeFlow"
 
+val ktorVersion = "3.4.0"
+
 pluginManagement {
     repositories {
         google {
@@ -22,6 +24,7 @@ pluginManagement {
         gradlePluginPortal()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // Compose Multiplatform pre-release versions
+        maven("https://packages.confluent.io/maven/")
     }
 }
 
@@ -38,8 +41,12 @@ dependencyResolutionManagement {
         }
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // Compose Multiplatform pre-release versions
+        maven("https://packages.confluent.io/maven/")
     }
     versionCatalogs {
+        create("ktorLibs") {
+            from("io.ktor:ktor-version-catalog:$ktorVersion")
+        }
         create("app") {
             from(files("gradle/app.versions.toml"))
         }
@@ -59,5 +66,8 @@ include(":app:android")
 include(":app:ios")
 include(":app:desktop")
 include(":app:web")
+include(":api:models")
+include(":api:server")
+include(":api:client")
 
 include(":builder")

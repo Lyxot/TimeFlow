@@ -24,6 +24,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Clock
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimeFlowViewModelTest {
@@ -73,6 +74,7 @@ class TimeFlowViewModelTest {
 
         assertEquals(newSchedule, updatedSettings.schedules[updatedSettings.selectedScheduleID])
         assertEquals(1, updatedSettings.schedules.size)
+        assertEquals(newSchedule.updatedAt, updatedSettings.selectedScheduleUpdatedAt)
     }
 
     @Test
@@ -85,8 +87,8 @@ class TimeFlowViewModelTest {
         val scheduleId = initialSettings.selectedScheduleID
 
         // Now, update it
-        val updatedSchedule = initialSchedule.copy(name = "Updated Name")
-        viewModel.updateSchedule(scheduleId, updatedSchedule)
+        val updatedSchedule = initialSchedule.copy(name = "Updated Name", updatedAt = Clock.System.now())
+        viewModel.updateSchedule(scheduleId, updatedSchedule, updatedSchedule.updatedAt)
 
         val finalSettings =
             viewModel.settings.first { it.schedules[scheduleId]?.name == "Updated Name" }
@@ -123,9 +125,72 @@ class TimeFlowViewModelTest {
     @Test
     fun `test updateSelectedSchedule updates settings`() = runTest {
         val newID: Short = 1145
-        viewModel.updateSelectedSchedule(newID)
+        val updatedAt = Clock.System.now()
+        viewModel.updateSelectedSchedule(newID, updatedAt)
 
         val updatedSettings = viewModel.settings.first { it.selectedScheduleID == newID }
         assertEquals(newID, updatedSettings.selectedScheduleID)
+        assertEquals(updatedAt, updatedSettings.selectedScheduleUpdatedAt)
+    }
+
+    @Test
+    fun `test updateSyncedAt updates settings`() = runTest {
+        val syncedAt = Clock.System.now()
+        viewModel.updateSyncedAt(syncedAt)
+
+        val updatedSettings = viewModel.settings.first { it.syncedAt == syncedAt }
+        assertEquals(syncedAt, updatedSettings.syncedAt)
+    }
+
+    @Test
+    fun `test deleteSchedule soft delete marks schedule as deleted`() = runTest {
+        // Create a schedule first
+        val schedule = Schedule(name = "Test Schedule")
+        viewModel.createSchedule(schedule)
+        val settingsWithSchedule = viewModel.settings.first { it.schedules.isNotEmpty() }
+        val scheduleId = settingsWithSchedule.selectedScheduleID
+
+        // Soft delete it
+        viewModel.deleteSchedule(scheduleId, permanently = false)
+
+        val updatedSettings = viewModel.settings.first { it.schedules[scheduleId]?.deleted == true }
+        assertEquals(true, updatedSettings.schedules[scheduleId]?.deleted)
+        assertEquals(Settings.ZERO_ID, updatedSettings.selectedScheduleID)
+    }
+
+    @Test
+    fun `test deleteSchedule permanent delete removes schedule`() = runTest {
+        // Create a schedule first
+        val schedule = Schedule(name = "Test Schedule")
+        viewModel.createSchedule(schedule)
+        val settingsWithSchedule = viewModel.settings.first { it.schedules.isNotEmpty() }
+        val scheduleId = settingsWithSchedule.selectedScheduleID
+
+        // Permanently delete it
+        viewModel.deleteSchedule(scheduleId, permanently = true)
+
+        val updatedSettings = viewModel.settings.first { !it.schedules.containsKey(scheduleId) }
+        assertEquals(false, updatedSettings.schedules.containsKey(scheduleId))
+        assertEquals(Settings.ZERO_ID, updatedSettings.selectedScheduleID)
+    }
+
+    @Test
+    fun `test deleteSchedule does not change selectedScheduleID if deleting different schedule`() = runTest {
+        // Create two schedules
+        val schedule1 = Schedule(name = "Schedule 1")
+        viewModel.createSchedule(schedule1)
+        val settingsWithFirst = viewModel.settings.first { it.schedules.isNotEmpty() }
+        val scheduleId1 = settingsWithFirst.selectedScheduleID
+
+        val schedule2 = Schedule(name = "Schedule 2")
+        viewModel.createSchedule(schedule2)
+        val settingsWithBoth = viewModel.settings.first { it.schedules.size == 2 }
+        val scheduleId2 = settingsWithBoth.selectedScheduleID
+
+        // Delete schedule1 (not currently selected)
+        viewModel.deleteSchedule(scheduleId1, permanently = true)
+
+        val updatedSettings = viewModel.settings.first { !it.schedules.containsKey(scheduleId1) }
+        assertEquals(scheduleId2, updatedSettings.selectedScheduleID) // Should still be scheduleId2
     }
 }

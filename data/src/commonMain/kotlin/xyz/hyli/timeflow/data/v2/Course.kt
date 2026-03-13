@@ -39,6 +39,12 @@ data class Course(
     @ProtoNumber(11) val reserved11: String? = null,
     @ProtoNumber(12) val reserved12: String? = null,
 ) {
+    val summary = CourseSummary(
+        name = name,
+        teacher = teacher,
+        classroom = classroom
+    )
+
     /**
      * 检查此课程是否安排在指定的教学周。
      *

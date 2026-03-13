@@ -31,6 +31,8 @@ import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.utils.writeBytesToFile
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
 class TimeFlowViewModel(
@@ -76,9 +78,10 @@ class TimeFlowViewModel(
         }
     }
 
-    fun updateSelectedSchedule(id: Short) {
+    fun updateSelectedSchedule(id: Short, updatedAt: Instant? = Clock.System.now()) {
         viewModelScope.launch {
-            repository.updateSelectedSchedule(id)
+            repository.updateSelectedScheduleID(id)
+            repository.updateSelectedScheduleUpdatedAt(updatedAt)
         }
     }
 
@@ -86,20 +89,40 @@ class TimeFlowViewModel(
     fun createSchedule(schedule: Schedule) {
         val id = settings.value.newScheduleId()
         viewModelScope.launch {
-            repository.createSchedule(id, schedule)
-            repository.updateSelectedSchedule(id)
+            repository.upsertSchedule(id, schedule)
+            repository.updateSelectedScheduleID(id)
+            repository.updateSelectedScheduleUpdatedAt(schedule.updatedAt)
         }
     }
 
-    fun updateSchedule(id: Short = settings.value.selectedScheduleID, schedule: Schedule) {
+    fun updateSchedule(
+        id: Short = settings.value.selectedScheduleID, schedule: Schedule, updatedAt: Instant = Clock.System.now()
+    ) {
         viewModelScope.launch {
-            repository.updateSchedule(id, schedule)
+            repository.upsertSchedule(id, schedule.copy(updatedAt = updatedAt))
         }
     }
 
     fun deleteSchedule(id: Short, permanently: Boolean = false) {
         viewModelScope.launch {
-            repository.deleteSchedule(id, permanently)
+            if (permanently) {
+                repository.deleteSchedule(id)
+            } else {
+                val schedule = settings.value.schedules[id]
+                if (schedule != null) {
+                    repository.upsertSchedule(id, schedule.copy(deleted = true, updatedAt = Clock.System.now()))
+                }
+            }
+            if (settings.value.selectedScheduleID == id) {
+                repository.updateSelectedScheduleID(Settings.ZERO_ID)
+                repository.updateSelectedScheduleUpdatedAt(Clock.System.now())
+            }
+        }
+    }
+
+    fun updateSyncedAt(syncedAt: Instant? = Clock.System.now()) {
+        viewModelScope.launch {
+            repository.updateSyncedAt(syncedAt)
         }
     }
 

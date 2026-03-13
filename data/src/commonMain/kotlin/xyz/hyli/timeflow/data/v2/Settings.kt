@@ -13,8 +13,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import xyz.hyli.timeflow.data.newShortId
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.supportDynamicColor
+import kotlin.time.Instant
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -34,7 +33,7 @@ data class Settings(
     /**
      * 是否启用动态取色，仅适用于 Android 12 及以上版本或 Windows
      */
-    @ProtoNumber(3) val themeDynamicColor: Boolean = currentPlatform().supportDynamicColor(),
+    @ProtoNumber(3) val themeDynamicColor: Boolean = false,
     /**
      * RGB 格式的主题颜色
      */
@@ -47,8 +46,8 @@ data class Settings(
      * 选中课程表的ID，如果没有选中则为0
      */
     @ProtoNumber(6) val selectedScheduleID: Short = ZERO_ID,
-    @ProtoNumber(7) val reserved7: String? = null,
-    @ProtoNumber(8) val reserved8: String? = null,
+    @ProtoNumber(7) val selectedScheduleUpdatedAt: Instant? = null,
+    @ProtoNumber(8) val syncedAt: Instant? = null,
     @ProtoNumber(9) val reserved9: String? = null,
     @ProtoNumber(10) val reserved10: String? = null,
     @ProtoNumber(11) val reserved11: String? = null,

@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: timeflow-postgres
+    environment:
+      POSTGRES_DB: timeflow
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db:/var/lib/postgresql

@@ -38,7 +38,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":utils"))
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.protobuf)
         }

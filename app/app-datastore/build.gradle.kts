@@ -30,6 +30,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":utils"))
             api(project(":app:app-interface"))
             implementation(libs.androidx.datastore)
             implementation(libs.filekit.core)

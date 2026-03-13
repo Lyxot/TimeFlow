@@ -92,6 +92,7 @@ abstract class BuildArchiveTask : DefaultTask() {
 
         val output = outputFile.get().asFile
         output.parentFile.mkdirs()
+        output.delete()
         val sevenZipCmd = get7zipCommand()
         if (sevenZipCmd == null) {
             logger.lifecycle("[Archive] 7z/7zz not found, falling back to 'zip' command.")

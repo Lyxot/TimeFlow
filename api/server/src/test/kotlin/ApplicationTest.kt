@@ -1,0 +1,863 @@
+/*
+ * Copyright (c) 2025-2026 Lyxot and contributors.
+ *
+ * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
+ * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
+ *
+ * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
+ */
+
+package xyz.hyli.timeflow
+
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.server.config.*
+import io.ktor.server.testing.*
+import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.api.models.Ping
+import xyz.hyli.timeflow.api.models.User
+import xyz.hyli.timeflow.api.models.Version
+import xyz.hyli.timeflow.client.ApiClient
+import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.server.EmailService
+import xyz.hyli.timeflow.server.TurnstileService
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Clock
+
+class ApplicationTest {
+    companion object {
+        init {
+            System.setProperty("timeflow.testing", "true")
+        }
+    }
+
+    @Test
+    fun `test api`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig()
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            // --- Health Check and Version API Tests ---
+
+            /**
+             * Test: GET /ping
+             * Checks if the health check endpoint is alive and returns the correct response.
+             */
+            client.ping().apply {
+                val message = "[GET /ping]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(Ping.Response(), body<Ping.Response>(), "$message Body should be default Ping.Response")
+                contentType()?.let {
+                    assertTrue(
+                        it.match(ContentType.Application.ProtoBuf),
+                        "$message Content-Type should be ProtoBuf"
+                    )
+                }
+            }
+
+            /**
+             * Test: GET /version
+             * Checks if the version endpoint returns the correct build information.
+             */
+            client.version().apply {
+                val message = "[GET /version]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    Version.Response(
+                        version = BuildConfig.APP_VERSION_NAME,
+                        buildTime = BuildConfig.BUILD_TIME,
+                        commitHash = BuildConfig.GIT_COMMIT_HASH
+                    ), body<Version.Response>(), "$message Body should match BuildConfig"
+                )
+            }
+
+            // --- Authentication API Tests ---
+
+            /**
+             * Test: GET /auth/check-email (Non-existing)
+             * Checks if a non-registered email returns exists=false.
+             */
+            client.checkEmail("test@test.com").apply {
+                val message = "[GET /auth/check-email] Non-existing email"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(false, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be false")
+            }
+
+            client.emailVerification().apply {
+                val message = "[GET /auth/email-verification]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(true, body<ApiV1.Auth.EmailVerification.Response>().enabled, "$message should be enabled")
+            }
+
+            /**
+             * Test: POST /auth/send-verification-code
+             * Checks if the server accepts a request to send a verification code.
+             */
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
+                assertEquals(
+                    HttpStatusCode.Accepted,
+                    status,
+                    "[POST /auth/send-verification-code] Status should be Accepted"
+                )
+            }
+
+            /**
+             * Test: POST /auth/register (Invalid verification code)
+             * Checks if registration fails with an invalid verification code.
+             */
+            client.register(
+                ApiV1.Auth.Register.Payload(
+                    username = "testuser",
+                    email = "test@test.com",
+                    password = "password",
+                    code = "000000"  // Wrong code
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/register] Invalid verification code should return 400 Bad Request"
+                )
+            }
+
+            /**
+             * Test: POST /auth/register
+             * Checks if a new user can be registered successfully.
+             */
+            client.register(
+                ApiV1.Auth.Register.Payload(
+                    username = "testuser",
+                    email = "test@test.com",
+                    password = "password",
+                    code = EmailService.TESTING_VERIFICATION_CODE
+                )
+            ).apply {
+                assertEquals(HttpStatusCode.Created, status, "[POST /auth/register] Status should be Created")
+            }
+
+            /**
+             * Test: POST /auth/login (Invalid)
+             * Checks if logging in with incorrect credentials fails.
+             */
+            client.login(ApiV1.Auth.Login.Payload(email = "1@2.com", password = "123")).apply {
+                assertEquals(
+                    HttpStatusCode.Unauthorized,
+                    status,
+                    "[POST /auth/login] Invalid credentials should be Unauthorized"
+                )
+            }
+
+            /**
+             * Test: POST /auth/login (Valid)
+             * Checks if a registered user can log in successfully and receives tokens.
+             */
+            client.login(ApiV1.Auth.Login.Payload(email = "test@test.com", password = "password")).apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/login] Valid credentials should be OK")
+                // Further token checks could be added here
+            }
+
+            /**
+             * Test: GET /auth/check-email (Existing)
+             * Checks if a registered email returns exists=true.
+             */
+            client.checkEmail("test@test.com").apply {
+                val message = "[GET /auth/check-email] Existing email"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(true, body<ApiV1.Auth.CheckEmail.Response>().exists, "$message 'exists' should be true")
+            }
+
+            /**
+             * Test: POST /auth/send-verification-code (Existing user)
+             * Returns 202 Accepted regardless to prevent account enumeration.
+             */
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
+                assertEquals(
+                    HttpStatusCode.Accepted,
+                    status,
+                    "[POST /auth/send-verification-code] Existing user should return 202 Accepted to prevent enumeration"
+                )
+            }
+
+            /**
+             * Test: POST /auth/send-verification-code (Rate limiting)
+             * Checks if sending verification code too many times is rate limited.
+             */
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "test@test.com")).apply {
+                assertEquals(
+                    HttpStatusCode.TooManyRequests,
+                    status,
+                    "[POST /auth/send-verification-code] Rate limiting should return 429 Too Many Requests"
+                )
+            }
+
+            /**
+             * Test: GET /users/me
+             * Checks if the endpoint returns the correct information for the logged-in user.
+             */
+            client.me().apply {
+                val message = "[GET /users/me]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<User>()
+                assertEquals("testuser", body.username, "$message Username should be correct")
+                assertEquals("test@test.com", body.email, "$message Email should be correct")
+            }
+
+            // --- Selected Schedule API Tests ---
+
+            /**
+             * Test: GET /users/me/selected-schedule (Initial)
+             * A new user should have no selected schedule.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] Initial fetch"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should be null"
+                )
+            }
+
+            // --- Schedules API Tests ---
+
+            /**
+             * Test: GET /schedules (Initial)
+             * A new user should have an empty map of schedules.
+             */
+            client.schedules().apply {
+                val message = "[GET /schedules] Initial fetch"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            val testScheduleId = 1145.toShort()
+            val testSchedule = xyz.hyli.timeflow.data.Schedule(
+                name = "Test Schedule", courses = emptyMap(),
+                termStartDate = xyz.hyli.timeflow.data.Date(2025, 9, 1),
+                termEndDate = xyz.hyli.timeflow.data.Date(2026, 1, 15),
+                lessonTimePeriodInfo = xyz.hyli.timeflow.data.LessonTimePeriodInfo(
+                    emptyList(),
+                    emptyList(),
+                    emptyList()
+                ),
+                displayWeekends = true, deleted = false
+            )
+
+            /**
+             * Test: PUT /schedules/{id} (Create)
+             * Creates a new schedule via the PUT endpoint.
+             */
+            client.upsertSchedule(testScheduleId, testSchedule).apply {
+                assertEquals(HttpStatusCode.Created, status, "[PUT /schedules/{id}] Create should return 201 Created")
+            }
+
+            /**
+             * Test: GET /schedules (After Create)
+             * The list should now contain one schedule summary.
+             */
+            client.schedules().apply {
+                val message = "[GET /schedules] After creation"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<Map<Short, ScheduleSummary>>()
+                assertEquals(1, body.size, "$message Map size should be 1")
+                assertEquals(testSchedule.name, body[testScheduleId]?.name, "$message Schedule name should match")
+            }
+
+            /**
+             * Test: GET /schedules/{id}
+             * Fetches the full details of the newly created schedule.
+             */
+            client.getSchedule(testScheduleId).apply {
+                val message = "[GET /schedules/{id}]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(testSchedule.name, body<Schedule>().name, "$message Schedule name should match")
+            }
+
+            /**
+             * Test: PUT /schedules/{id} (Update)
+             * Updates an existing schedule.
+             */
+            val updatedSchedule = testSchedule.copy(name = "Updated Schedule Name")
+            client.upsertSchedule(testScheduleId, updatedSchedule).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /schedules/{id}] Update should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Verify Update
+             * Fetches the schedule again to confirm its name has been updated.
+             */
+            client.getSchedule(testScheduleId).apply {
+                val message = "[PUT /schedules/{id}] Verify update"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals("Updated Schedule Name", body<Schedule>().name, "$message Name should be updated")
+            }
+
+            // --- Selected Schedule Tests (with existing schedule) ---
+
+            /**
+             * Test: PUT /users/me/selected-schedule
+             * Sets the selected schedule to an existing schedule.
+             */
+            client.setSelectedSchedule(testScheduleId, Clock.System.now()).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /users/me/selected-schedule] Should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: GET /users/me/selected-schedule (After setting)
+             * Should return the selected schedule ID.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After setting"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    testScheduleId,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return the selected schedule ID"
+                )
+            }
+
+            /**
+             * Test: Soft delete selected schedule
+             * After soft deleting, the selected schedule should return null.
+             */
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = true, updatedAt = Clock.System.now()))
+                .apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /schedules/{id}] Soft delete (via upsert with deleted=true) should return 204 No Content"
+                )
+            }
+
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After soft delete"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return null after schedule is deleted"
+                )
+            }
+
+            /**
+             * Test: Restore schedule (create with same ID)
+             * Re-create the schedule to continue with course tests.
+             */
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = false)).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /schedules/{id}] Restore should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Set selected schedule after restore
+             * Should be able to select the restored schedule.
+             */
+            client.setSelectedSchedule(testScheduleId, Clock.System.now()).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /users/me/selected-schedule] Should set restored schedule"
+                )
+            }
+
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After restore"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    testScheduleId,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return the selected schedule ID after restore"
+                )
+            }
+
+            // --- Courses API Tests (on the existing schedule) ---
+
+            /**
+             * Test: GET /schedules/{id}/courses (Initial)
+             * The new schedule should have an empty map of courses.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] Initial fetch"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, CourseSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            val testCourseId = 201.toShort()
+            val testCourse = Course(
+                name = "Test Course", teacher = "Mr. Ktor", classroom = "Server Room",
+                time = Range(3, 4),
+                weekday = Weekday.FRIDAY,
+                week = WeekList(listOf(1, 2, 3, 4, 5)),
+                color = 1, note = ""
+            )
+
+            /**
+             * Test: PUT /schedules/{id}/courses/{id} (Create)
+             * Creates a new course in the schedule.
+             */
+            client.upsertCourse(testScheduleId, testCourseId, testCourse).apply {
+                assertEquals(HttpStatusCode.Created, status, "[PUT /.../courses/{id}] Create should return 201 Created")
+            }
+
+            /**
+             * Test: GET /schedules/{id}/courses (After Create)
+             * The course list should now contain one summary.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] After creation"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<ApiV1.Schedules.ScheduleId.Courses.Response>()
+                assertEquals(1, body.size, "$message Map size should be 1")
+                assertEquals(testCourse.name, body[testCourseId]?.name, "$message Course name should match")
+            }
+
+            /**
+             * Test: GET /schedules/{id}/courses/{id}
+             * Fetches the full details of the newly created course.
+             */
+            client.getCourse(testScheduleId, testCourseId).apply {
+                val message = "[GET /.../courses/{id}]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(testCourse.name, body<Course>().name, "$message Course name should match")
+            }
+
+            /**
+             * Test: DELETE /schedules/{id}/courses/{id}
+             * Deletes the course.
+             */
+            client.deleteCourse(testScheduleId, testCourseId).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[DELETE /.../courses/{id}] Delete should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Verify Course Deletion
+             * The course list should be empty again.
+             */
+            client.courses(testScheduleId).apply {
+                val message = "[GET /.../courses] After deletion"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, CourseSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            // --- Soft Delete Tests ---
+
+            /**
+             * Test: PUT /schedules/{id} (Soft Delete via upsert with deleted=true)
+             * Soft deletes the schedule by setting deleted=true.
+             */
+            client.upsertSchedule(testScheduleId, updatedSchedule.copy(deleted = true, updatedAt = Clock.System.now()))
+                .apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[PUT /schedules/{id}] Soft delete (via upsert with deleted=true) should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: GET /schedules (After Soft Delete)
+             * Non-deleted schedules list should be empty.
+             */
+            client.schedules(deleted = null).apply {
+                val message = "[GET /schedules] After soft delete (default)"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /schedules?deleted=false
+             * Explicitly requesting non-deleted schedules should also return empty.
+             */
+            client.schedules(deleted = false).apply {
+                val message = "[GET /schedules?deleted=false]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /schedules?deleted=true
+             * Should return the soft-deleted schedule.
+             */
+            client.schedules(deleted = true).apply {
+                val message = "[GET /schedules?deleted=true]"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                val body = body<Map<Short, ScheduleSummary>>()
+                assertEquals(1, body.size, "$message Map size should be 1")
+                assertEquals("Updated Schedule Name", body[testScheduleId]?.name, "$message Schedule name should match")
+            }
+
+            // --- Final Cleanup ---
+
+            /**
+             * Test: DELETE /schedules/{id} (Permanent)
+             * Permanently deletes the parent schedule.
+             */
+            client.deleteSchedule(testScheduleId).apply {
+                assertEquals(
+                    HttpStatusCode.NoContent,
+                    status,
+                    "[DELETE /schedules/{id}] Permanent delete should return 204 No Content"
+                )
+            }
+
+            /**
+             * Test: Verify Permanent Schedule Deletion
+             * Both non-deleted and deleted lists should be empty.
+             */
+            client.schedules(deleted = null).apply {
+                val message = "[GET /schedules] After permanent deletion"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            client.schedules(deleted = true).apply {
+                val message = "[GET /schedules?deleted=true] After permanent deletion"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertTrue(body<Map<Short, ScheduleSummary>>().isEmpty(), "$message Map should be empty")
+            }
+
+            /**
+             * Test: GET /users/me/selected-schedule (After permanent delete)
+             * Should return null after the selected schedule is permanently deleted.
+             */
+            client.getSelectedSchedule().apply {
+                val message = "[GET /users/me/selected-schedule] After permanent delete"
+                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
+                assertEquals(
+                    null,
+                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
+                    "$message Should return null after schedule is permanently deleted"
+                )
+            }
+
+            /**
+             * Test: Automatic Token Refresh
+             * Simulates an expired access token to ensure the ApiClient's interceptor handles refreshing it.
+             */
+            tokenManager.setAccessToken("invalid_token")
+            client.me().apply {
+                assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Auto refresh access token should succeed")
+            }
+
+            // --- Logout API Tests ---
+
+            /**
+             * Test: POST /auth/logout (Single device)
+             * Logs out the current device by revoking its refresh token.
+             */
+            client.logout()?.apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/logout] Should return 200 OK")
+            }
+
+            /**
+             * Test: Verify logout invalidates refresh token
+             * After logout, the refresh token should be invalid and cannot be used to get a new access token.
+             */
+            client.refresh(false).apply {
+                assertEquals(
+                    HttpStatusCode.Unauthorized,
+                    status,
+                    "[POST /auth/refresh] After logout should be Unauthorized"
+                )
+            }
+
+            /**
+             * Test: Login again for logout all test
+             * Re-login to get new tokens.
+             */
+            client.login(ApiV1.Auth.Login.Payload(email = "test@test.com", password = "password")).apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/login] Re-login should be OK")
+            }
+
+            /**
+             * Test: Verify logged in
+             * Confirm user is logged in.
+             */
+            client.me().apply {
+                assertEquals(HttpStatusCode.OK, status, "[GET /users/me] Should be accessible after re-login")
+            }
+
+            /**
+             * Test: POST /auth/logout?all=true
+             * Logs out all devices by revoking all refresh tokens for the user.
+             */
+            client.logout(all = true)?.apply {
+                assertEquals(HttpStatusCode.OK, status, "[POST /auth/logout?all=true] Should return 200 OK")
+            }
+
+            /**
+             * Test: Verify logout all invalidates refresh token
+             * After logout all, the refresh token should be invalid.
+             */
+            client.refresh(false).apply {
+                assertEquals(
+                    HttpStatusCode.Unauthorized,
+                    status,
+                    "[POST /auth/refresh] After logout all should be Unauthorized"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test register without verification when disabled`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "email.verificationEnabled" to "false"
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.emailVerification().apply {
+                assertEquals(
+                    HttpStatusCode.OK,
+                    status,
+                    "[GET /auth/email-verification] should succeed when email verification is disabled"
+                )
+                assertEquals(
+                    false,
+                    body<ApiV1.Auth.EmailVerification.Response>().enabled,
+                    "[GET /auth/email-verification] should report disabled"
+                )
+            }
+
+            client.sendVerificationCode(ApiV1.Auth.SendVerificationCode.Payload(email = "novalidation@test.com"))
+                .apply {
+                    assertEquals(
+                        HttpStatusCode.BadRequest,
+                        status,
+                        "[POST /auth/send-verification-code] should be rejected when email verification is disabled"
+                    )
+                }
+
+            client.register(
+                ApiV1.Auth.Register.Payload(
+                    username = "noverify",
+                    email = "novalidation@test.com",
+                    password = "password",
+                    code = null
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.Created,
+                    status,
+                    "[POST /auth/register] should allow missing code when email verification is disabled"
+                )
+            }
+
+            client.login(ApiV1.Auth.Login.Payload(email = "novalidation@test.com", password = "password")).apply {
+                assertEquals(
+                    HttpStatusCode.OK,
+                    status,
+                    "[POST /auth/login] should work for a user registered without email verification"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code with turnstile enabled`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "turnstile.enabled" to "true"
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(email = "turnstile@test.com")
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/send-verification-code] should require a Turnstile token when enabled"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code rejects invalid turnstile token`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "turnstile.enabled" to "true"
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(
+                    email = "turnstile-invalid@test.com",
+                    turnstileToken = "invalid-token"
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    status,
+                    "[POST /auth/send-verification-code] should reject an invalid Turnstile token"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test send verification code accepts testing turnstile token`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "turnstile.enabled" to "true"
+            )
+        }
+
+        val tokenManager = FakeTokenManager()
+        val apiClient = ApiClient(
+            tokenManager = tokenManager,
+            client = client,
+        )
+
+        apiClient.use { client ->
+            client.sendVerificationCode(
+                ApiV1.Auth.SendVerificationCode.Payload(
+                    email = "turnstile-success@test.com",
+                    turnstileToken = TurnstileService.TESTING_TOKEN
+                )
+            ).apply {
+                assertEquals(
+                    HttpStatusCode.Accepted,
+                    status,
+                    "[POST /auth/send-verification-code] should accept the testing Turnstile token"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test app route disabled`() = testApplication {
+        application {
+            module()
+        }
+
+        environment {
+            config = testConfig(
+                "webApp.serveEnabled" to "false"
+            )
+        }
+
+        client.get("/app").apply {
+            assertEquals(
+                HttpStatusCode.NotFound,
+                status,
+                "[GET /app] should not be served when web app serving is disabled"
+            )
+        }
+    }
+
+    private fun testConfig(vararg overrides: Pair<String, String>): ApplicationConfig {
+        return MapApplicationConfig(
+            *listOf(
+                "host" to "0.0.0.0",
+                "port" to "8080",
+                "jwt.domain" to "http://localhost:8080",
+                "jwt.audience" to "timeflow-client",
+                "jwt.realm" to "TimeFlow API",
+                "jwt.issuer" to "timeflow-api",
+                "jwt.privateKeyPath" to ".tmp/test-jwt-private.pem",
+                "jwt.publicKeyPath" to ".tmp/test-jwt-public.pem",
+                "postgres.host" to "localhost",
+                "postgres.port" to "5432",
+                "postgres.database" to "timeflow",
+                "postgres.user" to "username",
+                "postgres.password" to "password",
+                "postgres.maximumPoolSize" to "3",
+                "email.verificationEnabled" to "true",
+                "email.host" to "smtp.example.com",
+                "email.port" to "465",
+                "email.username" to "your-email@example.com",
+                "email.password" to "your-password",
+                "email.from" to "noreply@example.com",
+                "email.ssl" to "true",
+                "email.codeExpirationMinutes" to "10",
+                "http.forwardedHeaders.enabled" to "true",
+                "http.xForwardedHeaders.enabled" to "true",
+                "http.cors.enabled" to "false",
+                "http.cors.anyHost" to "false",
+                "http.cors.allowedHosts" to "",
+                "http.cors.allowCredentials" to "false",
+                "http.hsts.enabled" to "false",
+                "http.hsts.includeSubDomains" to "true",
+                "http.hsts.preload" to "false",
+                "http.hsts.maxAgeInSeconds" to "31536000",
+                "http.httpsRedirect.enabled" to "false",
+                "http.httpsRedirect.sslPort" to "443",
+                "http.httpsRedirect.permanentRedirect" to "true",
+                "webApp.serveEnabled" to "true",
+                "webApp.zipPath" to "/static/app.zip",
+                "turnstile.enabled" to "false",
+                "turnstile.secretKey" to "",
+                "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+            ).plus(overrides).toTypedArray()
+        )
+    }
+}

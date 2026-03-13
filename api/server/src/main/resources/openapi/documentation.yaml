@@ -1,0 +1,574 @@
+openapi: 3.0.3
+info:
+  title: TimeFlow API
+  description: The RESTful API for the TimeFlow application, supporting cloud sync and data management.
+  version: 1.2.0
+
+servers:
+  - url: /api/v1
+    description: API Version 1
+
+# Reusable components
+components:
+  # Security scheme for protected endpoints
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # Data models (schemas)
+  schemas:
+    # Primitive Types
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: A human-readable error message.
+    PingResponse:
+      type: object
+      properties:
+        status: { type: string, example: "ok" }
+    VersionResponse:
+      type: object
+      properties:
+        version: { type: string, description: "Application version" }
+        buildTime: { type: integer, format: int64, description: "The timestamp when the application was built" }
+        commitHash: { type: string, description: "Short git commit hash" }
+    Date:
+      type: object
+      properties:
+        year: { type: integer, format: int32 }
+        month: { type: integer, format: int32 }
+        day: { type: integer, format: int32 }
+    Time:
+      type: object
+      properties:
+        hour: { type: integer, format: int32 }
+        minute: { type: integer, format: int32 }
+    Range:
+      type: object
+      properties:
+        start: { type: integer, format: int32 }
+        end: { type: integer, format: int32 }
+    WeekList:
+      type: object
+      properties:
+        weeks:
+          type: array
+          items: { type: integer, format: int32 }
+    Weekday:
+      type: string
+      enum: [ MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY ]
+    Lesson:
+      type: object
+      properties:
+        start: { $ref: '#/components/schemas/Time' }
+        end: { $ref: '#/components/schemas/Time' }
+    LessonTimePeriodInfo:
+      type: object
+      properties:
+        morning: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+        afternoon: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+        evening: { type: array, items: { $ref: '#/components/schemas/Lesson' } }
+
+    # Core Data Models
+    Course:
+      type: object
+      properties:
+        name: { type: string }
+        teacher: { type: string }
+        classroom: { type: string }
+        time: { $ref: '#/components/schemas/Range' }
+        weekday: { $ref: '#/components/schemas/Weekday' }
+        week: { $ref: '#/components/schemas/WeekList' }
+        color: { type: integer, format: int32 }
+        note: { type: string }
+    CourseSummary:
+      type: object
+      properties:
+        name: { type: string }
+        classroom: { type: string }
+        teacher: { type: string }
+    Schedule:
+      type: object
+      description: Schedule object. The local ID is not a field; it is the map key in GET /schedules or the path parameter in /schedules/{scheduleId}.
+      properties:
+        name: { type: string }
+        deleted: { type: boolean }
+        courses:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Course'
+        termStartDate: { $ref: '#/components/schemas/Date' }
+        termEndDate: { $ref: '#/components/schemas/Date' }
+        lessonTimePeriodInfo: { $ref: '#/components/schemas/LessonTimePeriodInfo' }
+        displayWeekends: { type: boolean }
+        createdAt: { type: string, format: date-time, description: "Timestamp when the schedule was created." }
+        updatedAt: { type: string, format: date-time, description: "Timestamp when the schedule was last updated." }
+    ScheduleSummary:
+      type: object
+      description: Summary of a schedule. The local ID is not a field; it is the map key in the response.
+      properties:
+        name: { type: string }
+        deleted: { type: boolean }
+        termStartDate: { $ref: '#/components/schemas/Date' }
+        termEndDate: { $ref: '#/components/schemas/Date' }
+        createdAt: { type: string, format: date-time, description: "Timestamp when the schedule was created." }
+        updatedAt: { type: string, format: date-time, description: "Timestamp when the schedule was last updated." }
+    # Selected Schedule Schemas
+    SelectedScheduleResponse:
+      type: object
+      properties:
+        scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the currently selected schedule, or null if none selected" }
+        updatedAt: { type: string, format: date-time, nullable: true, description: "Timestamp when the selected schedule was last updated, or null if never set" }
+    SelectedScheduleRequest:
+      type: object
+      properties:
+        scheduleId: { type: integer, format: int16, nullable: true, description: "The local ID of the schedule to select, or null to clear selection" }
+        updatedAt: { type: string, format: date-time, nullable: true, description: "Timestamp when the selection was made" }
+
+    # Auth Schemas
+    VerificationCodeRequest:
+      type: object
+      required: [ email ]
+      properties:
+        email: { type: string, format: email }
+        turnstileToken:
+          type: string
+          nullable: true
+          description: "Required when Cloudflare Turnstile is enabled on the server."
+    UserRegistrationRequest:
+      type: object
+      required: [ username, email, password ]
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        code:
+          type: string
+          nullable: true
+          description: "The 6-digit verification code sent to the user's email when email verification is enabled."
+    UserLoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    TokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string, description: "Short-lived JWT Access Token" }
+        refreshToken: { type: string, description: "Long-lived JWT Refresh Token. Conditionally returned.", nullable: true }
+        refreshTokenExpiresAt: { type: string, format: date-time, description: "Expiry time of the refresh token. Returned alongside refreshToken.", nullable: true }
+    UserInfoResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        authId: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+    CheckEmailResponse:
+      type: object
+      properties:
+        exists: { type: boolean }
+    EmailVerificationResponse:
+      type: object
+      properties:
+        enabled: { type: boolean, description: "Whether email verification is enabled for registration." }
+
+# API Paths
+paths:
+  /ping:
+    servers:
+      - url: /
+    get:
+      tags: [ Health ]
+      summary: Check service status
+      responses:
+        '200':
+          description: Service is running and healthy
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/PingResponse' } }
+        '503':
+          description: Service is running but database is unavailable
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/PingResponse' } }
+  /version:
+    servers:
+      - url: /
+    get:
+      tags: [ Health ]
+      summary: Get application build information
+      responses:
+        '200':
+          description: Build version and time information
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/VersionResponse' } }
+  # Auth Endpoints
+  /auth/check-email:
+    get:
+      tags: [ Auth ]
+      summary: Check if an email is already registered
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        '200':
+          description: Returns whether the email exists
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/CheckEmailResponse' } }
+        '400':
+          description: Email parameter is missing or invalid
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+  /auth/email-verification:
+    get:
+      tags: [ Auth ]
+      summary: Get email verification availability
+      responses:
+        '200':
+          description: Returns whether email verification is enabled for registration.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/EmailVerificationResponse' } }
+  /auth/send-verification-code:
+    post:
+      tags: [ Auth ]
+      summary: Send a registration verification code
+      description: Available only when email verification is enabled in server configuration. When Turnstile is enabled, `turnstileToken` is also required.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/VerificationCodeRequest' } }
+      responses:
+        '202': { description: Successfully accepted the request to send an email. }
+        '400':
+          description: The email format is invalid, email verification is disabled, or Turnstile validation failed.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '409':
+          description: The email address is already registered.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429':
+          description: Too many requests. Please try again later.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '503':
+          description: Turnstile verification service is unavailable.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+  /auth/register:
+    post:
+      tags: [ Auth ]
+      summary: Register a new user
+      description: The verification `code` is required only when email verification is enabled in server configuration.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UserRegistrationRequest' } }
+      responses:
+        '201': { description: User created successfully }
+        '400':
+          description: Invalid input (email, username, password, or verification code)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '409':
+          description: User with this email already exists
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429': { description: Too many requests }
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Log in a user
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UserLoginRequest' } }
+      responses:
+        '200':
+          description: Successful login, returns access and refresh tokens
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429': { description: Too many requests }
+  /auth/logout:
+    post:
+      tags: [ Auth ]
+      summary: Log out and revoke refresh token
+      security: [ { bearerAuth: [ ] } ]
+      description: >
+        Revokes the current refresh token and blacklists the access token.
+        Use `?all=true` to revoke all refresh tokens for the user.
+      parameters:
+        - name: all
+          in: query
+          required: false
+          description: If true, revokes all refresh tokens for the user (logout all sessions).
+          schema: { type: boolean, nullable: true }
+      responses:
+        '200': { description: Successfully logged out }
+        '401':
+          description: Unauthorized or invalid token
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+  /auth/refresh:
+    post:
+      tags: [ Auth ]
+      summary: Refresh an access token
+      security: [ { bearerAuth: [ ] } ]
+      description: >
+        Provides a new access token by validating a JWT of type 'REFRESH' sent in the Authorization header.
+        The client can optionally request to rotate the refresh token by passing `?rotate=true`.
+      parameters:
+        - name: rotate
+          in: query
+          required: false
+          description: If true, the server will return a new refresh token (rotation).
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Successfully refreshed. The response will always contain a new `accessToken`. It will conditionally contain a new `refreshToken` if rotation was requested.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } }
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429': { description: Too many requests }
+  /users/me:
+    get:
+      tags: [ Users ]
+      summary: Get current user's profile
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/UserInfoResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
+  /users/me/selected-schedule:
+    get:
+      tags: [ Users ]
+      summary: Get the currently selected schedule
+      description: Returns the selected schedule ID, or null if no schedule is selected, the schedule doesn't exist, or the schedule is deleted.
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The selected schedule ID
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+    put:
+      tags: [ Users ]
+      summary: Set the currently selected schedule
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleRequest' } }
+      responses:
+        '204': { description: Selected schedule updated successfully }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
+  # Schedules Endpoints
+  /schedules:
+    get:
+      tags: [ Schedules ]
+      summary: List all schedules for the current user
+      security: [ { bearerAuth: [ ] } ]
+      parameters:
+        - name: deleted
+          in: query
+          description: >
+            Controls which schedules to return based on deletion status.
+            If null or not provided (default), returns only non-deleted schedules.
+            If true, returns only deleted schedules.
+            If false, returns only non-deleted schedules.
+          required: false
+          schema:
+            type: boolean
+            nullable: true
+            default: null
+      responses:
+        '200':
+          description: A map of schedule summaries, keyed by their local IDs.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ScheduleSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+  /schedules/{scheduleId}:
+    parameters:
+      - name: scheduleId
+        in: path
+        required: true
+        schema: { type: integer, format: int16 }
+    get:
+      tags: [ Schedules ]
+      summary: Get a single schedule by ID
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The full schedule object
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+    put:
+      tags: [ Schedules ]
+      summary: Create or update a schedule (including soft delete)
+      description: Use this endpoint to create, update, or soft-delete a schedule by setting deleted=true
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Schedule' } }
+      responses:
+        '201': { description: Schedule created successfully. }
+        '204': { description: Schedule updated successfully. }
+        '400':
+          description: Invalid input (e.g. schedule name too long)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+    delete:
+      tags: [ Schedules ]
+      summary: Permanently delete a schedule
+      description: Permanently deletes a schedule from the database. For soft delete, use PUT with deleted=true.
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '204': { description: Schedule deleted successfully }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
+  # Courses Endpoints
+  /schedules/{scheduleId}/courses:
+    parameters:
+      - name: scheduleId
+        in: path
+        required: true
+        schema: { type: integer, format: int16 }
+    get:
+      tags: [ Courses ]
+      summary: List all course summaries for a schedule
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: A map of course summaries, keyed by their local IDs.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/CourseSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
+  /schedules/{scheduleId}/courses/{courseId}:
+    parameters:
+      - name: scheduleId
+        in: path
+        required: true
+        schema: { type: integer, format: int16 }
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: integer, format: int16 }
+    get:
+      tags: [ Courses ]
+      summary: Get a single course by ID
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: The full course object
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Course' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule or Course not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+    put:
+      tags: [ Courses ]
+      summary: Create or update a specific course
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/Course' } }
+      responses:
+        '201': { description: Course created successfully. }
+        '204': { description: Course updated successfully. }
+        '400':
+          description: Invalid input (e.g. name, teacher, classroom, or note too long)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+    delete:
+      tags: [ Courses ]
+      summary: Delete a course from a schedule
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '204': { description: Course deleted successfully }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '404':
+          description: Schedule or Course not found
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }

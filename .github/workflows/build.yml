@@ -6,8 +6,30 @@ on:
 
 jobs:
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: shared UI
+            task: ./gradlew :app:shared:jvmTest
+          - name: API server
+            task: ./gradlew :api:server:test
     runs-on: ubuntu-latest
-    name: Run tests
+    name: Test ${{ matrix.name }}
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: timeflow
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v6
         with:
@@ -25,10 +47,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Run tests
-        run: ./gradlew jvmTest
+      - name: Run ${{ matrix.name }} tests
+        run: ${{ matrix.task }}
 
-  build:
+  build-app:
     strategy:
       fail-fast: false
       matrix:
@@ -57,12 +79,9 @@ jobs:
           - name: windows-arm64
             runner: windows-11-arm
             task: ./gradlew.bat :builder:buildWindowsReleaseMsi :builder:buildWindowsReleaseExe && ./gradlew.bat :builder:buildWindowsReleasePortable
-          - name: js
+          - name: webCompat
             runner: ubuntu-24.04-arm
-            task: ./gradlew :builder:buildJsReleaseZip
-          - name: wasmJs
-            runner: ubuntu-24.04-arm
-            task: ./gradlew :builder:buildWasmJsReleaseZip
+            task: ./gradlew :builder:buildWebCompatReleaseZip
 
     runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.name }}
@@ -105,4 +124,59 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: builder/build/artifacts/release/${{ matrix.name }}/*
-    
+
+  build-server:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: server
+            bundleWebApp: false
+            artifact: timeflow-server.jar
+          - name: server-web
+            bundleWebApp: true
+            artifact: timeflow-server-web.jar
+    runs-on: ubuntu-24.04-arm
+    needs: build-app
+    if: ${{ always() }}
+    name: Build ${{ matrix.name }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Download webCompat artifact
+        if: ${{ matrix.bundleWebApp }}
+        uses: actions/download-artifact@v8
+        with:
+          name: webCompat
+          path: builder/build/artifacts/release/webCompat
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ./gradlew :api:server:buildFatJar -PbundleWebAppZip=${{ matrix.bundleWebApp }}
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p release_files
+          JAR_PATH=$(ls -t api/server/build/libs/TimeFlow-*.jar | head -n 1)
+          cp "$JAR_PATH" "release_files/${{ matrix.artifact }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.name }}
+          path: release_files/${{ matrix.artifact }}

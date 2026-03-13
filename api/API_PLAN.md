@@ -1,0 +1,119 @@
+# TimeFlow API 规划
+
+本文档概述了 TimeFlow 应用的 RESTful API 结构，旨在支持云同步等功能。
+
+## API 设计原则
+
+- **版本控制:** 大部分业务端点都以 `/api/v1` 作为前缀。
+- **身份认证:** 受保护的端点需要在 `Authorization` 请求头中提供 JWT Bearer 令牌。
+- **数据格式:** TimeFlow 客户端的请求和响应体优先采用 `application/protobuf` 格式；如不支持，则回退为 `application/json`。
+
+---
+
+## 0. 健康检查 API (`/ping`)
+
+用于检查服务是否存活。
+
+| 方法    | 端点         | 描述               | 认证       |
+|:------|:-----------|:-----------------|:---------|
+| `GET` | `/ping`    | 检查服务的可用性。        | &#10006; |
+| `GET` | `/version` | 获取服务的构建版本和时间等信息。 | &#10006; |
+
+---
+
+## 1. 用户认证 API (`/auth`)
+
+处理用户注册和登录，可公开访问。
+
+| 方法     | 端点                             | 描述                                                             | 认证       |
+|:-------|:-------------------------------|:---------------------------------------------------------------|:---------|
+| `GET`  | `/auth/check-email`            | 检查指定的邮箱地址是否已经被注册。                                              | &#10006; |
+| `POST` | `/auth/register`               | 使用邮箱、密码和收到的验证码注册一个新用户。                                         | &#10006; |
+| `POST` | `/auth/send-verification-code` | 请求向指定邮箱发送一个注册验证码。                                              | &#10006; |
+| `POST` | `/auth/login`                  | 用户登录并获取 JWT 令牌。                                                | &#10006; |
+| `POST` | `/auth/logout`                 | 登出并撤销当前的 Refresh Token。                                        | &#10004; |
+| `POST` | `/auth/refresh`                | 使用 Refresh Token 获取新的 Access Token。客户端可选择是否同时轮换 Refresh Token。 | &#10004; |
+
+---
+
+## 2. 课程表 API (`/schedules`)
+
+管理用户的课程表集合。
+
+| 方法       | 端点                        | 描述                         | 认证       |
+|:---------|:--------------------------|:---------------------------|:---------|
+| `GET`    | `/schedules`              | 获取当前用户的所有课程表概要列表。          | &#10004; |
+| `GET`    | `/schedules/{scheduleId}` | 获取指定 ID 的单个课程表的完整信息。       | &#10004; |
+| `PUT`    | `/schedules/{scheduleId}` | 创建或完整更新指定 ID 的课程表。         | &#10004; |
+| `DELETE` | `/schedules/{scheduleId}` | 永久删除指定 ID 的课程表。软删除请使用 PUT。 | &#10004; |
+
+---
+
+## 3. 课程 API (`/schedules/{scheduleId}/courses`)
+
+管理特定课程表内的课程。注意：这些操作也可以通过更新父级 `Schedule` 对象（通过 `PUT /schedules/{scheduleId}`）来间接实现。
+
+| 方法       | 端点                                           | 描述                     | 认证       |
+|:---------|:---------------------------------------------|:-----------------------|:---------|
+| `GET`    | `/schedules/{scheduleId}/courses`            | 获取指定课程表下的所有课程概要列表。     | &#10004; |
+| `GET`    | `/schedules/{scheduleId}/courses/{courseId}` | 获取指定 ID 的单个课程的完整信息。    | &#10004; |
+| `PUT`    | `/schedules/{scheduleId}/courses/{courseId}` | 创建或更新指定课程表中的指定 ID 的课程。 | &#10004; |
+| `DELETE` | `/schedules/{scheduleId}/courses/{courseId}` | 从指定课程表中删除指定 ID 的课程。    | &#10004; |
+
+---
+
+## 4. 用户 API (`/users/me`)
+
+管理用户个人资料和偏好设置。
+
+| 方法    | 端点                            | 描述                                                | 认证       |
+|:------|:------------------------------|:--------------------------------------------------|:---------|
+| `GET` | `/users/me`                   | 获取当前已登录用户的个人资料。                                   | &#10004; |
+| `GET` | `/users/me/selected-schedule` | 获取当前选中的课程表 ID 及其更新时间（`scheduleId` 和 `updatedAt`）。 | &#10004; |
+| `PUT` | `/users/me/selected-schedule` | 更新当前选中的课程表，请求体需包含 `scheduleId` 和 `updatedAt`。     | &#10004; |
+
+> **注意**: 主题设置（主题模式、动态颜色、主题颜色等）属于本地 UI 偏好，应存储在客户端本地（如 DataStore），无需云端同步。
+
+---
+
+## 5. 云同步逻辑
+
+API 不提供专门的 `/sync` 端点。客户端应使用现有的 CRUD API 实现同步功能。
+
+### 推荐的同步实现方式:
+
+1. **获取服务端数据概要**:
+   ```
+   GET /api/v1/schedules
+   GET /api/v1/users/me/selected-schedule
+   ```
+   返回所有课程表的摘要信息（包含 `updatedAt` 时间戳）以及选中的课程表 ID 和更新时间（`scheduleId` 和 `updatedAt`）。
+
+2. **比较时间戳**:
+    - 客户端将本地课程表的 `updatedAt` 与服务端进行比较
+    - 比较本地的 `selectedScheduleUpdatedAt` 与服务端返回的值，同步选中状态
+    - 对于 `updatedAt` 较新的课程表，下载完整数据
+
+3. **下载更新的课程表**:
+   ```
+   GET /api/v1/schedules/{scheduleId}
+   ```
+   获取服务端更新过的课程表完整数据。
+
+4. **上传本地更改**:
+   ```
+   PUT /api/v1/schedules/{scheduleId}        # 创建、更新或软删除（设置 deleted=true）
+   PUT /api/v1/users/me/selected-schedule
+   DELETE /api/v1/schedules/{scheduleId}     # 仅用于永久删除
+   ```
+   将本地的新建、修改、删除操作推送到服务端。
+
+5. **冲突处理**:
+    - 如果客户端和服务端都修改了同一课程表，比较 `updatedAt` 时间戳
+    - 向用户展示两个版本的最后修改时间，让用户选择保留哪个版本
+
+### 时间戳字段:
+
+- `createdAt`: 课程表创建时间（Instant, 不可变）
+- `updatedAt`: 课程表最后更新时间（Instant, 每次修改时更新）
+- `selectedScheduleUpdatedAt`: 选中课程表的更新时间（Instant, 每次选择时自动设置）

@@ -26,5 +26,6 @@ sealed class OS {
     open class Web(override val name: String) : OS() {
         object Js : Web("js")
         object WasmJs : Web("wasmJs")
+        object WebCompat : Web("webCompat")
     }
 }

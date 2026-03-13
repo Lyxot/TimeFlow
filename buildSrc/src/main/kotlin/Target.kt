@@ -119,4 +119,13 @@ sealed class Target {
     object WasmJS : Web() {
         override val system: OS.Web = OS.Web.WasmJs
     }
+
+    object WebCompat : Web() {
+        override val system: OS.Web = OS.Web.WebCompat
+    }
+
+    object Server : Target() {
+        override val format = Format.Jar
+        override val artifactSuffix = ""
+    }
 }

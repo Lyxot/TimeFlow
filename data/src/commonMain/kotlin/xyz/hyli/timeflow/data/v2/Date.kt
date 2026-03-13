@@ -38,6 +38,8 @@ data class Date(
         }
     }
 
+    constructor(localDate: LocalDate) : this(localDate.year, localDate.month.number, localDate.day)
+
     /**
      * 返回日期的字符串表示形式，格式为 "YYYY/MM/DD"。
      * 月和日如果小于10，会用 '0' 补齐。
@@ -116,6 +118,6 @@ data class Date(
         while (this.weeksTill(current) > weeks) {
             current = current.minus(1, DateTimeUnit.DAY)
         }
-        return fromLocalDate(current)
+        return Date(current)
     }
 }

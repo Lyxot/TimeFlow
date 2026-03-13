@@ -17,10 +17,15 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import okio.*
 import okio.Path.Companion.toPath
 import xyz.hyli.timeflow.data.*
+import xyz.hyli.timeflow.utils.currentPlatform
+import xyz.hyli.timeflow.utils.supportDynamicColor
+import kotlin.time.Instant
 
 @OptIn(ExperimentalSerializationApi::class)
 internal object SettingsProtobufSerializer : OkioSerializer<Settings> {
-    override val defaultValue = Settings()
+    override val defaultValue = Settings(
+        themeDynamicColor = currentPlatform().supportDynamicColor()
+    )
 
     override suspend fun readFrom(source: BufferedSource) =
         readSettingsFromByteArray(source.readByteArray()) ?: defaultValue
@@ -77,46 +82,44 @@ class SettingsDataStore(
         }
     }
 
-    suspend fun updateSelectedSchedule(id: Short) {
+    suspend fun updateSelectedScheduleID(id: Short) {
         db.updateData { currentSettings ->
             currentSettings.copy(selectedScheduleID = id)
         }
     }
 
-    suspend fun createSchedule(id: Short, schedule: Schedule) {
+    suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?) {
         db.updateData { currentSettings ->
-            val updatedSchedule = currentSettings.schedules.toMutableMap()
-            updatedSchedule[id] = schedule
-            currentSettings.copy(schedules = updatedSchedule)
+            currentSettings.copy(selectedScheduleUpdatedAt = updatedAt)
         }
     }
 
-    suspend fun updateSchedule(id: Short, schedule: Schedule) {
+    suspend fun upsertSchedule(id: Short, schedule: Schedule) {
         db.updateData { currentSettings ->
-            val updatedSchedule = currentSettings.schedules.toMutableMap()
-            updatedSchedule[id] = schedule
-            currentSettings.copy(schedules = updatedSchedule)
-        }
-    }
-
-    suspend fun deleteSchedule(id: Short, permanently: Boolean) {
-        db.updateData { currentSettings ->
-            val updatedSchedule = currentSettings.schedules.toMutableMap()
-            if (permanently) {
-                updatedSchedule.remove(id)
-            } else {
-                val schedule = updatedSchedule[id]
-                if (schedule != null) {
-                    updatedSchedule[id] = schedule.copy(deleted = true)
-                }
+            val updatedSchedule = currentSettings.schedules.toMutableMap().apply {
+                set(id, schedule)
             }
             currentSettings.copy(schedules = updatedSchedule)
         }
     }
 
+    suspend fun deleteSchedule(id: Short) {
+        db.updateData { currentSettings ->
+            val updatedSchedule = currentSettings.schedules.toMutableMap()
+            updatedSchedule.remove(id)
+            currentSettings.copy(schedules = updatedSchedule)
+        }
+    }
+
+    suspend fun updateSyncedAt(syncedAt: Instant?) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(syncedAt = syncedAt)
+        }
+    }
+
     suspend fun reset() {
         db.updateData { _ ->
-            Settings()
+            SettingsProtobufSerializer.defaultValue
         }
     }
 }

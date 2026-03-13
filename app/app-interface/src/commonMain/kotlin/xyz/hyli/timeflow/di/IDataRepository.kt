@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.Settings
 import xyz.hyli.timeflow.data.ThemeMode
+import kotlin.time.Instant
 
 interface IDataRepository {
     val settings: Flow<Settings>
@@ -20,8 +21,9 @@ interface IDataRepository {
     suspend fun updateThemeMode(themeMode: ThemeMode)
     suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean)
     suspend fun updateThemeColor(color: Int)
-    suspend fun updateSelectedSchedule(id: Short)
-    suspend fun createSchedule(id: Short, schedule: Schedule)
-    suspend fun updateSchedule(id: Short, schedule: Schedule)
-    suspend fun deleteSchedule(id: Short, permanently: Boolean)
+    suspend fun updateSelectedScheduleID(id: Short)
+    suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?)
+    suspend fun upsertSchedule(id: Short, schedule: Schedule)
+    suspend fun deleteSchedule(id: Short)
+    suspend fun updateSyncedAt(syncedAt: Instant?)
 }
