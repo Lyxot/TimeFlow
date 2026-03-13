@@ -31,6 +31,7 @@ import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
+import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.DeleteCourseButton
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseContent
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseStyle
@@ -43,7 +44,6 @@ fun AddScheduleDialog(
     state: MutableState<Boolean>,
     viewModel: TimeFlowViewModel
 ) {
-    val stringScheduleNameEmpty = stringResource(Res.string.schedule_value_schedule_name_empty)
     TextInputDialog(
         title = stringResource(Res.string.schedule_title_create_schedule),
         initialValue = "",
@@ -54,12 +54,14 @@ fun AddScheduleDialog(
         onDismiss = { state.value = false },
         validator = rememberDialogInputValidator(
             validate = {
-                if (it.isNotEmpty())
+                val error = InputValidation.validateName(it)
+                if (error == null)
                     DialogInputValidator.Result.Valid
                 else
-                    DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                    DialogInputValidator.Result.Error(error)
             }
-        )
+        ),
+        maxLength = InputValidation.MAX_NAME_LENGTH
     )
 }
 

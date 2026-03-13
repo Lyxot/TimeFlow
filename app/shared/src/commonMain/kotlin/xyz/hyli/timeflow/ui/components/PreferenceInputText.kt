@@ -23,6 +23,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.utils.InputValidation.codePointCount
+import xyz.hyli.timeflow.utils.InputValidation.takeCodePoints
 import xyz.hyli.timeflow.shared.generated.resources.cancel
 import xyz.hyli.timeflow.shared.generated.resources.confirm
 
@@ -36,7 +38,8 @@ fun PreferenceInputText(
     subtitle: String? = null,
     enabled: Dependency = Dependency.Enabled,
     visible: Dependency = Dependency.Enabled,
-    validator: DialogInputValidator? = null
+    validator: DialogInputValidator? = null,
+    maxLength: Int? = null
 ) {
     val isEnabled by enabled.asState()
     var showDialog by remember { mutableStateOf(false) }
@@ -67,7 +70,8 @@ fun PreferenceInputText(
                 showDialog = false
             },
             onDismiss = { showDialog = false },
-            validator = validator
+            validator = validator,
+            maxLength = maxLength
         )
     }
 }
@@ -78,7 +82,8 @@ fun TextInputDialog(
     initialValue: String,
     onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
-    validator: DialogInputValidator? = null
+    validator: DialogInputValidator? = null,
+    maxLength: Int? = null
 ) {
     var textValue by remember { mutableStateOf(initialValue) }
     var isValid by remember { mutableStateOf(true) }
@@ -135,10 +140,13 @@ fun TextInputDialog(
             Column {
                 OutlinedTextField(
                     value = textValue,
-                    onValueChange = { textValue = it },
+                    onValueChange = { textValue = if (maxLength != null) it.takeCodePoints(maxLength) else it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     isError = !isValid,
+                    suffix = if (maxLength != null) {
+                        { Text("${textValue.codePointCount()}/$maxLength", style = MaterialTheme.typography.labelMedium) }
+                    } else null,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {

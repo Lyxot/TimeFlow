@@ -43,6 +43,7 @@ import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
+import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.Files.settingsFilePath
 import xyz.hyli.timeflow.utils.Files.showFileInFileManager
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -143,8 +144,6 @@ fun SettingsScreen(
                     }
                 )
                 // Add New Schedule
-                val stringScheduleNameEmpty =
-                    stringResource(Res.string.settings_warning_schedule_name_empty)
                 PreferenceInputText(
                     value = "",
                     onValueChange = { newScheduleName ->
@@ -161,12 +160,14 @@ fun SettingsScreen(
                     subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
                     validator = rememberDialogInputValidator(
                         validate = {
-                            if (it.isNotEmpty())
+                            val error = InputValidation.validateName(it)
+                            if (error == null)
                                 DialogInputValidator.Result.Valid
                             else
-                                DialogInputValidator.Result.Error(stringScheduleNameEmpty)
+                                DialogInputValidator.Result.Error(error)
                         }
-                    )
+                    ),
+                    maxLength = InputValidation.MAX_NAME_LENGTH
                 )
             }
             PreferenceDivider()
@@ -195,7 +196,17 @@ fun SettingsScreen(
                         )
                     },
                     title = stringResource(Res.string.settings_title_schedule_name),
-                    enabled = scheduleDependency
+                    enabled = scheduleDependency,
+                    validator = rememberDialogInputValidator(
+                        validate = {
+                            val error = InputValidation.validateName(it)
+                            if (error == null)
+                                DialogInputValidator.Result.Valid
+                            else
+                                DialogInputValidator.Result.Error(error)
+                        }
+                    ),
+                    maxLength = InputValidation.MAX_NAME_LENGTH
                 )
                 // Term Start and End Dates
                 PreferenceDate(

@@ -36,6 +36,12 @@ import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
+import xyz.hyli.timeflow.utils.InputValidation
+import xyz.hyli.timeflow.utils.InputValidation.codePointCount
+import xyz.hyli.timeflow.utils.InputValidation.truncateClassroom
+import xyz.hyli.timeflow.utils.InputValidation.truncateName
+import xyz.hyli.timeflow.utils.InputValidation.truncateNote
+import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
 import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
 import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -141,7 +147,8 @@ fun EditCourseContent(
     var isClassroomChanged by remember { mutableStateOf(false) }
     var isTeacherChanged by remember { mutableStateOf(false) }
 
-    val isNameValid = remember(course.name, schedule) { course.name.isNotBlank() }
+    val nameError = remember(course.name) { InputValidation.validateName(course.name) }
+    val isNameValid = nameError == null
     val isTimeValid = remember(course.time, schedule) {
         if (course.time.start > course.time.end) {
             false
@@ -206,7 +213,7 @@ fun EditCourseContent(
         // Course Name
         OutlinedTextField(
             value = course.name,
-            onValueChange = { course = course.copy(name = it.trim()) },
+            onValueChange = { course = course.copy(name = it.trim().truncateName()) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = !isNameValid,
@@ -217,8 +224,11 @@ fun EditCourseContent(
             },
             supportingText = {
                 Text(
-                    text = "*" + stringResource(Res.string.required)
+                    text = nameError ?: ("*" + stringResource(Res.string.required))
                 )
+            },
+            suffix = {
+                Text("${course.name.codePointCount()}/${InputValidation.MAX_NAME_LENGTH}", style = MaterialTheme.typography.labelMedium)
             },
             shape = CardDefaults.shape
         )
@@ -226,7 +236,7 @@ fun EditCourseContent(
         OutlinedTextField(
             value = course.classroom,
             onValueChange = {
-                course = course.copy(classroom = it)
+                course = course.copy(classroom = it.truncateClassroom())
                 isClassroomChanged = true
             },
             modifier = Modifier.fillMaxWidth(),
@@ -236,13 +246,16 @@ fun EditCourseContent(
                     text = stringResource(Res.string.schedule_title_course_classroom)
                 )
             },
+            suffix = {
+                Text("${course.classroom.codePointCount()}/${InputValidation.MAX_CLASSROOM_LENGTH}", style = MaterialTheme.typography.labelMedium)
+            },
             shape = CardDefaults.shape
         )
         // Teacher
         OutlinedTextField(
             value = course.teacher,
             onValueChange = {
-                course = course.copy(teacher = it)
+                course = course.copy(teacher = it.truncateTeacher())
                 isTeacherChanged = true
             },
             modifier = Modifier.fillMaxWidth(),
@@ -251,6 +264,9 @@ fun EditCourseContent(
                 Text(
                     text = stringResource(Res.string.schedule_title_course_teacher)
                 )
+            },
+            suffix = {
+                Text("${course.teacher.codePointCount()}/${InputValidation.MAX_TEACHER_LENGTH}", style = MaterialTheme.typography.labelMedium)
             },
             shape = CardDefaults.shape
         )
@@ -536,13 +552,16 @@ fun EditCourseContent(
         OutlinedTextField(
             value = course.note,
             onValueChange = {
-                course = course.copy(note = it)
+                course = course.copy(note = it.truncateNote())
             },
             modifier = Modifier.fillMaxWidth(),
             label = {
                 Text(
                     text = stringResource(Res.string.schedule_title_course_note)
                 )
+            },
+            suffix = {
+                Text("${course.note.codePointCount()}/${InputValidation.MAX_NOTE_LENGTH}", style = MaterialTheme.typography.labelMedium)
             },
             shape = CardDefaults.shape
         )

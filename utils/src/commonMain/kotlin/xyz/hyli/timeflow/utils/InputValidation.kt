@@ -31,13 +31,52 @@ object InputValidation {
     const val MAX_NOTE_LENGTH = 1000  // Reasonable limit for text field
 
     /**
+     * Returns the number of Unicode code points in the string.
+     * Unlike String.length which counts UTF-16 code units,
+     * this correctly counts supplementary characters (e.g. emoji) as 1.
+     */
+    fun String.codePointCount(): Int {
+        var count = 0
+        var i = 0
+        while (i < length) {
+            val c = this[i]
+            if (c.isHighSurrogate() && i + 1 < length && this[i + 1].isLowSurrogate()) {
+                i += 2
+            } else {
+                i++
+            }
+            count++
+        }
+        return count
+    }
+
+    /**
+     * Truncates the string to at most [maxCodePoints] Unicode code points,
+     * without splitting surrogate pairs.
+     */
+    fun String.takeCodePoints(maxCodePoints: Int): String {
+        var count = 0
+        var i = 0
+        while (i < length && count < maxCodePoints) {
+            val c = this[i]
+            if (c.isHighSurrogate() && i + 1 < length && this[i + 1].isLowSurrogate()) {
+                i += 2
+            } else {
+                i++
+            }
+            count++
+        }
+        return substring(0, i)
+    }
+
+    /**
      * Validates email format and length
      * @return error message if invalid, null if valid
      */
     fun validateEmail(email: String): String? {
         return when {
             email.isBlank() -> "Email cannot be blank"
-            email.length > MAX_EMAIL_LENGTH -> "Email is too long (max $MAX_EMAIL_LENGTH characters)"
+            email.codePointCount() > MAX_EMAIL_LENGTH -> "Email is too long (max $MAX_EMAIL_LENGTH characters)"
             !EMAIL_REGEX.matches(email) -> "Invalid email format"
             else -> null
         }
@@ -50,7 +89,7 @@ object InputValidation {
     fun validateUsername(username: String): String? {
         return when {
             username.isBlank() -> "Username cannot be blank"
-            username.length > MAX_USERNAME_LENGTH -> "Username is too long (max $MAX_USERNAME_LENGTH characters)"
+            username.codePointCount() > MAX_USERNAME_LENGTH -> "Username is too long (max $MAX_USERNAME_LENGTH characters)"
             else -> null
         }
     }
@@ -74,7 +113,7 @@ object InputValidation {
     fun validateName(name: String, fieldName: String = "Name"): String? {
         return when {
             name.isBlank() -> "$fieldName cannot be blank"
-            name.length > MAX_NAME_LENGTH -> "$fieldName is too long (max $MAX_NAME_LENGTH characters)"
+            name.codePointCount() > MAX_NAME_LENGTH -> "$fieldName is too long (max $MAX_NAME_LENGTH characters)"
             else -> null
         }
     }
@@ -85,7 +124,7 @@ object InputValidation {
      */
     fun validateNote(note: String): String? {
         return when {
-            note.length > MAX_NOTE_LENGTH -> "Note is too long (max $MAX_NOTE_LENGTH characters)"
+            note.codePointCount() > MAX_NOTE_LENGTH -> "Note is too long (max $MAX_NOTE_LENGTH characters)"
             else -> null
         }
     }
@@ -96,7 +135,7 @@ object InputValidation {
      */
     fun validateTeacher(teacher: String): String? {
         return when {
-            teacher.length > MAX_TEACHER_LENGTH -> "Teacher name is too long (max $MAX_TEACHER_LENGTH characters)"
+            teacher.codePointCount() > MAX_TEACHER_LENGTH -> "Teacher name is too long (max $MAX_TEACHER_LENGTH characters)"
             else -> null
         }
     }
@@ -107,40 +146,22 @@ object InputValidation {
      */
     fun validateClassroom(classroom: String): String? {
         return when {
-            classroom.length > MAX_CLASSROOM_LENGTH -> "Classroom name is too long (max $MAX_CLASSROOM_LENGTH characters)"
+            classroom.codePointCount() > MAX_CLASSROOM_LENGTH -> "Classroom name is too long (max $MAX_CLASSROOM_LENGTH characters)"
             else -> null
         }
     }
 
-    // Truncation functions - automatically cut strings to maximum allowed length
+    // Truncation functions - automatically cut strings to maximum allowed code points
 
-    /**
-     * Truncates email to maximum allowed length
-     */
-    fun String.truncateEmail(): String = take(MAX_EMAIL_LENGTH)
+    fun String.truncateEmail(): String = takeCodePoints(MAX_EMAIL_LENGTH)
 
-    /**
-     * Truncates username to maximum allowed length
-     */
-    fun String.truncateUsername(): String = take(MAX_USERNAME_LENGTH)
+    fun String.truncateUsername(): String = takeCodePoints(MAX_USERNAME_LENGTH)
 
-    /**
-     * Truncates name to maximum allowed length
-     */
-    fun String.truncateName(): String = take(MAX_NAME_LENGTH)
+    fun String.truncateName(): String = takeCodePoints(MAX_NAME_LENGTH)
 
-    /**
-     * Truncates teacher name to maximum allowed length
-     */
-    fun String.truncateTeacher(): String = take(MAX_TEACHER_LENGTH)
+    fun String.truncateTeacher(): String = takeCodePoints(MAX_TEACHER_LENGTH)
 
-    /**
-     * Truncates classroom name to maximum allowed length
-     */
-    fun String.truncateClassroom(): String = take(MAX_CLASSROOM_LENGTH)
+    fun String.truncateClassroom(): String = takeCodePoints(MAX_CLASSROOM_LENGTH)
 
-    /**
-     * Truncates note to maximum allowed length
-     */
-    fun String.truncateNote(): String = take(MAX_NOTE_LENGTH)
+    fun String.truncateNote(): String = takeCodePoints(MAX_NOTE_LENGTH)
 }
