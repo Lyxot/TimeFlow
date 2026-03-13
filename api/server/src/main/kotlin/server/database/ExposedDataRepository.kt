@@ -30,7 +30,6 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
 
 /**
  * DataRepository 接口的 Exposed 实现，完全使用 DAO 模式。
@@ -40,7 +39,7 @@ class ExposedDataRepository : DataRepository {
 
     override suspend fun findUserByAuthId(authId: Uuid): User? = dbQuery {
         UserEntity
-            .find { UsersTable.authId eq authId.toJavaUuid() }
+            .find { UsersTable.authId eq authId }
             .singleOrNull()
             ?.user
     }
@@ -65,7 +64,7 @@ class ExposedDataRepository : DataRepository {
     override suspend fun createUser(authId: Uuid, username: String, email: String, passwordHash: String): User =
         dbQuery {
             UserEntity.new {
-                this.authId = authId.toJavaUuid()
+                this.authId = authId
                 this.username = username.truncateUsername()
                 this.email = email.truncateEmail()
                 this.passwordHash = passwordHash
@@ -76,7 +75,7 @@ class ExposedDataRepository : DataRepository {
         dbQuery {
             RefreshTokenEntity.new {
                 this.user = UserEntity[userId]
-                this.jti = jti.toJavaUuid()
+                this.jti = jti
                 this.expiresAt = expiresAt
             }
         }
@@ -87,7 +86,7 @@ class ExposedDataRepository : DataRepository {
         val token = RefreshTokenEntity
             .find {
                 (RefreshTokensTable.userId eq userId) and
-                        (RefreshTokensTable.jti eq jti.toJavaUuid())
+                        (RefreshTokensTable.jti eq jti)
             }
             .firstOrNull()
 
@@ -104,7 +103,7 @@ class ExposedDataRepository : DataRepository {
     override suspend fun revokeRefreshToken(jti: Uuid) {
         dbQuery {
             RefreshTokenEntity
-                .find { RefreshTokensTable.jti eq jti.toJavaUuid() }
+                .find { RefreshTokensTable.jti eq jti }
                 .firstOrNull()
                 ?.delete()
         }

@@ -7,6 +7,8 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+@file:OptIn(ExperimentalUuidApi::class)
+
 package xyz.hyli.timeflow.server.database
 
 import kotlinx.serialization.json.Json
@@ -20,6 +22,7 @@ import xyz.hyli.timeflow.data.LessonTimePeriodInfo
 import xyz.hyli.timeflow.data.Range
 import xyz.hyli.timeflow.data.Weekday
 import xyz.hyli.timeflow.utils.InputValidation
+import kotlin.uuid.ExperimentalUuidApi
 
 /**
  * 用户表

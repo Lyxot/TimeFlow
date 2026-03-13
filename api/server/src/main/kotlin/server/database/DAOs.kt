@@ -7,6 +7,8 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
+@file:OptIn(ExperimentalUuidApi::class)
+
 package xyz.hyli.timeflow.server.database
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -20,7 +22,6 @@ import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.WeekList
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.toKotlinUuid
 
 /**
  * 与 UsersTable 对应的 DAO 实体。
@@ -41,7 +42,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     val user: User
         get() = User(
             id = id.value,
-            authId = authId.toKotlinUuid(),
+            authId = authId,
             username = username,
             email = email
         )
