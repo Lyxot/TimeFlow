@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
@@ -53,13 +52,37 @@ import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
+private val BASE_CELL_HEIGHT = 56.dp
+private val NAME_LINE_HEIGHT = 16.dp
+private val INFO_LINE_HEIGHT = 14.dp
+private const val NAME_CHAR_WIDTH = 12f
+private const val INFO_CHAR_WIDTH = 11f
+private const val CELL_CONTENT_PADDING = 12f
+
+private fun estimateTextLines(text: String, availableWidthDp: Float, charWidthDp: Float): Int {
+    if (text.isEmpty()) return 0
+    var totalWidth = 0f
+    for (c in text) {
+        totalWidth += if (c.code > 0x7F) charWidthDp else charWidthDp * 0.6f
+    }
+    return maxOf(1, kotlin.math.ceil((totalWidth / availableWidthDp).toDouble()).toInt())
+}
+
+private fun computeRowYOffsets(rowHeights: List<Dp>): List<Dp> {
+    val offsets = mutableListOf(0.dp)
+    rowHeights.forEach { h -> offsets.add(offsets.last() + h) }
+    return offsets
+}
+
 data class ScheduleLayoutParams(
     val headerWidth: MutableState<Dp>,
     val headerHeight: MutableState<Dp>,
     val cellWidth: Dp,
     val rows: Int,
     val columns: Int,
-    val noGridCells: MutableState<List<Set<Int>>>
+    val noGridCells: MutableState<List<Set<Int>>>,
+    val rowHeights: List<Dp>,
+    val rowYOffsets: List<Dp>
 )
 
 data class ScheduleParams(
@@ -371,12 +394,53 @@ fun ScheduleTable(
     val headerHeight = remember { mutableStateOf(40.dp) }
 
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(headerHeight.value + 64.dp * rows)
+        modifier = modifier.fillMaxWidth()
     ) {
         val state = remember { mutableStateOf(TableState()) }
         val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
+        val availableTextWidth = (cellWidth - CELL_CONTENT_PADDING.dp).value
+
+        val rowHeights = remember(scheduleParams.schedule, rows, cellWidth) {
+            val heights = MutableList(rows) { BASE_CELL_HEIGHT }
+            for (dayIndex in 0 until columns) {
+                val courses = scheduleParams.schedule.getCoursesOfWeekday(weekdays[dayIndex])
+                val timeSlots = courses.values.map { it.time }.toSet()
+                for (time in timeSlots) {
+                    val span = time.end - time.start + 1
+                    val maxCourseHeight = courses.values
+                        .filter { it.time == time }
+                        .maxOfOrNull { course ->
+                            val nameLines =
+                                minOf(3, estimateTextLines(course.name, availableTextWidth, NAME_CHAR_WIDTH))
+                            var h = NAME_LINE_HEIGHT * nameLines
+                            if (course.classroom.isNotBlank()) {
+                                h += INFO_LINE_HEIGHT * minOf(
+                                    2,
+                                    estimateTextLines("@${course.classroom}", availableTextWidth, INFO_CHAR_WIDTH)
+                                )
+                            }
+                            if (course.teacher.isNotBlank()) {
+                                h += INFO_LINE_HEIGHT
+                            }
+                            h + 8.dp
+                        } ?: continue
+                    val baseSpanHeight = BASE_CELL_HEIGHT * span
+                    if (maxCourseHeight > baseSpanHeight) {
+                        val perRowExtra = (maxCourseHeight - baseSpanHeight) / span
+                        for (i in (time.start - 1) until time.end) {
+                            if (i in heights.indices) {
+                                heights[i] = maxOf(heights[i], BASE_CELL_HEIGHT + perRowExtra)
+                            }
+                        }
+                    }
+                }
+            }
+            heights
+        }
+
+        val rowYOffsets = remember(rowHeights) { computeRowYOffsets(rowHeights) }
+        val totalHeight = rowYOffsets.last()
+
         val noGridCells = remember {
             mutableStateOf(
                 List(rows) { setOf<Int>() }
@@ -398,22 +462,30 @@ fun ScheduleTable(
             cellWidth = cellWidth,
             rows = rows,
             columns = columns,
-            noGridCells = noGridCells
+            noGridCells = noGridCells,
+            rowHeights = rowHeights,
+            rowYOffsets = rowYOffsets
         )
 
-        // 底层：表格框架
-        TableGrid(
-            layoutParams = layoutParams,
-            dateList = scheduleParams.schedule.dateList(scheduleParams.currentWeek),
-            lessonTimePeriodInfo = lessons
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(headerHeight.value + totalHeight)
+        ) {
+            // 底层：表格框架
+            TableGrid(
+                layoutParams = layoutParams,
+                dateList = scheduleParams.schedule.dateList(scheduleParams.currentWeek),
+                lessonTimePeriodInfo = lessons
+            )
 
-        // 覆盖层：课程内容
-        CourseOverlay(
-            layoutParams = layoutParams,
-            scheduleParams = scheduleParams,
-            state = state
-        )
+            // 覆盖层：课程内容
+            CourseOverlay(
+                layoutParams = layoutParams,
+                scheduleParams = scheduleParams,
+                state = state
+            )
+        }
     }
 }
 
@@ -518,6 +590,7 @@ fun CourseColumn(
             val coursesForThisTime = remember(scheduleParams.schedule, time) {
                 scheduleParams.schedule.getCoursesOverlapping(time, weekdays[dayIndex])
             }
+            val cellHeight = layoutParams.rowYOffsets[time.end] - layoutParams.rowYOffsets[time.start - 1]
             AnimatedContent(
                 targetState = courses.isNotEmpty(),
                 transitionSpec = {
@@ -527,10 +600,10 @@ fun CourseColumn(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp * (time.end - time.start + 1))
+                    .height(cellHeight)
                     .padding(bottom = 1.dp)
                     .offset(
-                        y = (time.start - 1) * 64.dp - 1.dp
+                        y = layoutParams.rowYOffsets[time.start - 1] - 1.dp
                     )
                     .zIndex(100f),
                 contentAlignment = Alignment.Center
@@ -542,6 +615,7 @@ fun CourseColumn(
                         coursesForThisTime = coursesForThisTime,
                         currentWeek = scheduleParams.currentWeek,
                         totalWeeks = scheduleParams.schedule.totalWeeks,
+                        displayHeight = cellHeight,
                         onEditCourse = { courseID, course ->
                             editCourse(courseID, course)
                         },
@@ -582,6 +656,7 @@ fun CourseColumn(
             val coursesForThisTime = remember(scheduleParams.schedule, time) {
                 scheduleParams.schedule.getCoursesOverlapping(time, weekdays[dayIndex])
             }
+            val spanHeight = layoutParams.rowYOffsets[time.end] - layoutParams.rowYOffsets[time.start - 1]
             AnimatedContent(
                 targetState = courses.isNotEmpty(),
                 transitionSpec = {
@@ -591,10 +666,10 @@ fun CourseColumn(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp * (time.end - time.start + 1))
+                    .height(spanHeight)
                     .padding(bottom = 1.dp)
                     .offset(
-                        y = (time.start - 1) * 64.dp - 1.dp
+                        y = layoutParams.rowYOffsets[time.start - 1] - 1.dp
                     )
                     .zIndex(99 - time.start + 1.0f / (time.end - time.start)) // 渲染顺序
                 ,
@@ -607,8 +682,8 @@ fun CourseColumn(
                         coursesForThisTime = coursesForThisTime,
                         currentWeek = scheduleParams.currentWeek,
                         totalWeeks = scheduleParams.schedule.totalWeeks,
-                        displayOffSet = 64.dp * (firstSpaceToDisplay - time.start),
-                        displayHeight = ((lastSpaceToDisplay - firstSpaceToDisplay + 1) * 64).dp,
+                        displayOffSet = layoutParams.rowYOffsets[firstSpaceToDisplay - 1] - layoutParams.rowYOffsets[time.start - 1],
+                        displayHeight = layoutParams.rowYOffsets[lastSpaceToDisplay] - layoutParams.rowYOffsets[firstSpaceToDisplay - 1],
                         onEditCourse = { courseID, course ->
                             editCourse(courseID, course)
                         },
@@ -624,10 +699,10 @@ fun CourseColumn(
         emptySlots.forEach { index ->
             Box(
                 modifier = Modifier
-                    .height(64.dp)
+                    .height(layoutParams.rowHeights[index - 1])
                     .padding(bottom = 1.dp)
                     .offset(
-                        y = (index - 1) * 64.dp - 1.dp
+                        y = layoutParams.rowYOffsets[index - 1] - 1.dp
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -659,14 +734,8 @@ fun OverviewScheduleTable(
     modifier: Modifier = Modifier
 ) {
     val lessons = schedule.lessonTimePeriodInfo.lessons
-    val baseCellHeight = 56.dp
-    val nameLineHeight = 16.dp   // labelMedium line height
-    val infoLineHeight = 14.dp   // labelSmall line height
     val interEntrySpacing = 9.dp // Spacer(4dp) + HorizontalDivider(0.5dp) + Spacer(4dp)
     val columnPadding = 8.dp     // Column padding 4dp top + 4dp bottom
-    val cellContentPadding = 12f // Card padding(2*2) + Column padding(4*2) in dp
-    val nameCharWidth = 12f      // labelMedium: ~12dp per CJK char
-    val infoCharWidth = 11f      // labelSmall: ~11dp per CJK char
 
     // Collect overview slots for all weekdays
     val overviewData = remember(schedule) {
@@ -682,20 +751,11 @@ fun OverviewScheduleTable(
         modifier = modifier.fillMaxWidth()
     ) {
         val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
-        val availableTextWidth = (cellWidth - cellContentPadding.dp).value
-
-        fun estimateLines(text: String, charWidth: Float): Int {
-            if (text.isEmpty()) return 0
-            var totalWidth = 0f
-            for (c in text) {
-                totalWidth += if (c.code > 0x7F) charWidth else charWidth * 0.6f
-            }
-            return maxOf(1, kotlin.math.ceil((totalWidth / availableTextWidth).toDouble()).toInt())
-        }
+        val availableTextWidth = (cellWidth - CELL_CONTENT_PADDING.dp).value
 
         // Compute dynamic row heights based on actual content and cell width
         val rowHeights = remember(overviewData, rows, cellWidth) {
-            val heights = MutableList(rows) { baseCellHeight }
+            val heights = MutableList(rows) { BASE_CELL_HEIGHT }
             for (daySlots in overviewData) {
                 for ((range, courses) in daySlots) {
                     if (courses.isEmpty()) continue
@@ -703,28 +763,34 @@ fun OverviewScheduleTable(
                     var neededHeight = columnPadding
                     courses.values.forEachIndexed { index, course ->
                         if (index > 0) neededHeight += interEntrySpacing
-                        // name: up to 3 lines
-                        neededHeight += nameLineHeight * minOf(3, estimateLines(course.name, nameCharWidth))
-                        // week: no maxLines limit
-                        val weekTextLen = course.week.toString().length + 4 // "第 " + " 周"
-                        neededHeight += infoLineHeight * estimateLines("x".repeat(weekTextLen), infoCharWidth)
-                        // time period: always short, 1 line
-                        neededHeight += infoLineHeight
-                        // classroom: up to 2 lines
+                        neededHeight += NAME_LINE_HEIGHT * minOf(
+                            3,
+                            estimateTextLines(course.name, availableTextWidth, NAME_CHAR_WIDTH)
+                        )
+                        val weekTextLen = course.week.toString().length + 4
+                        neededHeight += INFO_LINE_HEIGHT * estimateTextLines(
+                            "x".repeat(weekTextLen),
+                            availableTextWidth,
+                            INFO_CHAR_WIDTH
+                        )
+                        neededHeight += INFO_LINE_HEIGHT // time period
                         if (course.classroom.isNotBlank()) {
-                            neededHeight += infoLineHeight * minOf(2, estimateLines(course.classroom, infoCharWidth))
+                            neededHeight += INFO_LINE_HEIGHT * minOf(
+                                2,
+                                estimateTextLines(course.classroom, availableTextWidth, INFO_CHAR_WIDTH)
+                            )
                         }
-                        // teacher: 1 line
                         if (course.teacher.isNotBlank()) {
-                            neededHeight += infoLineHeight
+                            neededHeight += INFO_LINE_HEIGHT
                         }
                     }
-                    val baseSpanHeight = baseCellHeight * span
+                    val baseSpanHeight = BASE_CELL_HEIGHT * span
                     if (neededHeight > baseSpanHeight) {
-                        val extra = neededHeight - baseSpanHeight
-                        val rowIndex = range.start - 1
-                        if (rowIndex in heights.indices) {
-                            heights[rowIndex] = maxOf(heights[rowIndex], baseCellHeight + extra)
+                        val perRowExtra = (neededHeight - baseSpanHeight) / span
+                        for (i in (range.start - 1) until range.end) {
+                            if (i in heights.indices) {
+                                heights[i] = maxOf(heights[i], BASE_CELL_HEIGHT + perRowExtra)
+                            }
                         }
                     }
                 }
@@ -732,13 +798,7 @@ fun OverviewScheduleTable(
             heights
         }
 
-        // Cumulative Y offsets for each row
-        val rowYOffsets = remember(rowHeights) {
-            val offsets = mutableListOf(0.dp)
-            rowHeights.forEach { h -> offsets.add(offsets.last() + h) }
-            offsets
-        }
-
+        val rowYOffsets = remember(rowHeights) { computeRowYOffsets(rowHeights) }
         val totalHeight = rowYOffsets.last()
 
         Box(

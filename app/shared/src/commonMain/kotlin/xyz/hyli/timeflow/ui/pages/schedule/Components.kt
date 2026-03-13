@@ -89,7 +89,7 @@ fun TableGrid(
                 x = layoutParams.headerWidth.value + 4.dp + layoutParams.cellWidth * dayIndex,
                 y = 0.dp
             )
-                .height(layoutParams.headerHeight.value + 64.dp * layoutParams.rows)
+                .height(layoutParams.headerHeight.value + layoutParams.rowYOffsets.last())
         )
     }
 
@@ -168,7 +168,7 @@ fun TableGrid(
                 val column = subcompose("lesson$lessonIndex") {
                     Column(
                         modifier = Modifier
-                            .height(63.dp)
+                            .height(layoutParams.rowHeights[lessonIndex] - 1.dp)
                             .width(IntrinsicSize.Max),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -204,7 +204,7 @@ fun TableGrid(
                 if (layoutParams.headerWidth.value != newWidth) {
                     layoutParams.headerWidth.value = newWidth
                 }
-                layout(column.width, 63.dp.roundToPx()) {
+                layout(column.width, (layoutParams.rowHeights[lessonIndex] - 1.dp).roundToPx()) {
                     column.placeRelative(
                         x = 0,
                         y = 0
@@ -228,7 +228,7 @@ fun TableGrid(
                     color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier
                         .offset(
-                            y = layoutParams.headerHeight.value + 64.dp * lessonIndex - 1.dp
+                            y = layoutParams.headerHeight.value + layoutParams.rowYOffsets[lessonIndex] - 1.dp
                         )
                 )
             }
@@ -432,7 +432,6 @@ fun CourseCell(
                         Text(
                             text = course.name,
                             style = MaterialTheme.typography.labelMedium,
-                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             color = contentColor
                         )
@@ -497,11 +496,10 @@ fun OverviewCourseCell(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
-                // Course name: display up to 3 lines, ellipsis if longer
+                // Course name: wraps naturally, ellipsis only if cell overflows
                 Text(
                     text = course.name,
                     style = MaterialTheme.typography.labelMedium,
-                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     color = contentColor
                 )
