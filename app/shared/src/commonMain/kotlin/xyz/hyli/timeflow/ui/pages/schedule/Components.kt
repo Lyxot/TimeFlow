@@ -461,6 +461,90 @@ fun CourseCell(
     }
 }
 
+@Composable
+fun OverviewCourseCell(
+    courses: Map<Short, Course>,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    val sortedCourses = remember(courses) {
+        courses.entries.sortedBy { it.value.week.weeks.minOrNull() ?: 0 }
+    }
+    val firstCourse = sortedCourses.first().value
+    val containerColor =
+        Color(firstCourse.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
+    val contentColor =
+        Color(firstCourse.color).harmonize(MaterialTheme.colorScheme.onSecondaryContainer, true)
+
+    Card(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(2.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(containerColor)
+                .padding(4.dp)
+        ) {
+            sortedCourses.forEachIndexed { index, (_, course) ->
+                if (index > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(
+                        color = contentColor.copy(alpha = 0.3f),
+                        thickness = 0.5.dp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                // Course name: display up to 3 lines, ellipsis if longer
+                Text(
+                    text = course.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    color = contentColor
+                )
+                Text(
+                    text = stringResource(
+                        Res.string.schedule_value_course_week,
+                        course.week.toString()
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor
+                )
+                Text(
+                    text = stringResource(
+                        Res.string.schedule_value_course_time_period,
+                        course.time.start,
+                        course.time.end
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor
+                )
+                if (course.classroom.isNotBlank()) {
+                    Text(
+                        text = "@${course.classroom}",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = contentColor
+                    )
+                }
+                if (course.teacher.isNotBlank()) {
+                    Text(
+                        text = course.teacher,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = contentColor
+                    )
+                }
+            }
+        }
+    }
+}
+
 private object RightBottomTriangleShape : Shape {
     override fun createOutline(
         size: Size,

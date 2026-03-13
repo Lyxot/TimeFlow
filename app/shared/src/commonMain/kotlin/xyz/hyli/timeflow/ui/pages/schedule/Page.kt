@@ -24,12 +24,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -39,9 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.LocalNavSuiteType
-import xyz.hyli.timeflow.data.Course
-import xyz.hyli.timeflow.data.Schedule
-import xyz.hyli.timeflow.data.Weekday
+import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.CustomScaffold
 import xyz.hyli.timeflow.ui.components.TopAppBarType
@@ -49,6 +50,7 @@ import xyz.hyli.timeflow.ui.components.bottomPadding
 import xyz.hyli.timeflow.ui.components.rememberDialogState
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
+import xyz.hyli.timeflow.ui.theme.NotoSans
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 data class ScheduleLayoutParams(
@@ -114,6 +116,7 @@ fun ScheduleScreen(
             )
             return
         }
+        var isOverviewMode by remember { mutableStateOf(false) }
         val pagerState = schedule!!.totalWeeks.let {
             rememberPagerState(
                 initialPage = (schedule!!.termStartDate.weeksTill() - 1).coerceIn(
@@ -130,86 +133,93 @@ fun ScheduleScreen(
         CustomScaffold(
             modifier = Modifier.fillMaxSize(),
             title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0
+                if (isOverviewMode) {
+                    Text(
+                        text = stringResource(Res.string.schedule_title_overview),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                            contentDescription = null
-                        )
-                    }
-                    SubcomposeLayout { constraints ->
-                        val list = listOf(
-                            "part1" to Res.string.schedule_title_week_x_part_1,
-                            "part2" to Res.string.schedule_title_week_x_part_2,
-                            "part3" to Res.string.schedule_title_week_x_part_3,
-                            "vacation" to Res.string.schedule_title_week_vacation
-                        ).map {
-                            subcompose(it.first) {
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            },
+                            enabled = pagerState.currentPage > 0
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                                contentDescription = null
+                            )
+                        }
+                        SubcomposeLayout { constraints ->
+                            val list = listOf(
+                                "part1" to Res.string.schedule_title_week_x_part_1,
+                                "part2" to Res.string.schedule_title_week_x_part_2,
+                                "part3" to Res.string.schedule_title_week_x_part_3,
+                                "vacation" to Res.string.schedule_title_week_vacation
+                            ).map {
+                                subcompose(it.first) {
+                                    Text(
+                                        text =
+                                            if (it.first == "part2") "${pagerState.currentPage + 1}"
+                                            else stringResource(it.second),
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }[0].measure(constraints)
+                            }
+                            val part2Max = subcompose("part2max") {
                                 Text(
-                                    text =
-                                        if (it.first == "part2") "${pagerState.currentPage + 1}"
-                                        else stringResource(it.second),
+                                    text = stringResource(
+                                        Res.string.schedule_title_week_x_part_2,
+                                        pagerState.pageCount + 1
+                                    ),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }[0].measure(constraints)
-                        }
-                        val part2Max = subcompose("part2max") {
-                            Text(
-                                text = stringResource(
-                                    Res.string.schedule_title_week_x_part_2,
-                                    pagerState.pageCount + 1
-                                ),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }[0].measure(constraints)
-                        val width =
-                            maxOf(
-                                list[0].width + part2Max.width + list[2].width,
-                                list[3].width
-                            )
-                        layout(width, constraints.minHeight) {
-                            if (pagerState.currentPage < pagerState.pageCount - 1) {
-                                list[0].placeRelative(
-                                    0,
-                                    -list[0].height / 2
+                            val width =
+                                maxOf(
+                                    list[0].width + part2Max.width + list[2].width,
+                                    list[3].width
                                 )
-                                list[1].placeRelative(
-                                    (width - list[1].width) / 2,
-                                    -list[1].height / 2
-                                )
-                                list[2].placeRelative(
-                                    width - list[2].width,
-                                    -list[2].height / 2
-                                )
-                            } else {
-                                list[3].placeRelative(
-                                    (width - list[3].width) / 2,
-                                    -list[3].height / 2
-                                )
+                            layout(width, constraints.minHeight) {
+                                if (pagerState.currentPage < pagerState.pageCount - 1) {
+                                    list[0].placeRelative(
+                                        0,
+                                        -list[0].height / 2
+                                    )
+                                    list[1].placeRelative(
+                                        (width - list[1].width) / 2,
+                                        -list[1].height / 2
+                                    )
+                                    list[2].placeRelative(
+                                        width - list[2].width,
+                                        -list[2].height / 2
+                                    )
+                                } else {
+                                    list[3].placeRelative(
+                                        (width - list[3].width) / 2,
+                                        -list[3].height / 2
+                                    )
+                                }
                             }
                         }
-                    }
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage < pagerState.pageCount - 1
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null
-                        )
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            },
+                            enabled = pagerState.currentPage < pagerState.pageCount - 1
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
             },
@@ -226,6 +236,14 @@ fun ScheduleScreen(
                 }
             },
             actions = {
+                IconButton(
+                    onClick = { isOverviewMode = !isOverviewMode },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarViewMonth,
+                        contentDescription = stringResource(Res.string.schedule_title_overview)
+                    )
+                }
                 IconButton(
                     onClick = {
                         showAddScheduleDialog.value = true
@@ -245,24 +263,45 @@ fun ScheduleScreen(
                 )
             }
         ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .verticalScroll(scrollState)
-                    .bottomPadding(extra = 56.dp)
-            ) { page ->
-                // 课程表表格
-                ScheduleTable(
-                    scheduleParams = ScheduleParams(
-                        viewModel = viewModel,
-                        navHostController = navHostController,
+            AnimatedContent(
+                targetState = isOverviewMode,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
+                }
+            ) { overview ->
+                if (overview) {
+                    OverviewScheduleTable(
                         schedule = schedule!!,
-                        currentWeek = page + 1
-                    ),
-                    rows = rows,
-                    columns = columns,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                        navHostController = navHostController,
+                        viewModel = viewModel,
+                        rows = rows,
+                        columns = columns,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .bottomPadding(extra = 56.dp)
+                    )
+                } else {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .verticalScroll(scrollState)
+                            .bottomPadding(extra = 56.dp)
+                    ) { page ->
+                        ScheduleTable(
+                            scheduleParams = ScheduleParams(
+                                viewModel = viewModel,
+                                navHostController = navHostController,
+                                schedule = schedule!!,
+                                currentWeek = page + 1
+                            ),
+                            rows = rows,
+                            columns = columns,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
         }
         if (showAddScheduleDialog.value) {
@@ -605,6 +644,380 @@ fun CourseColumn(
                         editCourse(courseID, course)
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun OverviewScheduleTable(
+    schedule: Schedule,
+    navHostController: NavHostController,
+    viewModel: TimeFlowViewModel,
+    rows: Int,
+    columns: Int,
+    modifier: Modifier = Modifier
+) {
+    val lessons = schedule.lessonTimePeriodInfo.lessons
+    val baseCellHeight = 56.dp
+    val nameLineHeight = 16.dp   // labelMedium line height
+    val infoLineHeight = 14.dp   // labelSmall line height
+    val interEntrySpacing = 9.dp // Spacer(4dp) + HorizontalDivider(0.5dp) + Spacer(4dp)
+    val columnPadding = 8.dp     // Column padding 4dp top + 4dp bottom
+    val cellContentPadding = 12f // Card padding(2*2) + Column padding(4*2) in dp
+    val nameCharWidth = 12f      // labelMedium: ~12dp per CJK char
+    val infoCharWidth = 11f      // labelSmall: ~11dp per CJK char
+
+    // Collect overview slots for all weekdays
+    val overviewData = remember(schedule) {
+        List(columns) { dayIndex ->
+            schedule.getOverviewTimeSlotsFor(weekdays[dayIndex])
+        }
+    }
+
+    val headerWidth = remember { mutableStateOf(48.dp) }
+    val headerHeight = remember { mutableStateOf(40.dp) }
+
+    BoxWithConstraints(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        val cellWidth = (maxWidth - headerWidth.value - 5.dp) / columns
+        val availableTextWidth = (cellWidth - cellContentPadding.dp).value
+
+        fun estimateLines(text: String, charWidth: Float): Int {
+            if (text.isEmpty()) return 0
+            var totalWidth = 0f
+            for (c in text) {
+                totalWidth += if (c.code > 0x7F) charWidth else charWidth * 0.6f
+            }
+            return maxOf(1, kotlin.math.ceil((totalWidth / availableTextWidth).toDouble()).toInt())
+        }
+
+        // Compute dynamic row heights based on actual content and cell width
+        val rowHeights = remember(overviewData, rows, cellWidth) {
+            val heights = MutableList(rows) { baseCellHeight }
+            for (daySlots in overviewData) {
+                for ((range, courses) in daySlots) {
+                    if (courses.isEmpty()) continue
+                    val span = range.end - range.start + 1
+                    var neededHeight = columnPadding
+                    courses.values.forEachIndexed { index, course ->
+                        if (index > 0) neededHeight += interEntrySpacing
+                        // name: up to 3 lines
+                        neededHeight += nameLineHeight * minOf(3, estimateLines(course.name, nameCharWidth))
+                        // week: no maxLines limit
+                        val weekTextLen = course.week.toString().length + 4 // "第 " + " 周"
+                        neededHeight += infoLineHeight * estimateLines("x".repeat(weekTextLen), infoCharWidth)
+                        // time period: always short, 1 line
+                        neededHeight += infoLineHeight
+                        // classroom: up to 2 lines
+                        if (course.classroom.isNotBlank()) {
+                            neededHeight += infoLineHeight * minOf(2, estimateLines(course.classroom, infoCharWidth))
+                        }
+                        // teacher: 1 line
+                        if (course.teacher.isNotBlank()) {
+                            neededHeight += infoLineHeight
+                        }
+                    }
+                    val baseSpanHeight = baseCellHeight * span
+                    if (neededHeight > baseSpanHeight) {
+                        val extra = neededHeight - baseSpanHeight
+                        val rowIndex = range.start - 1
+                        if (rowIndex in heights.indices) {
+                            heights[rowIndex] = maxOf(heights[rowIndex], baseCellHeight + extra)
+                        }
+                    }
+                }
+            }
+            heights
+        }
+
+        // Cumulative Y offsets for each row
+        val rowYOffsets = remember(rowHeights) {
+            val offsets = mutableListOf(0.dp)
+            rowHeights.forEach { h -> offsets.add(offsets.last() + h) }
+            offsets
+        }
+
+        val totalHeight = rowYOffsets.last()
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(headerHeight.value + totalHeight)
+        ) {
+
+            // Grid: weekday headers (no dates)
+            OverviewTableHeader(
+                columns = columns,
+                cellWidth = cellWidth,
+                headerWidth = headerWidth,
+                headerHeight = headerHeight
+            )
+
+            // Grid: row headers and horizontal dividers
+            OverviewRowHeaders(
+                rows = rows,
+                rowHeights = rowHeights,
+                rowYOffsets = rowYOffsets,
+                headerWidth = headerWidth,
+                headerHeight = headerHeight,
+                lessons = lessons
+            )
+
+            // Grid: vertical dividers
+            for (dayIndex in 0 until columns) {
+                VerticalDivider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier
+                        .offset(
+                            x = headerWidth.value + 4.dp + cellWidth * dayIndex,
+                            y = 0.dp
+                        )
+                        .height(headerHeight.value + totalHeight)
+                )
+            }
+
+            // Grid: horizontal dividers per column
+            for (dayIndex in 0 until columns) {
+                val noGridRows = remember(overviewData, dayIndex) {
+                    val set = mutableSetOf<Int>()
+                    overviewData[dayIndex].keys.forEach { range ->
+                        if (range.end - range.start > 0) {
+                            (range.start until range.end).forEach { set.add(it + 1) }
+                        }
+                    }
+                    set
+                }
+                Box(
+                    modifier = Modifier
+                        .width(cellWidth)
+                        .offset(x = headerWidth.value + 4.dp + cellWidth * dayIndex)
+                ) {
+                    for (lessonIndex in 0 until rows) {
+                        if (lessonIndex + 1 in noGridRows) continue
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.offset(
+                                y = headerHeight.value + rowYOffsets[lessonIndex] - 1.dp
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Course overlay
+            val navSuiteType by LocalNavSuiteType.current
+            val showEditCourseDialog = rememberDialogState()
+            var selectCourse by remember { mutableStateOf<Course?>(null) }
+            var selectCourseID by remember { mutableStateOf<Short?>(null) }
+            val showCourseListDialog = rememberDialogState()
+            var courseListDialogCourses by remember { mutableStateOf<Map<Short, Course>>(emptyMap()) }
+            var courseListDialogTime by remember { mutableStateOf(Range(1, 1)) }
+
+            fun editCourse(courseID: Short, course: Course) {
+                if (navSuiteType !in NavigationBarType) {
+                    selectCourse = course
+                    selectCourseID = courseID
+                    showEditCourseDialog.show()
+                } else {
+                    navHostController.navigate(
+                        Destination.Schedule.EditCourse(
+                            courseID = courseID,
+                            course = course
+                        )
+                    )
+                }
+            }
+
+            if (showEditCourseDialog.visible && selectCourse != null && selectCourseID != null) {
+                val state = remember { mutableStateOf(TableState()) }
+                EditCourseDialog(
+                    state = state,
+                    scheduleParams = ScheduleParams(
+                        viewModel = viewModel,
+                        navHostController = navHostController,
+                        schedule = schedule,
+                        currentWeek = 1
+                    ),
+                    courseID = selectCourseID!!,
+                    initValue = selectCourse!!,
+                    showEditCourseDialog = showEditCourseDialog
+                )
+            }
+
+            if (showCourseListDialog.visible) {
+                CourseListDialog(
+                    schedule = schedule,
+                    courses = courseListDialogCourses,
+                    currentWeek = 1,
+                    totalWeeks = schedule.totalWeeks,
+                    time = courseListDialogTime,
+                    showCourseListDialog = showCourseListDialog,
+                    onEditCourse = { courseID, course -> editCourse(courseID, course) },
+                    onCreateNewCourse = { course ->
+                        val newCourseID = schedule.newCourseId()
+                        editCourse(newCourseID, course)
+                    }
+                )
+            }
+
+            for (dayIndex in 0 until columns) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 1.dp)
+                        .width(cellWidth - 1.dp)
+                        .offset(
+                            x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                            y = headerHeight.value + 1.dp
+                        )
+                ) {
+                    overviewData[dayIndex].forEach { (range, courses) ->
+                        if (courses.isEmpty()) return@forEach
+                        val cellHeight = rowYOffsets[range.end] - rowYOffsets[range.start - 1]
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(cellHeight)
+                                .padding(bottom = 1.dp)
+                                .offset(y = rowYOffsets[range.start - 1] - 1.dp)
+                        ) {
+                            OverviewCourseCell(
+                                courses = courses,
+                                onClick = {
+                                    courseListDialogCourses = courses
+                                    courseListDialogTime = range
+                                    showCourseListDialog.show()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewTableHeader(
+    columns: Int,
+    cellWidth: Dp,
+    headerWidth: MutableState<Dp>,
+    headerHeight: MutableState<Dp>
+) {
+    val weekdayNames = listOf(
+        Res.string.monday,
+        Res.string.tuesday,
+        Res.string.wednesday,
+        Res.string.thursday,
+        Res.string.friday,
+        Res.string.saturday,
+        Res.string.sunday
+    ).map { stringResource(it) }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        for (dayIndex in 0 until columns) {
+            SubcomposeLayout(
+                modifier = Modifier.padding(end = 1.dp)
+            ) { constraints ->
+                val column = subcompose("overview_day$dayIndex") {
+                    Column(
+                        modifier = Modifier
+                            .width(cellWidth - 1.dp)
+                            .height(IntrinsicSize.Max)
+                            .offset(
+                                x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                                y = 0.dp
+                            ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = weekdayNames[dayIndex],
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }[0].measure(constraints)
+                val newHeight = column.height.toDp()
+                if (headerHeight.value != newHeight) {
+                    headerHeight.value = newHeight
+                }
+                layout(cellWidth.roundToPx(), column.height) {
+                    column.placeRelative(0, 0)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewRowHeaders(
+    rows: Int,
+    rowHeights: List<Dp>,
+    rowYOffsets: List<Dp>,
+    headerWidth: MutableState<Dp>,
+    headerHeight: MutableState<Dp>,
+    lessons: List<Lesson>
+) {
+    Column(
+        modifier = Modifier.offset(
+            x = 1.dp,
+            y = headerHeight.value - 1.dp
+        )
+    ) {
+        for (lessonIndex in 0 until rows) {
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.width(headerWidth.value + 4.dp)
+            )
+            SubcomposeLayout { constraints ->
+                val column = subcompose("overview_lesson$lessonIndex") {
+                    Column(
+                        modifier = Modifier
+                            .height(rowHeights[lessonIndex] - 1.dp)
+                            .width(IntrinsicSize.Max),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${lessonIndex + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                        if (lessonIndex < lessons.size) {
+                            Text(
+                                text = "${lessons[lessonIndex].start}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = NotoSans,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "${lessons[lessonIndex].end}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = NotoSans,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }[0].measure(constraints)
+                val newWidth = column.width.toDp()
+                if (headerWidth.value != newWidth) {
+                    headerWidth.value = newWidth
+                }
+                layout(column.width, (rowHeights[lessonIndex] - 1.dp).roundToPx()) {
+                    column.placeRelative(0, 0)
+                }
             }
         }
     }

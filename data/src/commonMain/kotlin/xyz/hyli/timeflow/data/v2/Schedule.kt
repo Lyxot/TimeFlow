@@ -232,6 +232,17 @@ data class Schedule(
     }
 
     /**
+     * 获取指定星期的所有时间段及其对应的所有课程（不区分周次），用于总览视图。
+     * @param weekday 指定的星期。
+     * @return 一个 Map，键为时间范围 [Range]，值为该时间段内的所有课程 Map。
+     */
+    fun getOverviewTimeSlotsFor(weekday: Weekday): Map<Range, Map<Short, Course>> {
+        return getCoursesOfWeekday(weekday).entries
+            .groupBy({ it.value.time }, { it.key to it.value })
+            .mapValues { it.value.toMap() }
+    }
+
+    /**
      * 生成一个新的、不重复的课程ID。
      * @return 新的课程ID ([Short])。
      */

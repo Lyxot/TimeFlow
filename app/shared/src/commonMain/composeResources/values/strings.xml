@@ -31,6 +31,7 @@
     <string name="schedule_title_week_x_part_2">%1$s</string>
     <string name="schedule_title_week_x_part_3"> 周</string>
     <string name="schedule_title_week_vacation">假期中</string>
+    <string name="schedule_title_overview">总览</string>
     <string name="schedule_title_edit_course">编辑课程</string>
     <string name="schedule_title_add_course">添加课程</string>
     <string name="schedule_title_course_name">课程名称</string>
@@ -39,7 +40,7 @@
     <string name="schedule_title_course_time_start">上课时间</string>
     <string name="schedule_title_course_time_end">下课时间</string>
     <string name="schedule_value_course_time">第 %1$s 节</string>
-    <string name="schedule_value_course_time_period">第 %1$s - %2$s 节</string>
+    <string name="schedule_value_course_time_period">第 %1$s-%2$s 节</string>
     <string name="schedule_value_course_week">第 %1$s 周</string>
     <string name="schedule_title_course_week">上课周次</string>
     <string name="schedule_warning_multiple_courses">当前时间段有 %1$s 节课程，请重新选择时间</string>
