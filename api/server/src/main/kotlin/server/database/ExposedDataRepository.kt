@@ -11,6 +11,8 @@ package xyz.hyli.timeflow.server.database
 
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import xyz.hyli.timeflow.api.models.SelectedSchedule
 import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.data.Course
@@ -118,10 +120,6 @@ class ExposedDataRepository : DataRepository {
 
     override suspend fun blacklistAccessToken(jti: String, expiresAt: kotlin.time.Instant) {
         dbQuery {
-            // Clean up expired entries
-            AccessTokenBlacklistEntity.all().forEach {
-                if (it.expiresAt <= Clock.System.now()) it.delete()
-            }
             AccessTokenBlacklistEntity.new {
                 this.jti = jti
                 this.expiresAt = expiresAt
@@ -131,6 +129,15 @@ class ExposedDataRepository : DataRepository {
 
     override suspend fun isAccessTokenBlacklisted(jti: String): Boolean = dbQuery {
         !AccessTokenBlacklistEntity.find { AccessTokenBlacklistTable.jti eq jti }.empty()
+    }
+
+    override suspend fun cleanupExpiredTokens() {
+        dbQuery {
+            val now = Clock.System.now()
+            RefreshTokensTable.deleteWhere { RefreshTokensTable.expiresAt lessEq now }
+            VerificationCodesTable.deleteWhere { VerificationCodesTable.expiresAt lessEq now }
+            AccessTokenBlacklistTable.deleteWhere { AccessTokenBlacklistTable.expiresAt lessEq now }
+        }
     }
 
     override suspend fun createVerificationCode(email: String, code: String, expiresAt: kotlin.time.Instant): Boolean =

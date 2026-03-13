@@ -36,6 +36,7 @@ CREATE TABLE refresh_tokens
 );
 
 CREATE INDEX refresh_tokens_user_id ON refresh_tokens USING btree (user_id);
+CREATE INDEX refresh_tokens_expires_at ON refresh_tokens USING btree (expires_at);
 
 CREATE TABLE verification_codes
 (
@@ -48,6 +49,7 @@ CREATE TABLE verification_codes
 );
 
 CREATE INDEX verification_codes_email ON verification_codes USING btree (email);
+CREATE INDEX verification_codes_expires_at ON verification_codes USING btree (expires_at);
 
 CREATE TABLE schedules
 (
@@ -105,3 +107,5 @@ CREATE TABLE access_token_blacklist
     CONSTRAINT access_token_blacklist_pkey PRIMARY KEY (id),
     CONSTRAINT access_token_blacklist_jti_unique UNIQUE (jti)
 );
+
+CREATE INDEX access_token_blacklist_expires_at ON access_token_blacklist USING btree (expires_at);

@@ -93,6 +93,11 @@ interface DataRepository {
     suspend fun isAccessTokenBlacklisted(jti: String): Boolean
 
     /**
+     * Cleans up expired refresh tokens, verification codes, and blacklisted access tokens.
+     */
+    suspend fun cleanupExpiredTokens()
+
+    /**
      * Creates a verification code for an email address if rate limit allows.
      * Checks if the last verification code was sent at least 1 minute ago.
      * @param email The email address to send the code to.

@@ -15,6 +15,9 @@ import io.ktor.server.config.*
 import io.ktor.server.config.yaml.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import xyz.hyli.timeflow.server.*
 import xyz.hyli.timeflow.server.database.DatabaseFactory
@@ -67,6 +70,18 @@ fun Application.module() {
     configureAdministration()
     configureSecurity(repository, jwtKeys)
     configureRouting(repository, turnstileService, tokenManager)
+
+    // Periodic cleanup of expired tokens and verification codes (every hour)
+    launch {
+        while (isActive) {
+            delay(3_600_000L)
+            try {
+                repository.cleanupExpiredTokens()
+            } catch (e: Exception) {
+                log.warn("Token cleanup failed: {}", e.message)
+            }
+        }
+    }
 
     monitor.subscribe(ApplicationStopping) {
         log.info("Server shutting down, closing resources...")

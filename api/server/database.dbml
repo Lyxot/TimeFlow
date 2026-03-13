@@ -22,6 +22,10 @@ Table RefreshTokens as RT {
   user_id int [not null]
   jti uuid [unique, not null, note: 'The unique ID (JWT ID) of the refresh token']
   expires_at timestamp [not null]
+
+  indexes {
+    expires_at
+  }
 }
 
 Table VerificationCodes as VC {
@@ -33,6 +37,7 @@ Table VerificationCodes as VC {
 
   indexes {
     email
+    expires_at
   }
 }
 
@@ -76,6 +81,10 @@ Table AccessTokenBlacklist as ATB {
   id long [pk, increment]
   jti varchar(36) [unique, not null, note: 'The unique ID (JWT ID) of the blacklisted access token']
   expires_at timestamp [not null]
+
+  indexes {
+    expires_at
+  }
 }
 
 // --- Relationship Definitions ---
