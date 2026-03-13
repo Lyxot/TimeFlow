@@ -17,32 +17,32 @@ import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
-import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.ECPrivateKey
+import java.security.interfaces.ECPublicKey
+import java.security.spec.ECGenParameterSpec
 import org.slf4j.LoggerFactory
-import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
 import kotlin.io.path.Path
 
 data class JwtKeys(
-    val publicKey: RSAPublicKey,
-    val privateKey: RSAPrivateKey,
+    val publicKey: ECPublicKey,
+    val privateKey: ECPrivateKey,
 ) {
-    val algorithm: Algorithm = Algorithm.RSA256(publicKey, privateKey)
+    val algorithm: Algorithm = Algorithm.ECDSA256(publicKey, privateKey)
 }
 
 object JwtKeysLoader {
     private val log = LoggerFactory.getLogger(JwtKeysLoader::class.java)
 
     private val testingKeys by lazy {
-        val generator = KeyPairGenerator.getInstance("RSA").apply {
-            initialize(4096)
-        }
-        val pair = generator.generateKeyPair()
+        val pair = KeyPairGenerator.getInstance("EC").apply {
+            initialize(ECGenParameterSpec("secp256r1"))
+        }.generateKeyPair()
         JwtKeys(
-            publicKey = pair.public as RSAPublicKey,
-            privateKey = pair.private as RSAPrivateKey,
+            publicKey = pair.public as ECPublicKey,
+            privateKey = pair.private as ECPrivateKey,
         )
     }
 
@@ -52,10 +52,7 @@ object JwtKeysLoader {
         val publicKeyText = loadPem(config, "jwt.publicKeyPem", "jwt.publicKeyPath")
 
         if (privateKeyText != null && publicKeyText != null) {
-            return JwtKeys(
-                publicKey = parsePublicKey(publicKeyText),
-                privateKey = parsePrivateKey(privateKeyText),
-            )
+            return loadAndValidate(publicKeyText, privateKeyText)
         }
 
         val privateKeyPath = configuredPath(config, "jwt.privateKeyPath")
@@ -65,10 +62,7 @@ object JwtKeysLoader {
                 "Both jwt.privateKeyPath and jwt.publicKeyPath must be configured together."
             }
             ensureKeyPairFiles(privateKeyPath, publicKeyPath)
-            return JwtKeys(
-                publicKey = parsePublicKey(Files.readString(publicKeyPath)),
-                privateKey = parsePrivateKey(Files.readString(privateKeyPath)),
-            )
+            return loadAndValidate(Files.readString(publicKeyPath), Files.readString(privateKeyPath))
         }
 
         if (testing) {
@@ -76,8 +70,29 @@ object JwtKeysLoader {
         }
 
         throw IllegalStateException(
-            "Missing RSA JWT keys. Configure jwt.privateKeyPath/jwt.publicKeyPath or jwt.privateKeyPem/jwt.publicKeyPem."
+            "Missing EC JWT keys. Configure jwt.privateKeyPath/jwt.publicKeyPath or jwt.privateKeyPem/jwt.publicKeyPem."
         )
+    }
+
+    private fun loadAndValidate(publicKeyPem: String, privateKeyPem: String): JwtKeys {
+        val publicKey = try {
+            parsePublicKey(publicKeyPem)
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to parse JWT public key. Ensure it is a valid EC (P-256) public key in PEM format.", e)
+        }
+        val privateKey = try {
+            parsePrivateKey(privateKeyPem)
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to parse JWT private key. Ensure it is a valid EC (P-256) private key in PEM format.", e)
+        }
+        val keys = JwtKeys(publicKey, privateKey)
+        try {
+            val token = com.auth0.jwt.JWT.create().withClaim("_test", true).sign(keys.algorithm)
+            com.auth0.jwt.JWT.require(keys.algorithm).build().verify(token)
+        } catch (e: Exception) {
+            throw IllegalStateException("JWT key pair validation failed. The public and private keys do not match.", e)
+        }
+        return keys
     }
 
     private fun loadPem(config: ApplicationConfig, inlineKey: String, pathKey: String): String? {
@@ -94,16 +109,24 @@ object JwtKeysLoader {
         config.propertyOrNull(key)?.getString()?.trim()?.takeIf { it.isNotBlank() }?.let(::Path)
 
     private fun ensureKeyPairFiles(privateKeyPath: java.nio.file.Path, publicKeyPath: java.nio.file.Path) {
-        if (Files.exists(privateKeyPath) && Files.exists(publicKeyPath)) {
+        val privateExists = Files.exists(privateKeyPath)
+        val publicExists = Files.exists(publicKeyPath)
+
+        if (privateExists && publicExists) {
             return
         }
 
-        log.warn("JWT key files not found at {} and {}. Auto-generating new RSA-4096 key pair. All existing tokens will be invalidated.", privateKeyPath, publicKeyPath)
-
-        val generator = KeyPairGenerator.getInstance("RSA").apply {
-            initialize(4096)
+        if (privateExists || publicExists) {
+            throw IllegalStateException(
+                "Only one JWT key file exists. Both jwt.privateKeyPath and jwt.publicKeyPath must be present, or neither (to auto-generate)."
+            )
         }
-        val pair = generator.generateKeyPair()
+
+        log.warn("JWT key files not found at {} and {}. Auto-generating new ES256 key pair. All existing tokens will be invalidated.", privateKeyPath, publicKeyPath)
+
+        val pair = KeyPairGenerator.getInstance("EC").apply {
+            initialize(ECGenParameterSpec("secp256r1"))
+        }.generateKeyPair()
 
         writePem(privateKeyPath, "PRIVATE KEY", pair.private.encoded)
         writePem(publicKeyPath, "PUBLIC KEY", pair.public.encoded)
@@ -125,14 +148,14 @@ object JwtKeysLoader {
         )
     }
 
-    private fun parsePublicKey(pem: String): RSAPublicKey {
+    private fun parsePublicKey(pem: String): ECPublicKey {
         val spec = X509EncodedKeySpec(decodePem(pem, "PUBLIC KEY"))
-        return KeyFactory.getInstance("RSA").generatePublic(spec) as RSAPublicKey
+        return KeyFactory.getInstance("EC").generatePublic(spec) as ECPublicKey
     }
 
-    private fun parsePrivateKey(pem: String): RSAPrivateKey {
+    private fun parsePrivateKey(pem: String): ECPrivateKey {
         val spec = PKCS8EncodedKeySpec(decodePem(pem, "PRIVATE KEY"))
-        return KeyFactory.getInstance("RSA").generatePrivate(spec) as RSAPrivateKey
+        return KeyFactory.getInstance("EC").generatePrivate(spec) as ECPrivateKey
     }
 
     private fun decodePem(pem: String, type: String): ByteArray {

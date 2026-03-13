@@ -14,10 +14,10 @@ jwt:
   realm: "TimeFlow API"
   # JWT 签发者标识
   issuer: "timeflow-api"
-  # 使用 OpenSSL 生成 RSA 私钥：
-  # openssl genpkey -algorithm RSA -out jwt-private.pem -pkeyopt rsa_keygen_bits:4096
+  # 使用 OpenSSL 生成 ES256 (P-256) 私钥：
+  # openssl ecparam -genkey -name prime256v1 -noout -out jwt-private.pem
   # 从私钥导出对应的公钥：
-  # openssl rsa -pubout -in jwt-private.pem -out jwt-public.pem
+  # openssl ec -in jwt-private.pem -pubout -out jwt-public.pem
   # JWT 私钥文件路径；文件不存在时服务可按当前逻辑自动生成
   privateKeyPath: "jwt-private.pem"
   # JWT 公钥文件路径；用于校验访问令牌
