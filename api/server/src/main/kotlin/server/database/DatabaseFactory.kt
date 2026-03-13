@@ -16,9 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import xyz.hyli.timeflow.server.isTestMode
 
 object DatabaseFactory {
@@ -27,48 +25,33 @@ object DatabaseFactory {
     /**
      * 初始化数据库连接。
      * 此方法应在 Ktor 应用启动时调用。
-     * @param config Ktor 的应用配置，用于读取生产数据库的连接参数。
+     * @param config Ktor 的应用配置，用于读取数据库的连接参数。
      */
     fun init(config: ApplicationConfig) {
-        // isTestMode 如果为 true，则使用 H2 内存数据库进行测试；否则，使用配置文件中的 PostgreSQL。
-        val db = if (isTestMode) {
-            Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
-        } else {
-            val host = config.property("postgres.host").getString()
-            val port = config.property("postgres.port").getString()
-            val database = config.property("postgres.database").getString()
-            val user = config.property("postgres.user").getString()
-            val password = config.property("postgres.password").getString()
-            val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 10
-            val url = "jdbc:postgresql://$host:$port/$database"
-            val hikariDataSource = createHikariDataSource(url, user, password, maximumPoolSize)
-            dataSource = hikariDataSource
-            migratePostgres(hikariDataSource)
-            Database.connect(hikariDataSource)
-        }
-
-        // Tests still use an in-memory H2 database; bootstrap its schema directly.
-        if (isTestMode) {
-            transaction(db) {
-                SchemaUtils.create(
-                    UsersTable,
-                    RefreshTokensTable,
-                    VerificationCodesTable,
-                    SchedulesTable,
-                    CoursesTable,
-                    AccessTokenBlacklistTable,
-                )
-            }
-        }
+        val host = config.property("postgres.host").getString()
+        val port = config.property("postgres.port").getString()
+        val database = config.property("postgres.database").getString()
+        val user = config.property("postgres.user").getString()
+        val password = config.property("postgres.password").getString()
+        val maximumPoolSize = config.propertyOrNull("postgres.maximumPoolSize")?.getString()?.toInt() ?: 10
+        val url = "jdbc:postgresql://$host:$port/$database"
+        val hikariDataSource = createHikariDataSource(url, user, password, maximumPoolSize)
+        dataSource = hikariDataSource
+        migratePostgres(hikariDataSource)
+        Database.connect(hikariDataSource)
     }
 
     private fun migratePostgres(dataSource: HikariDataSource) {
-        Flyway.configure()
+        val flyway = Flyway.configure()
             .dataSource(dataSource)
             .locations("classpath:db/migration")
             .baselineOnMigrate(true)
+            .cleanDisabled(!isTestMode)
             .load()
-            .migrate()
+        if (isTestMode) {
+            flyway.clean()
+        }
+        flyway.migrate()
     }
 
     /**
@@ -94,7 +77,7 @@ object DatabaseFactory {
      * Returns true if the database connection pool is running and a connection can be obtained.
      */
     fun isHealthy(): Boolean = try {
-        dataSource?.connection?.use { it.isValid(2) } ?: isTestMode
+        dataSource?.connection?.use { it.isValid(2) } ?: false
     } catch (_: Exception) {
         false
     }

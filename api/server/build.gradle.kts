@@ -91,7 +91,6 @@ dependencies {
     implementation(ktorLibs.server.resources)
     implementation(ktorLibs.server.sessions)
 
-    testImplementation(libs.h2)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(ktorLibs.server.testHost)
     testImplementation(project(":api:client"))

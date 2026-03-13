@@ -13,7 +13,6 @@ compose = "1.11.0-alpha01"
 exposed = "1.0.0-rc-4"
 filekitCore = "0.12.0"
 flyway = "12.1.0"
-h2 = "2.4.240"
 hikaricp = "7.0.2"
 hot-reload = "1.0.0"
 jakarta-mail = "2.0.2"
@@ -68,7 +67,6 @@ filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref =
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekitCore" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
-h2 = { module = "com.h2database:h2", version.ref = "h2" }
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 jakarta-mail = { module = "com.sun.mail:jakarta.mail", version.ref = "jakarta-mail" }
 jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jbr-api" }
