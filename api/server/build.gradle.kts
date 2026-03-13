@@ -31,13 +31,7 @@ application {
 
 val bundleWebAppZip = providers.gradleProperty("bundleWebAppZip")
     .map { it.toBoolean() }
-    .orElse(
-        provider {
-            gradle.startParameter.taskNames.any { taskName ->
-                taskName == "buildFatJar" || taskName.endsWith(":buildFatJar")
-            }
-        }
-    )
+    .orElse(false)
 
 ktor {
     fatJar {
@@ -139,5 +133,7 @@ val prepareWebAppResources by tasks.registering(Sync::class) {
 }
 
 tasks.named("processResources") {
-    dependsOn(prepareWebAppResources)
+    if (bundleWebAppZip.get()) {
+        dependsOn(prepareWebAppResources)
+    }
 }

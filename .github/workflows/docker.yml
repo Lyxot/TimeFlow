@@ -34,7 +34,9 @@ jobs:
           echo "New tag: $NEW_TAG_CLEAN"
 
       - name: Download webCompat artifact
+        id: download-web
         uses: actions/download-artifact@v8
+        continue-on-error: true
         with:
           name: webCompat
           path: builder/build/artifacts/release/webCompat
@@ -50,6 +52,12 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
+
+      - name: Build webCompat from source
+        if: ${{ steps.download-web.outcome == 'failure' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :builder:buildWebCompatReleaseZip
 
       - name: Build Docker image tarball
         env:
