@@ -21,4 +21,4 @@ libraries.json
 /api/server/src/main/resources/static/app.zip
 /server.yml
 *.pem
-/data
+/db
