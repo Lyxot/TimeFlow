@@ -7,18 +7,12 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-@file:OptIn(
-    ExperimentalWasmDsl::class,
-    ExperimentalKotlinGradlePluginApi::class,
-)
+@file:OptIn(ExperimentalWasmDsl::class)
 
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.multiplatform)
-    alias(libs.plugins.compose)
-    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
@@ -26,7 +20,6 @@ kotlin {
         browser()
         binaries.executable()
     }
-
     wasmJs {
         browser()
         binaries.executable()
@@ -34,13 +27,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":app:shared"))
-            implementation(project(":app:app-localstorage"))
-            implementation(libs.androidx.lifecycle.runtime)
-            implementation(libs.androidx.lifecycle.viewmodel)
-            implementation(libs.compose.components.resources)
+            api(project(":app:app-interface"))
+            implementation(libs.kotlinx.browser)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.compose.material3)
+            implementation(libs.kotlinx.serialization.json)
         }
     }
 }

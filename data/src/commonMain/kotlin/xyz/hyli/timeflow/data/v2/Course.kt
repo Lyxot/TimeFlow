@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.protobuf.ProtoNumber
 
 // Docs: https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/formats.md
@@ -39,6 +40,7 @@ data class Course(
     @ProtoNumber(11) val reserved11: String? = null,
     @ProtoNumber(12) val reserved12: String? = null,
 ) {
+    @Transient
     val summary = CourseSummary(
         name = name,
         teacher = teacher,

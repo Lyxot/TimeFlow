@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.protobuf.ProtoNumber
 
 
@@ -141,9 +142,11 @@ data class LessonTimePeriodInfo(
     }
 
     /** 一天中的总课程节数 */
+    @Transient
     val totalLessonsCount: Int = morning.size + afternoon.size + evening.size
 
     /** 按早、中、晚顺序合并的总课程列表 */
+    @Transient
     val lessons: List<Lesson> = morning + afternoon + evening
 
     /**
@@ -167,6 +170,7 @@ data class LessonTimePeriodInfo(
      * 存在时间冲突的课程索引集合。
      * 如果第 n 节课的开始时间早于第 n-1 节课的结束时间，则认为存在冲突。
      */
+    @Transient
     val conflictSet: Set<Int> = (1 until lessons.size)
         .filter { i -> lessons[i].start < lessons[i - 1].end }
         .flatMap { i -> listOf(i - 1, i) }

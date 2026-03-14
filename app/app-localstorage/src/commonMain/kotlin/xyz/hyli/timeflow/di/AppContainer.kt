@@ -9,8 +9,10 @@
 
 package xyz.hyli.timeflow.di
 
+import xyz.hyli.timeflow.localstorage.LocalStorageSettingsStore
+
 class AppContainer : IAppContainer {
     override val dataRepository: IDataRepository by lazy {
-        DataRepository()
+        DataRepository(LocalStorageSettingsStore())
     }
 }

@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.data.v2
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.protobuf.ProtoNumber
 import xyz.hyli.timeflow.data.newShortId
 import kotlin.time.Instant
@@ -57,24 +58,29 @@ data class Settings(
     }
 
     /** 未被删除（仍在回收站外）的所有课程表。 */
+    @Transient
     val nonDeletedSchedules: Map<Short, Schedule> =
         schedules.filterValues { !it.deleted }
 
     /** 未被删除且不是当前选中的所有课程表。 */
+    @Transient
     val nonSelectedSchedules: Map<Short, Schedule> =
         schedules.filter { (id, schedule) ->
             id != selectedScheduleID && !schedule.deleted
         }
 
     /** 已被删除（在回收站内）的所有课程表。 */
+    @Transient
     val deletedSchedules: Map<Short, Schedule> =
         schedules.filterValues { it.deleted }
 
     /** 检查当前是否有选中的、且未被删除的课程表。 */
+    @Transient
     val isScheduleSelected: Boolean =
         selectedScheduleID != ZERO_ID && schedules.containsKey(selectedScheduleID) && !schedules[selectedScheduleID]!!.deleted
 
     /** 当前选中的课程表对象，如果没有选中则为 null。 */
+    @Transient
     val selectedSchedule: Schedule? =
         if (isScheduleSelected) {
             schedules[selectedScheduleID]
@@ -83,6 +89,7 @@ data class Settings(
         }
 
     /** 检查是否存在任何未被删除的课程表。 */
+    @Transient
     val isScheduleEmpty: Boolean =
         nonDeletedSchedules.isEmpty()
 

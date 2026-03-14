@@ -12,6 +12,7 @@ package xyz.hyli.timeflow.data.v2
 import kotlinx.datetime.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.protobuf.ProtoNumber
 import xyz.hyli.timeflow.data.Weekday
 import xyz.hyli.timeflow.data.newShortId
@@ -68,6 +69,7 @@ data class Schedule(
     /**
      * 课程表的摘要信息。
      */
+    @Transient
     val summary = ScheduleSummary(
         name = this.name,
         deleted = this.deleted,
@@ -80,6 +82,7 @@ data class Schedule(
     /**
      * 根据学期起止日期计算总教学周数。
      */
+    @Transient
     val totalWeeks: Int = this.termStartDate.weeksTill(this.termEndDate)
 
     /**
