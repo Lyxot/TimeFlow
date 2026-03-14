@@ -16,6 +16,43 @@ jobs:
     uses: ./.github/workflows/docker.yml
     secrets: inherit
 
+  deploy-web:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy web app to GitHub Pages
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download webCompat artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: webCompat
+          path: webCompat-artifact
+
+      - name: Extract web app
+        run: |
+          mkdir -p web-pages-tmp
+          unzip webCompat-artifact/*.zip -d web-pages-tmp
+          mv web-pages-tmp/*/* web-pages-tmp/ 2>/dev/null || true
+          rmdir web-pages-tmp/TimeFlow 2>/dev/null || true
+          mv web-pages-tmp web-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web-pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   release:
     needs:
       - build
