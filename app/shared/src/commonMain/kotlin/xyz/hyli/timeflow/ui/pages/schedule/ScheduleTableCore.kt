@@ -20,9 +20,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
@@ -41,60 +44,91 @@ fun ScheduleTableLayout(
     config: ScheduleDisplayConfig,
     tableDataFactory: @Composable (cellWidth: Dp) -> ScheduleTableData,
     modifier: Modifier = Modifier,
+    fixedCellWidth: Dp? = null,
     columnContent: @Composable BoxScope.(dayIndex: Int, tableData: ScheduleTableData) -> Unit
 ) {
     val headerWidth = remember { mutableStateOf(48.dp) }
     val headerHeight = remember { mutableStateOf(40.dp) }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val cellWidth = (maxWidth - headerWidth.value - 5.dp) / config.columns
+        val cellWidth = fixedCellWidth ?: ((maxWidth - headerWidth.value - 5.dp) / config.columns)
         val tableData = tableDataFactory(cellWidth)
         val totalHeight = tableData.rowYOffsets.last()
+        val naturalHeight = headerHeight.value + totalHeight
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(headerHeight.value + totalHeight)
-        ) {
-            // Weekday column headers
-            WeekdayHeaders(
-                config = config,
-                cellWidth = cellWidth,
-                headerWidth = headerWidth,
-                headerHeight = headerHeight
-            )
+        val tableContent: @Composable () -> Unit = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(naturalHeight)
+            ) {
+                // Weekday column headers
+                WeekdayHeaders(
+                    config = config,
+                    cellWidth = cellWidth,
+                    headerWidth = headerWidth,
+                    headerHeight = headerHeight
+                )
 
-            // Lesson row headers + left-side horizontal dividers
-            LessonRowHeaders(
-                config = config,
-                tableData = tableData,
-                headerWidth = headerWidth,
-                headerHeight = headerHeight
-            )
+                // Lesson row headers + left-side horizontal dividers
+                LessonRowHeaders(
+                    config = config,
+                    tableData = tableData,
+                    headerWidth = headerWidth,
+                    headerHeight = headerHeight
+                )
 
-            // Grid dividers (vertical + per-column horizontal)
-            GridDividers(
-                config = config,
-                tableData = tableData,
-                cellWidth = cellWidth,
-                headerWidth = headerWidth.value,
-                headerHeight = headerHeight.value
-            )
+                // Grid dividers (vertical + per-column horizontal)
+                GridDividers(
+                    config = config,
+                    tableData = tableData,
+                    cellWidth = cellWidth,
+                    headerWidth = headerWidth.value,
+                    headerHeight = headerHeight.value
+                )
 
-            // Column content slots
-            for (dayIndex in 0 until config.columns) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 1.dp)
-                        .width(cellWidth - 1.dp)
-                        .offset(
-                            x = headerWidth.value + 5.dp + cellWidth * dayIndex,
-                            y = headerHeight.value + 1.dp
-                        )
-                ) {
-                    columnContent(dayIndex, tableData)
+                // Column content slots
+                for (dayIndex in 0 until config.columns) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 1.dp)
+                            .width(cellWidth - 1.dp)
+                            .offset(
+                                x = headerWidth.value + 5.dp + cellWidth * dayIndex,
+                                y = headerHeight.value + 1.dp
+                            )
+                    ) {
+                        columnContent(dayIndex, tableData)
+                    }
                 }
             }
+        }
+
+        if (fixedCellWidth != null) {
+            val naturalWidth = headerWidth.value + 5.dp + fixedCellWidth * config.columns
+            val scaleFactor = (maxWidth.value / naturalWidth.value).coerceAtMost(1f)
+
+            Layout(
+                content = tableContent,
+                modifier = Modifier.fillMaxWidth()
+            ) { measurables, constraints ->
+                val placeable = measurables.first().measure(
+                    Constraints.fixed(
+                        naturalWidth.roundToPx(),
+                        naturalHeight.roundToPx()
+                    )
+                )
+                val scaledHeight = (placeable.height * scaleFactor).toInt()
+                layout(constraints.maxWidth, scaledHeight) {
+                    placeable.placeWithLayer(0, 0) {
+                        scaleX = scaleFactor
+                        scaleY = scaleFactor
+                        transformOrigin = TransformOrigin(0f, 0f)
+                    }
+                }
+            }
+        } else {
+            tableContent()
         }
     }
 }

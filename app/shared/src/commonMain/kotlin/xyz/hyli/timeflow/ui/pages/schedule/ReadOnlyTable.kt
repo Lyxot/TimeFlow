@@ -46,7 +46,8 @@ fun ReadOnlyScheduleTable(
         tableDataFactory = { cellWidth ->
             rememberOverviewTableData(schedule, config, cellWidth)
         },
-        modifier = modifier
+        modifier = modifier,
+        fixedCellWidth = 96.dp
     ) { dayIndex, tableData ->
         overviewData[dayIndex].forEach { (range, courses) ->
             if (courses.isEmpty()) return@forEach
