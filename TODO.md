@@ -14,4 +14,3 @@
 - [ ] 桌面小组件
     - [ ] Android
     - [ ] iOS
-- [ ] 升级到最新的 KMP 插件(https://developer.android.com/kotlin/multiplatform/plugin)
