@@ -157,6 +157,7 @@ fun CourseCell(
                     } else {
                         Text(
                             text = course.name,
+                            modifier = Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.labelMedium,
                             overflow = TextOverflow.Ellipsis,
                             color = contentColor
@@ -165,7 +166,6 @@ fun CourseCell(
                             Text(
                                 text = "@${course.classroom}",
                                 style = MaterialTheme.typography.labelSmall,
-                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 color = contentColor
                             )
@@ -224,6 +224,7 @@ fun OverviewCourseCell(
                 }
                 Text(
                     text = course.name,
+                    modifier = Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.labelMedium,
                     overflow = TextOverflow.Ellipsis,
                     color = contentColor
@@ -249,7 +250,6 @@ fun OverviewCourseCell(
                     Text(
                         text = "@${course.classroom}",
                         style = MaterialTheme.typography.labelSmall,
-                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = contentColor
                     )

@@ -9,19 +9,22 @@
 
 package xyz.hyli.timeflow.ui.pages.schedule
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDate
 import xyz.hyli.timeflow.data.*
 
 val BASE_CELL_HEIGHT = 56.dp
-private val NAME_LINE_HEIGHT = 16.dp
-private val INFO_LINE_HEIGHT = 14.dp
-private const val NAME_CHAR_WIDTH = 12f
-private const val INFO_CHAR_WIDTH = 11f
-const val CELL_CONTENT_PADDING = 12f
+private val CELL_CONTENT_PADDING = 12.dp  // Card 2*2dp + Column ~2*4dp horizontal
+private val CELL_VERTICAL_PADDING = 12.dp // Card 2*2dp + Column ~2*4dp vertical
+private val INTER_ENTRY_SPACING = 9.dp    // Spacer(4dp) + HorizontalDivider(0.5dp) + Spacer(4dp)
 
 val weekdays = listOf(
     Weekday.MONDAY,
@@ -48,19 +51,6 @@ data class ScheduleTableData(
     val noGridCells: List<Set<Int>>,
 )
 
-fun interface CellHeightEstimator {
-    fun estimateHeight(courses: Map<Short, Course>, availableTextWidth: Float): Dp
-}
-
-fun estimateTextLines(text: String, availableWidthDp: Float, charWidthDp: Float): Int {
-    if (text.isEmpty()) return 0
-    var totalWidth = 0f
-    for (c in text) {
-        totalWidth += if (c.code > 0x7F) charWidthDp else charWidthDp * 0.6f
-    }
-    return maxOf(1, kotlin.math.ceil((totalWidth / availableWidthDp).toDouble()).toInt())
-}
-
 fun computeRowYOffsets(rowHeights: List<Dp>): List<Dp> {
     val offsets = mutableListOf(0.dp)
     rowHeights.forEach { h -> offsets.add(offsets.last() + h) }
@@ -70,8 +60,7 @@ fun computeRowYOffsets(rowHeights: List<Dp>): List<Dp> {
 fun computeRowHeights(
     rows: Int,
     columns: Int,
-    availableTextWidth: Float,
-    estimator: CellHeightEstimator,
+    estimateHeight: (courses: Map<Short, Course>, span: Int) -> Dp,
     timeSlotsProvider: (dayIndex: Int) -> Map<Range, Map<Short, Course>>
 ): List<Dp> {
     val heights = MutableList(rows) { BASE_CELL_HEIGHT }
@@ -80,7 +69,7 @@ fun computeRowHeights(
         for ((range, courses) in daySlots) {
             if (courses.isEmpty()) continue
             val span = range.end - range.start + 1
-            val neededHeight = estimator.estimateHeight(courses, availableTextWidth)
+            val neededHeight = estimateHeight(courses, span)
             val baseSpanHeight = BASE_CELL_HEIGHT * span
             if (neededHeight > baseSpanHeight) {
                 val perRowExtra = (neededHeight - baseSpanHeight) / span
@@ -110,52 +99,114 @@ fun computeNoGridCells(
     }
 }
 
-val WeeklyCellHeightEstimator = CellHeightEstimator { courses, availableTextWidth ->
-    courses.values.maxOfOrNull { course ->
-        val nameLines = estimateTextLines(course.name, availableTextWidth, NAME_CHAR_WIDTH)
-        var h = NAME_LINE_HEIGHT * nameLines
-        if (course.classroom.isNotBlank()) {
-            h += INFO_LINE_HEIGHT * minOf(
-                2,
-                estimateTextLines("@${course.classroom}", availableTextWidth, INFO_CHAR_WIDTH)
-            )
-        }
-        if (course.teacher.isNotBlank()) {
-            h += INFO_LINE_HEIGHT
-        }
-        h + 8.dp
-    } ?: 0.dp
+/**
+ * Measure the height of a single course's text content using [TextMeasurer].
+ */
+private fun measureWeeklyCourseHeight(
+    course: Course,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    nameStyle: TextStyle,
+    infoStyle: TextStyle,
+    textConstraints: Constraints,
+    density: androidx.compose.ui.unit.Density,
+    span: Int
+): Dp {
+    var heightPx = 0
+    val nameHeight3LineMax = textMeasurer.measure(
+        text = course.name,
+        maxLines = 3,
+        style = nameStyle,
+        constraints = textConstraints
+    ).size.height
+    val nameHeight = textMeasurer.measure(
+        text = course.name,
+        style = nameStyle,
+        constraints = textConstraints
+    ).size.height
+    if (course.classroom.isNotBlank()) {
+        heightPx += textMeasurer.measure(
+            text = "@${course.classroom}",
+            style = infoStyle,
+            constraints = textConstraints
+        ).size.height
+    }
+    if (course.teacher.isNotBlank()) {
+        heightPx += textMeasurer.measure(
+            text = course.teacher,
+            style = infoStyle,
+            maxLines = 1,
+            constraints = textConstraints
+        ).size.height
+    }
+    heightPx += if (with(density) { (heightPx + nameHeight).toDp() } + CELL_VERTICAL_PADDING > BASE_CELL_HEIGHT * span) {
+        // If the info lines + name exceed base span height, use the 3-line max height for name to avoid overflow
+        nameHeight3LineMax
+    } else {
+        nameHeight
+    }
+    return with(density) { heightPx.toDp() } + CELL_VERTICAL_PADDING
 }
 
-private val INTER_ENTRY_SPACING = 9.dp // Spacer(4dp) + HorizontalDivider(0.5dp) + Spacer(4dp)
-private val COLUMN_PADDING = 8.dp      // Column padding 4dp top + 4dp bottom
-
-val OverviewCellHeightEstimator = CellHeightEstimator { courses, availableTextWidth ->
-    var neededHeight = COLUMN_PADDING
+/**
+ * Measure the height of an overview cell containing multiple courses using [TextMeasurer].
+ */
+private fun measureOverviewCellHeight(
+    courses: Map<Short, Course>,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    nameStyle: TextStyle,
+    infoStyle: TextStyle,
+    textConstraints: Constraints,
+    density: androidx.compose.ui.unit.Density,
+    nameMinHeightPx: Int,
+    span: Int
+): Dp {
+    var heightPx = 0
     courses.values.forEachIndexed { index, course ->
-        if (index > 0) neededHeight += INTER_ENTRY_SPACING
-        neededHeight += NAME_LINE_HEIGHT * minOf(
-            3,
-            estimateTextLines(course.name, availableTextWidth, NAME_CHAR_WIDTH)
-        )
-        val weekTextLen = course.week.toString().length + 4
-        neededHeight += INFO_LINE_HEIGHT * estimateTextLines(
-            "x".repeat(weekTextLen),
-            availableTextWidth,
-            INFO_CHAR_WIDTH
-        )
-        neededHeight += INFO_LINE_HEIGHT // time period
+        if (index > 0) heightPx += with(density) { INTER_ENTRY_SPACING.toPx() }.toInt()
+        val nameHeight3LineMax = textMeasurer.measure(
+            text = course.name,
+            maxLines = 3,
+            style = nameStyle,
+            constraints = textConstraints
+        ).size.height
+        val nameHeight = textMeasurer.measure(
+            text = course.name,
+            style = nameStyle,
+            constraints = textConstraints
+        ).size.height
+        heightPx += textMeasurer.measure(
+            text = course.week.toString(),
+            style = infoStyle,
+            constraints = textConstraints
+        ).size.height
+        heightPx += textMeasurer.measure(
+            text = "${course.time.start}-${course.time.end}",
+            style = infoStyle,
+            constraints = textConstraints
+        ).size.height
         if (course.classroom.isNotBlank()) {
-            neededHeight += INFO_LINE_HEIGHT * minOf(
-                2,
-                estimateTextLines(course.classroom, availableTextWidth, INFO_CHAR_WIDTH)
-            )
+            heightPx += textMeasurer.measure(
+                text = "@${course.classroom}",
+                style = infoStyle,
+                constraints = textConstraints
+            ).size.height
         }
         if (course.teacher.isNotBlank()) {
-            neededHeight += INFO_LINE_HEIGHT
+            heightPx += textMeasurer.measure(
+                text = course.teacher,
+                style = infoStyle,
+                maxLines = 1,
+                constraints = textConstraints
+            ).size.height
+        }
+        heightPx += if (with(density) { (heightPx + nameHeight).toDp() } + CELL_VERTICAL_PADDING > BASE_CELL_HEIGHT * span) {
+            // If the info lines + name exceed base span height, use the 3-line max height for name to avoid overflow
+            nameHeight3LineMax
+        } else {
+            nameHeight
         }
     }
-    neededHeight
+    return with(density) { heightPx.toDp() } + CELL_VERTICAL_PADDING
 }
 
 @Composable
@@ -164,13 +215,31 @@ fun rememberWeeklyTableData(
     config: ScheduleDisplayConfig,
     cellWidth: Dp
 ): ScheduleTableData {
-    val availableTextWidth = (cellWidth - CELL_CONTENT_PADDING.dp).value
-    val rowHeights = remember(schedule, config.rows, cellWidth) {
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val nameStyle = MaterialTheme.typography.labelMedium
+    val infoStyle = MaterialTheme.typography.labelSmall
+
+    val rowHeights = remember(schedule, config.rows, cellWidth, density, nameStyle, infoStyle) {
+        val contentWidthPx = with(density) { (cellWidth - CELL_CONTENT_PADDING).toPx() }
+            .toInt().coerceAtLeast(1)
+        val textConstraints = Constraints(maxWidth = contentWidthPx)
+        val nameMinHeightPx = textMeasurer.measure(
+            text = "W\nW\nW",
+            style = nameStyle,
+            constraints = textConstraints
+        ).size.height
+
         computeRowHeights(
             rows = config.rows,
             columns = config.columns,
-            availableTextWidth = availableTextWidth,
-            estimator = WeeklyCellHeightEstimator,
+            estimateHeight = { courses, span ->
+                courses.values.maxOfOrNull { course ->
+                    measureWeeklyCourseHeight(
+                        course, textMeasurer, nameStyle, infoStyle, textConstraints, density, span
+                    )
+                } ?: 0.dp
+            },
             timeSlotsProvider = { dayIndex ->
                 val courses = schedule.getCoursesOfWeekday(weekdays[dayIndex])
                 courses.entries
@@ -194,18 +263,35 @@ fun rememberOverviewTableData(
     config: ScheduleDisplayConfig,
     cellWidth: Dp
 ): ScheduleTableData {
-    val availableTextWidth = (cellWidth - CELL_CONTENT_PADDING.dp).value
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val nameStyle = MaterialTheme.typography.labelMedium
+    val infoStyle = MaterialTheme.typography.labelSmall
+
     val overviewData = remember(schedule) {
         List(config.columns) { dayIndex ->
             schedule.getOverviewTimeSlotsFor(weekdays[dayIndex])
         }
     }
-    val rowHeights = remember(overviewData, config.rows, cellWidth) {
+    val rowHeights = remember(overviewData, config.rows, cellWidth, density, nameStyle, infoStyle) {
+        val contentWidthPx = with(density) { (cellWidth - CELL_CONTENT_PADDING).toPx() }
+            .toInt().coerceAtLeast(1)
+        val textConstraints = Constraints(maxWidth = contentWidthPx)
+        val nameMinHeightPx = textMeasurer.measure(
+            text = "W\nW\nW",
+            style = nameStyle,
+            constraints = textConstraints
+        ).size.height
+
         computeRowHeights(
             rows = config.rows,
             columns = config.columns,
-            availableTextWidth = availableTextWidth,
-            estimator = OverviewCellHeightEstimator,
+            estimateHeight = { courses, span ->
+                measureOverviewCellHeight(
+                    courses, textMeasurer, nameStyle, infoStyle, textConstraints, density,
+                    nameMinHeightPx, span
+                )
+            },
             timeSlotsProvider = { dayIndex -> overviewData[dayIndex] }
         )
     }
