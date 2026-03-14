@@ -31,11 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import com.materialkolor.ktx.harmonize
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.*
@@ -195,11 +194,18 @@ fun OverviewCourseCell(
     val sortedCourses = remember(courses) {
         courses.entries.sortedBy { it.value.week.weeks.minOrNull() ?: 0 }
     }
-    val firstCourse = sortedCourses.first().value
-    val containerColor =
-        Color(firstCourse.color).harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
-    val contentColor =
-        Color(firstCourse.color).harmonize(MaterialTheme.colorScheme.onSecondaryContainer, true)
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val nameStyle = MaterialTheme.typography.labelMedium
+    val infoStyle = MaterialTheme.typography.labelSmall
+
+    // Pre-resolve formatted strings at composable level
+    val weekTexts = sortedCourses.map { (_, course) ->
+        stringResource(Res.string.schedule_value_course_week, course.week.toString())
+    }
+    val periodTexts = sortedCourses.map { (_, course) ->
+        stringResource(Res.string.schedule_value_course_time_period, course.time.start, course.time.end)
+    }
 
     Card(
         modifier = modifier
@@ -207,61 +213,94 @@ fun OverviewCourseCell(
             .padding(2.dp),
         onClick = onClick ?: {}
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(containerColor)
-                .padding(4.dp)
-        ) {
-            sortedCourses.forEachIndexed { index, (_, course) ->
-                if (index > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider(
-                        color = contentColor.copy(alpha = 0.3f),
-                        thickness = 0.5.dp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val contentWidthPx = with(density) { (maxWidth - 8.dp).toPx() }
+                .toInt().coerceAtLeast(1)
+            val textConstraints = Constraints(maxWidth = contentWidthPx)
+
+            // Pre-compute per-course entry heights
+            val courseHeights = remember(courses, contentWidthPx, nameStyle, infoStyle) {
+                sortedCourses.mapIndexed { index, (_, course) ->
+                    var heightPx = 0
+                    heightPx += textMeasurer.measure(
+                        course.name, nameStyle, maxLines = 3, constraints = textConstraints
+                    ).size.height
+                    heightPx += textMeasurer.measure(
+                        weekTexts[index], infoStyle, constraints = textConstraints
+                    ).size.height
+                    heightPx += textMeasurer.measure(
+                        periodTexts[index], infoStyle, constraints = textConstraints
+                    ).size.height
+                    if (course.classroom.isNotBlank()) {
+                        heightPx += textMeasurer.measure(
+                            "@${course.classroom}", infoStyle, constraints = textConstraints
+                        ).size.height
+                    }
+                    if (course.teacher.isNotBlank()) {
+                        heightPx += textMeasurer.measure(
+                            course.teacher, infoStyle, maxLines = 1, constraints = textConstraints
+                        ).size.height
+                    }
+                    with(density) { heightPx.toDp() } + 8.dp // 4dp padding top + bottom
                 }
-                Text(
-                    text = course.name,
-                    modifier = Modifier.weight(1f, fill = false),
-                    style = MaterialTheme.typography.labelMedium,
-                    overflow = TextOverflow.Ellipsis,
-                    color = contentColor
-                )
-                Text(
-                    text = stringResource(
-                        Res.string.schedule_value_course_week,
-                        course.week.toString()
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor
-                )
-                Text(
-                    text = stringResource(
-                        Res.string.schedule_value_course_time_period,
-                        course.time.start,
-                        course.time.end
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor
-                )
-                if (course.classroom.isNotBlank()) {
-                    Text(
-                        text = "@${course.classroom}",
-                        style = MaterialTheme.typography.labelSmall,
-                        overflow = TextOverflow.Ellipsis,
-                        color = contentColor
-                    )
-                }
-                if (course.teacher.isNotBlank()) {
-                    Text(
-                        text = course.teacher,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = contentColor
-                    )
+            }
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                sortedCourses.forEachIndexed { index, (_, course) ->
+                    val containerColor = Color(course.color)
+                        .harmonize(MaterialTheme.colorScheme.secondaryContainer, true)
+                    val contentColor = Color(course.color)
+                        .harmonize(MaterialTheme.colorScheme.onSecondaryContainer, true)
+
+                    if (index > 0) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+
+                    Column(
+                        modifier = (if (index == sortedCourses.lastIndex) {
+                            Modifier.weight(1f)
+                        } else {
+                            Modifier.height(courseHeights[index])
+                        })
+                            .fillMaxWidth()
+                            .background(containerColor)
+                            .padding(4.dp)
+                    ) {
+                        Text(
+                            text = course.name,
+                            modifier = Modifier.weight(1f, fill = false),
+                            style = nameStyle,
+                            overflow = TextOverflow.Ellipsis,
+                            color = contentColor
+                        )
+                        Text(
+                            text = weekTexts[index],
+                            style = infoStyle,
+                            color = contentColor
+                        )
+                        Text(
+                            text = periodTexts[index],
+                            style = infoStyle,
+                            color = contentColor
+                        )
+                        if (course.classroom.isNotBlank()) {
+                            Text(
+                                text = "@${course.classroom}",
+                                style = infoStyle,
+                                overflow = TextOverflow.Ellipsis,
+                                color = contentColor
+                            )
+                        }
+                        if (course.teacher.isNotBlank()) {
+                            Text(
+                                text = course.teacher,
+                                style = infoStyle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = contentColor
+                            )
+                        }
+                    }
                 }
             }
         }

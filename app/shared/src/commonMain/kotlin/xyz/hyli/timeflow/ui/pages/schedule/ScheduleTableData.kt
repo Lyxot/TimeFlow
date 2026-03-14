@@ -24,7 +24,9 @@ import xyz.hyli.timeflow.data.*
 val BASE_CELL_HEIGHT = 56.dp
 private val CELL_CONTENT_PADDING = 12.dp  // Card 2*2dp + Column ~2*4dp horizontal
 private val CELL_VERTICAL_PADDING = 12.dp // Card 2*2dp + Column ~2*4dp vertical
-private val INTER_ENTRY_SPACING = 9.dp    // Spacer(4dp) + HorizontalDivider(0.5dp) + Spacer(4dp)
+private val OVERVIEW_ENTRY_PADDING = 8.dp  // 4dp top + 4dp bottom per course entry
+private val OVERVIEW_ENTRY_SPACING = 2.dp  // Gap between course entries
+private val OVERVIEW_CELL_PADDING = 5.dp   // Card 2*2dp external + Box bottom 1dp
 
 val weekdays = listOf(
     Weekday.MONDAY,
@@ -161,8 +163,11 @@ private fun measureOverviewCellHeight(
     span: Int
 ): Dp {
     var heightPx = 0
+    val entryPaddingPx = with(density) { OVERVIEW_ENTRY_PADDING.toPx() }.toInt()
+    val entrySpacingPx = with(density) { OVERVIEW_ENTRY_SPACING.toPx() }.toInt()
     courses.values.forEachIndexed { index, course ->
-        if (index > 0) heightPx += with(density) { INTER_ENTRY_SPACING.toPx() }.toInt()
+        if (index > 0) heightPx += entrySpacingPx
+        var entryContentPx = 0
         val nameHeight3LineMax = textMeasurer.measure(
             text = course.name,
             maxLines = 3,
@@ -174,39 +179,39 @@ private fun measureOverviewCellHeight(
             style = nameStyle,
             constraints = textConstraints
         ).size.height
-        heightPx += textMeasurer.measure(
+        entryContentPx += textMeasurer.measure(
             text = course.week.toString(),
             style = infoStyle,
             constraints = textConstraints
         ).size.height
-        heightPx += textMeasurer.measure(
+        entryContentPx += textMeasurer.measure(
             text = "${course.time.start}-${course.time.end}",
             style = infoStyle,
             constraints = textConstraints
         ).size.height
         if (course.classroom.isNotBlank()) {
-            heightPx += textMeasurer.measure(
+            entryContentPx += textMeasurer.measure(
                 text = "@${course.classroom}",
                 style = infoStyle,
                 constraints = textConstraints
             ).size.height
         }
         if (course.teacher.isNotBlank()) {
-            heightPx += textMeasurer.measure(
+            entryContentPx += textMeasurer.measure(
                 text = course.teacher,
                 style = infoStyle,
                 maxLines = 1,
                 constraints = textConstraints
             ).size.height
         }
-        heightPx += if (with(density) { (heightPx + nameHeight).toDp() } + CELL_VERTICAL_PADDING > BASE_CELL_HEIGHT * span) {
-            // If the info lines + name exceed base span height, use the 3-line max height for name to avoid overflow
+        entryContentPx += if (with(density) { (heightPx + entryContentPx + nameHeight + entryPaddingPx).toDp() } + OVERVIEW_CELL_PADDING > BASE_CELL_HEIGHT * span) {
             nameHeight3LineMax
         } else {
             nameHeight
         }
+        heightPx += entryContentPx + entryPaddingPx
     }
-    return with(density) { heightPx.toDp() } + CELL_VERTICAL_PADDING
+    return with(density) { heightPx.toDp() } + OVERVIEW_CELL_PADDING
 }
 
 @Composable
