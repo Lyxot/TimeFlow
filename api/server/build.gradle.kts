@@ -37,7 +37,30 @@ ktor {
     fatJar {
         archiveFileName.set(Target.Server.artifactName)
     }
+    docker {
+        jreVersion.set(JavaVersion.VERSION_17)
+    }
+}
 
+// Configure Jib platform to match host architecture (applied by Ktor plugin)
+val dockerArch: String = providers.gradleProperty("dockerArch")
+    .getOrElse(
+        System.getProperty("os.arch").let {
+            if (it == "aarch64" || it.contains("arm64")) "arm64" else "amd64"
+        }
+    )
+
+afterEvaluate {
+    extensions.configure<com.google.cloud.tools.jib.gradle.JibExtension>("jib") {
+        from {
+            platforms {
+                platform {
+                    architecture = dockerArch
+                    os = "linux"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
