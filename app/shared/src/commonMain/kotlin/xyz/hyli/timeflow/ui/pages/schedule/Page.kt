@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -36,15 +37,15 @@ import androidx.navigation.NavHostController
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.toProtoBufByteArray
 import xyz.hyli.timeflow.shared.generated.resources.*
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.TopAppBarType
-import xyz.hyli.timeflow.ui.components.bottomPadding
+import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -308,6 +309,58 @@ fun ScheduleScreen(
                         else if (delta < 0) fabVisible = true
                         lastScroll = scrollState.value
                     }
+
+                    var captureRequested by remember { mutableStateOf(false) }
+                    var capturedPngBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+                    @Suppress("DEPRECATION")
+                    val pngSaver = rememberFileSaverLauncher { file ->
+                        if (file != null && capturedPngBytes != null) {
+                            scope.launch {
+                                try {
+                                    writeBytesToFile(capturedPngBytes!!, file)
+                                    snackbarHostState.showSnackbar(
+                                        getString(Res.string.schedule_value_export_schedule_success, file.name)
+                                    )
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar(
+                                        getString(Res.string.schedule_value_export_schedule_failed, e.message ?: "")
+                                    )
+                                }
+                                capturedPngBytes = null
+                            }
+                        }
+                    }
+
+                    if (captureRequested && schedule != null) {
+                        ScheduleImageCapture(
+                            schedule = schedule!!,
+                            onCaptured = { pngBytes ->
+                                captureRequested = false
+                                if (currentPlatform().isWeb()) {
+                                    scope.launch {
+                                        writeBytesToFile(
+                                            pngBytes,
+                                            file = null,
+                                            filename = schedule!!.name + ".png"
+                                        )
+                                    }
+                                } else {
+                                    capturedPngBytes = pngBytes
+                                    pngSaver.launch(schedule!!.name, "png")
+                                }
+                            },
+                            onError = { error ->
+                                captureRequested = false
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        getString(Res.string.schedule_value_export_schedule_failed, error.message ?: "")
+                                    )
+                                }
+                            }
+                        )
+                    }
+
                     ScheduleScreenContent(scrollState)
                     ScheduleFAB(
                         modifier = Modifier.align(Alignment.BottomEnd),
@@ -317,7 +370,8 @@ fun ScheduleScreen(
                             scope.launch {
                                 snackbarHostState.showSnackbar(message)
                             }
-                        }
+                        },
+                        onExportAsImage = { captureRequested = true }
                     )
                 }
             }
@@ -332,9 +386,11 @@ fun ScheduleFAB(
     viewModel: TimeFlowViewModel,
     visible: Boolean,
     showMessage: (String) -> Unit,
+    onExportAsImage: () -> Unit,
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
     var showContent by remember { mutableStateOf(false) }
+    var showExportChoiceDialog by remember { mutableStateOf(false) }
 
     @Suppress("DEPRECATION")
     val saver = rememberFileSaverLauncher { file ->
@@ -355,6 +411,81 @@ fun ScheduleFAB(
             )
         }
     }
+
+    if (showExportChoiceDialog && schedule != null) {
+        val dialogState = rememberDialogState()
+        LaunchedEffect(Unit) { dialogState.show() }
+        if (dialogState.visible) {
+            MyDialog(
+                state = dialogState,
+                title = { Text(stringResource(Res.string.export)) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.IosShare,
+                        contentDescription = null
+                    )
+                },
+                buttons = DialogDefaults.buttonsDisabled(),
+                onEvent = {
+                    if (it is DialogEvent.Dismissed) {
+                        showExportChoiceDialog = false
+                    }
+                }
+            ) {
+                Column {
+                    ListItem(
+                        headlineContent = { Text(stringResource(Res.string.export_as_image)) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            DialogStyleDefaults.containerColor,
+                            DialogStyleDefaults.contentColor,
+                            DialogStyleDefaults.iconColor
+                        ),
+                        modifier = Modifier.clickable {
+                            showExportChoiceDialog = false
+                            dialogState.dismiss()
+                            onExportAsImage()
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(Res.string.export_as_file)) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            DialogStyleDefaults.containerColor,
+                            DialogStyleDefaults.contentColor,
+                            DialogStyleDefaults.iconColor
+                        ),
+                        modifier = Modifier.clickable {
+                            showExportChoiceDialog = false
+                            dialogState.dismiss()
+                            if (currentPlatform().isWeb()) {
+                                viewModel.viewModelScope.launch {
+                                    writeBytesToFile(
+                                        schedule!!.toProtoBufByteArray(),
+                                        file = null,
+                                        filename = schedule!!.name + ".pb"
+                                    )
+                                }
+                            } else {
+                                saver.launch(schedule!!.name, "pb")
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
     FloatingActionButtonMenu(
         modifier = modifier,
         button = {
@@ -384,17 +515,7 @@ fun ScheduleFAB(
             FloatingActionButtonMenuItem(
                 onClick = {
                     showContent = false
-                    if (currentPlatform().isWeb()) {
-                        viewModel.viewModelScope.launch {
-                            writeBytesToFile(
-                                schedule!!.toProtoBufByteArray(),
-                                file = null,
-                                filename = schedule!!.name + ".pb"
-                            )
-                        }
-                    } else {
-                        saver.launch(schedule!!.name, "pb")
-                    }
+                    showExportChoiceDialog = true
                 },
                 text = {
                     Text(stringResource(Res.string.export))

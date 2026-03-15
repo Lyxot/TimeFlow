@@ -19,6 +19,8 @@
     <string name="even_week">双周</string>
     <string name="all_week">全选</string>
     <string name="export">导出</string>
+    <string name="export_as_image">导出为图片</string>
+    <string name="export_as_file">导出为文件</string>
     <string name="import">导入</string>
     <string name="undo">撤回</string>
 
