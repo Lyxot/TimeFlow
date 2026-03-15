@@ -9,7 +9,6 @@
 
 package xyz.hyli.timeflow
 
-import io.ktor.events.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.config.yaml.*
@@ -22,7 +21,6 @@ import org.slf4j.LoggerFactory
 import xyz.hyli.timeflow.server.*
 import xyz.hyli.timeflow.server.database.DatabaseFactory
 import xyz.hyli.timeflow.server.database.ExposedDataRepository
-import xyz.hyli.timeflow.server.isTestMode
 import java.io.File
 
 fun main(args: Array<String>) {
@@ -170,7 +168,7 @@ private fun collectConfigKeys(config: ApplicationConfig, prefix: String = ""): S
 }
 
 private fun toEnvironmentVariableName(key: String): String = buildString {
-    append("${BuildConfig.APP_NAME}_")
+    append("${BuildConfig.APP_NAME.uppercase()}_")
     val normalizedKey = key.removePrefix("ktor.")
     normalizedKey.forEachIndexed { index, char ->
         when {
