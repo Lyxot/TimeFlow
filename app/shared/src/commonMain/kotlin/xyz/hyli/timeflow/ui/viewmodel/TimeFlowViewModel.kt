@@ -171,7 +171,11 @@ class TimeFlowViewModel(
         viewModelScope.launch {
             try {
                 val bytes = file.readBytes()
-                val importedSchedule = readScheduleFromByteArray(bytes)
+                val importedSchedule = if (file.name.endsWith(".png", ignoreCase = true)) {
+                    readScheduleFromPng(bytes) ?: readScheduleFromByteArray(bytes)
+                } else {
+                    readScheduleFromByteArray(bytes) ?: readScheduleFromPng(bytes)
+                }
                 createSchedule(importedSchedule!!)
                 showMessage(
                     getString(

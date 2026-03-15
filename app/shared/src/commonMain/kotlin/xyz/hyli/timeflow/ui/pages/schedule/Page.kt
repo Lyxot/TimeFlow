@@ -337,16 +337,17 @@ fun ScheduleScreen(
                             schedule = schedule!!,
                             onCaptured = { pngBytes ->
                                 captureRequested = false
+                                val polyglot = pngBytes + schedule!!.toProtoBufByteArray()
                                 if (currentPlatform().isWeb()) {
                                     scope.launch {
                                         writeBytesToFile(
-                                            pngBytes,
+                                            polyglot,
                                             file = null,
                                             filename = schedule!!.name + ".png"
                                         )
                                     }
                                 } else {
-                                    capturedPngBytes = pngBytes
+                                    capturedPngBytes = polyglot
                                     pngSaver.launch(schedule!!.name, "png")
                                 }
                             },
