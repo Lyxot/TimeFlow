@@ -10,3 +10,24 @@ services:
       - "5432:5432"
     volumes:
       - ./db:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U username -d timeflow" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: lyxot/timeflow-server:latest-web
+    container_name: timeflow-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      TIMEFLOW_POSTGRES_HOST: postgres
+      TIMEFLOW_POSTGRES_PORT: 5432
+      TIMEFLOW_POSTGRES_DATABASE: timeflow
+      TIMEFLOW_POSTGRES_USER: username
+      TIMEFLOW_POSTGRES_PASSWORD: password
+      TIMEFLOW_EMAIL_VERIFICATION_ENABLED: false
