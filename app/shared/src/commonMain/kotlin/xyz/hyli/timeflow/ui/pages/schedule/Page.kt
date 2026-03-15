@@ -245,7 +245,7 @@ fun ScheduleScreen(
                         navHostController = navHostController,
                         viewModel = viewModel,
                         rows = rows,
-                        columns = columns,
+                        columns = 7,
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(scrollState)
