@@ -18,15 +18,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import xyz.hyli.timeflow.data.Schedule
-
-expect fun ImageBitmap.encodeToPng(): ByteArray
+import xyz.hyli.timeflow.utils.encodeToPng
 
 @Composable
 fun ScheduleImageCapture(

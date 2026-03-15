@@ -7,15 +7,16 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.ui.pages.schedule
+package xyz.hyli.timeflow.utils
 
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asSkiaBitmap
-import org.jetbrains.skia.EncodedImageFormat
-import org.jetbrains.skia.Image
+import androidx.compose.ui.graphics.asAndroidBitmap
+import java.io.ByteArrayOutputStream
 
 actual fun ImageBitmap.encodeToPng(): ByteArray {
-    val skiaBitmap = this.asSkiaBitmap()
-    return Image.makeFromBitmap(skiaBitmap)
-        .encodeToData(EncodedImageFormat.PNG)!!.bytes
+    val androidBitmap = this.asAndroidBitmap()
+    val stream = ByteArrayOutputStream()
+    androidBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+    return stream.toByteArray()
 }
