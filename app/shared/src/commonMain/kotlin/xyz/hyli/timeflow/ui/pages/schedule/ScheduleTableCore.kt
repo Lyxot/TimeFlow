@@ -213,21 +213,24 @@ private fun LessonRowHeaders(
     headerWidth: MutableState<Dp>,
     headerHeight: MutableState<Dp>
 ) {
-    Column(
-        modifier = Modifier.offset(
-            x = 1.dp,
-            y = headerHeight.value - 1.dp
-        )
-    ) {
+    // Use offset-based positioning (matching grid content) to avoid
+    // cumulative pixel rounding drift from Column layout.
+    Box {
         for (lessonIndex in 0 until config.rows) {
             HorizontalDivider(
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.width(headerWidth.value + 4.dp)
+                modifier = Modifier
+                    .width(headerWidth.value + 4.dp)
+                    .offset(
+                        x = 1.dp,
+                        y = headerHeight.value + tableData.rowYOffsets[lessonIndex] - 1.dp
+                    )
             )
             LessonRowHeader(
                 lessonIndex = lessonIndex,
                 rowHeight = tableData.rowHeights[lessonIndex],
+                yOffset = headerHeight.value + tableData.rowYOffsets[lessonIndex],
                 lessons = config.lessons,
                 headerWidth = headerWidth
             )
@@ -239,14 +242,19 @@ private fun LessonRowHeaders(
 private fun LessonRowHeader(
     lessonIndex: Int,
     rowHeight: Dp,
+    yOffset: Dp,
     lessons: List<Lesson>,
     headerWidth: MutableState<Dp>
 ) {
-    SubcomposeLayout { constraints ->
+    SubcomposeLayout(
+        modifier = Modifier.offset(x = 1.dp, y = yOffset)
+    ) { constraints ->
+        val heightPx = rowHeight.roundToPx()
+
         val column = subcompose("lesson$lessonIndex") {
             Column(
                 modifier = Modifier
-                    .height(rowHeight - 1.dp)
+                    .fillMaxHeight()
                     .width(IntrinsicSize.Max),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -277,12 +285,12 @@ private fun LessonRowHeader(
                     )
                 }
             }
-        }[0].measure(constraints)
+        }[0].measure(constraints.copy(minHeight = heightPx, maxHeight = heightPx))
         val newWidth = column.width.toDp()
         if (headerWidth.value != newWidth) {
             headerWidth.value = newWidth
         }
-        layout(column.width, (rowHeight - 1.dp).roundToPx()) {
+        layout(column.width, heightPx) {
             column.placeRelative(0, 0)
         }
     }
