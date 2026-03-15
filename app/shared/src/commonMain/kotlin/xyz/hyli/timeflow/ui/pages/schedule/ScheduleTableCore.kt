@@ -118,8 +118,9 @@ fun ScheduleTableLayout(
                         naturalHeight.roundToPx()
                     )
                 )
+                val scaledWidth = (placeable.width * scaleFactor).toInt().coerceAtMost(constraints.maxWidth)
                 val scaledHeight = (placeable.height * scaleFactor).toInt()
-                layout(constraints.maxWidth, scaledHeight) {
+                layout(scaledWidth, scaledHeight) {
                     placeable.placeWithLayer(0, 0) {
                         scaleX = scaleFactor
                         scaleY = scaleFactor

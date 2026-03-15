@@ -48,7 +48,7 @@ fun ScheduleImageCapture(
         modifier = Modifier
             .wrapContentWidth(unbounded = true)
             .wrapContentHeight(unbounded = true)
-            .requiredWidth(naturalWidth + 16.dp)
+            .requiredWidth(naturalWidth)
             .graphicsLayer { alpha = 0f }
             .drawWithContent {
                 captureLayer.record(
@@ -59,8 +59,8 @@ fun ScheduleImageCapture(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(8.dp)
         ) {
             Text(
                 text = schedule.name,
@@ -68,7 +68,7 @@ fun ScheduleImageCapture(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 8.dp)
+                    .padding(vertical = 8.dp)
             )
             ReadOnlyScheduleTable(
                 schedule = schedule,
