@@ -26,13 +26,10 @@ class RepositoryTokenManager(
     private val scope: CoroutineScope,
 ) : TokenManager {
 
-    @Volatile
     private var cachedAccessToken: String? = null
 
-    @Volatile
     private var cachedRefreshToken: String? = null
 
-    @Volatile
     private var cachedRefreshTokenExpiresAt: Instant? = null
 
     fun syncFromSettings(settings: Settings) {
