@@ -15,11 +15,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +39,15 @@ import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
+import xyz.hyli.timeflow.ui.pages.settings.subpage.LoginDialog
+import xyz.hyli.timeflow.ui.pages.settings.subpage.RegisterDialog
+import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
+import xyz.hyli.timeflow.ui.sync.SyncStatus
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.Files.settingsFilePath
 import xyz.hyli.timeflow.utils.Files.showFileInFileManager
+import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 import xyz.hyli.timeflow.utils.supportDynamicColor
@@ -301,6 +303,9 @@ fun SettingsScreen(
                 )
             }
             PreferenceDivider()
+            // Account & Sync
+            AccountSection(viewModel)
+            PreferenceDivider()
             // Other
             PreferenceSection(
                 title = stringResource(Res.string.settings_title_other)
@@ -412,6 +417,129 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AccountSection(viewModel: TimeFlowViewModel) {
+    val settings by viewModel.settings.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
+
+    var showLoginDialog by remember { mutableStateOf(false) }
+    var showRegisterDialog by remember { mutableStateOf(false) }
+    var loginError by remember { mutableStateOf<String?>(null) }
+    var registerError by remember { mutableStateOf<String?>(null) }
+
+    // Conflict dialog
+    val firstConflict = syncState.conflicts.firstOrNull()
+    if (firstConflict != null) {
+        SyncConflictDialog(
+            conflict = firstConflict,
+            onResolve = { resolution -> viewModel.resolveConflict(resolution) }
+        )
+    }
+
+    if (showLoginDialog) {
+        LoginDialog(
+            onDismiss = {
+                showLoginDialog = false
+                loginError = null
+            },
+            onLogin = { email, password ->
+                viewModel.login(email, password) { result ->
+                    result.onSuccess {
+                        showLoginDialog = false
+                        loginError = null
+                    }.onFailure {
+                        loginError = it.message
+                    }
+                }
+            },
+            errorMessage = loginError
+        )
+    }
+
+    if (showRegisterDialog) {
+        RegisterDialog(
+            onDismiss = {
+                showRegisterDialog = false
+                registerError = null
+            },
+            onRegister = { username, email, password, code ->
+                viewModel.register(username, email, password, code) { result ->
+                    result.onSuccess {
+                        showRegisterDialog = false
+                        registerError = null
+                    }.onFailure {
+                        registerError = it.message
+                    }
+                }
+            },
+            errorMessage = registerError
+        )
+    }
+
+    PreferenceSection(
+        title = stringResource(Res.string.settings_title_account)
+    ) {
+        // Server endpoint
+        PreferenceInputText(
+            value = settings.apiEndpoint ?: "",
+            onValueChange = { endpoint ->
+                viewModel.updateApiEndpoint(endpoint.ifBlank { null })
+            },
+            title = stringResource(Res.string.settings_title_server_endpoint),
+            subtitle = settings.apiEndpoint
+                ?: stringResource(Res.string.settings_subtitle_server_endpoint),
+        )
+
+        if (!isLoggedIn) {
+            // Login button
+            BasePreference(
+                title = stringResource(Res.string.settings_title_login),
+                subtitle = stringResource(Res.string.settings_subtitle_not_logged_in),
+                onClick = { showLoginDialog = true }
+            )
+            // Register button
+            BasePreference(
+                title = stringResource(Res.string.settings_title_register),
+                onClick = { showRegisterDialog = true }
+            )
+        } else {
+            // Sync button
+            val syncSubtitle = when (syncState.status) {
+                SyncStatus.SYNCING -> stringResource(Res.string.settings_value_syncing)
+                SyncStatus.ERROR -> stringResource(Res.string.settings_value_sync_error, syncState.error ?: "")
+                else -> {
+                    val lastSynced = syncState.lastSyncedAt ?: settings.syncedAt
+                    if (lastSynced != null) {
+                        stringResource(Res.string.settings_subtitle_sync_last, lastSynced.toString())
+                    } else {
+                        stringResource(Res.string.settings_subtitle_sync_never)
+                    }
+                }
+            }
+            BasePreference(
+                title = stringResource(Res.string.settings_title_sync),
+                subtitle = syncSubtitle,
+                onClick = { viewModel.sync() },
+                enabled = Dependency.State(viewModel.syncState.collectAsState()) {
+                    it.status != SyncStatus.SYNCING
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Sync,
+                    contentDescription = null
+                )
+            }
+            // Logout button
+            BasePreference(
+                title = stringResource(Res.string.settings_title_logout),
+                subtitle = stringResource(Res.string.settings_subtitle_logged_in),
+                onClick = { viewModel.logout() }
+            )
         }
     }
 }

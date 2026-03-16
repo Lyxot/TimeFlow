@@ -58,6 +58,8 @@ kotlin {
         commonMain.dependencies {
             api(project(":utils"))
             api(project(":app:app-interface"))
+            implementation(project(":api:client"))
+            implementation(ktorLibs.client.core)
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.core)
             implementation(libs.aboutlibraries.compose.m3)

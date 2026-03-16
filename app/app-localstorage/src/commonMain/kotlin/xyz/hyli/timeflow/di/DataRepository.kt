@@ -70,4 +70,16 @@ class DataRepository(
     override suspend fun updateSyncedAt(syncedAt: Instant?) {
         store.update { it.copy(syncedAt = syncedAt) }
     }
+
+    override suspend fun updateAccessToken(token: String?) {
+        store.update { it.copy(accessToken = token) }
+    }
+
+    override suspend fun updateRefreshToken(token: String?, expiresAt: Instant?) {
+        store.update { it.copy(refreshToken = token, refreshTokenExpiresAt = expiresAt) }
+    }
+
+    override suspend fun updateApiEndpoint(endpoint: String?) {
+        store.update { it.copy(apiEndpoint = endpoint) }
+    }
 }

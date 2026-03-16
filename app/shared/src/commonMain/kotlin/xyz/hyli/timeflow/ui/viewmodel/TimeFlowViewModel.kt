@@ -30,6 +30,10 @@ import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.sync.ConflictResolution
+import xyz.hyli.timeflow.ui.sync.RepositoryTokenManager
+import xyz.hyli.timeflow.ui.sync.SyncManager
+import xyz.hyli.timeflow.ui.sync.SyncState
 import xyz.hyli.timeflow.utils.writeBytesToFile
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -53,6 +57,27 @@ class TimeFlowViewModel(
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = null
             )
+
+    private val tokenManager = RepositoryTokenManager(repository, { settings.value }, viewModelScope)
+    private val syncManager = SyncManager(repository, { settings.value }, tokenManager, viewModelScope)
+
+    val syncState: StateFlow<SyncState> = syncManager.syncState
+
+    val isLoggedIn: StateFlow<Boolean> =
+        settings.map { it.isLoggedIn }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = false
+            )
+
+    init {
+        viewModelScope.launch {
+            repository.settings.collect { s ->
+                tokenManager.syncFromSettings(s)
+            }
+        }
+    }
 
     fun updateFirstLaunch(versionCode: Int) {
         viewModelScope.launch {
@@ -193,6 +218,45 @@ class TimeFlowViewModel(
                 e.printStackTrace()
             }
         }
+    }
+
+    fun login(email: String, password: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(syncManager.login(email, password))
+        }
+    }
+
+    fun register(username: String, email: String, password: String, code: String?, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(syncManager.register(username, email, password, code))
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            syncManager.logout()
+        }
+    }
+
+    fun sync() {
+        syncManager.sync()
+    }
+
+    fun resolveConflict(resolution: ConflictResolution) {
+        viewModelScope.launch {
+            syncManager.resolveConflict(resolution)
+        }
+    }
+
+    fun updateApiEndpoint(endpoint: String?) {
+        viewModelScope.launch {
+            repository.updateApiEndpoint(endpoint)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        syncManager.close()
     }
 
     companion object {

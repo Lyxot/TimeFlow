@@ -120,6 +120,35 @@
     <string name="settings_title_changelog">更新日志</string>
     <string name="settings_title_config_path">配置文件路径</string>
 
+    <!--    account & sync settings-->
+    <string name="settings_title_account">账户与同步</string>
+    <string name="settings_title_server_endpoint">服务器地址</string>
+    <string name="settings_subtitle_server_endpoint">设置 TimeFlow 同步服务器地址</string>
+    <string name="settings_title_login">登录</string>
+    <string name="settings_title_register">注册</string>
+    <string name="settings_title_logout">退出登录</string>
+    <string name="settings_title_sync">同步</string>
+    <string name="settings_subtitle_sync_never">从未同步</string>
+    <string name="settings_subtitle_sync_last">上次同步: %1$s</string>
+    <string name="settings_value_syncing">同步中...</string>
+    <string name="settings_value_sync_success">同步成功</string>
+    <string name="settings_value_sync_error">同步失败: %1$s</string>
+    <string name="settings_subtitle_not_logged_in">未登录</string>
+    <string name="settings_subtitle_logged_in">已登录</string>
+    <string name="account_title_email">邮箱</string>
+    <string name="account_title_password">密码</string>
+    <string name="account_title_username">用户名</string>
+    <string name="account_title_verification_code">验证码</string>
+    <string name="account_button_send_code">发送验证码</string>
+    <string name="account_value_login_failed">登录失败: %1$s</string>
+    <string name="account_value_register_failed">注册失败: %1$s</string>
+    <string name="account_value_register_success">注册成功，请登录</string>
+    <string name="sync_title_conflict">同步冲突</string>
+    <string name="sync_subtitle_conflict">课程表"%1$s"在本地和服务器上都有修改</string>
+    <string name="sync_value_local_updated_at">本地更新: %1$s</string>
+    <string name="sync_value_server_updated_at">服务器更新: %1$s</string>
+    <string name="sync_button_keep_local">保留本地</string>
+    <string name="sync_button_keep_server">保留服务器</string>
 
     <string name="monday">周一</string>
     <string name="tuesday">周二</string>

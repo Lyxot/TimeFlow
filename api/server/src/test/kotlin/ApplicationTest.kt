@@ -220,16 +220,11 @@ class ApplicationTest {
 
             /**
              * Test: GET /users/me/selected-schedule (Initial)
-             * A new user should have no selected schedule.
+             * A new user should have no selected schedule, returns 204 No Content.
              */
             client.getSelectedSchedule().apply {
                 val message = "[GET /users/me/selected-schedule] Initial fetch"
-                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
-                assertEquals(
-                    null,
-                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
-                    "$message Should be null"
-                )
+                assertEquals(HttpStatusCode.NoContent, status, "$message Status should be No Content")
             }
 
             // --- Schedules API Tests ---
@@ -353,12 +348,7 @@ class ApplicationTest {
 
             client.getSelectedSchedule().apply {
                 val message = "[GET /users/me/selected-schedule] After soft delete"
-                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
-                assertEquals(
-                    null,
-                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
-                    "$message Should return null after schedule is deleted"
-                )
+                assertEquals(HttpStatusCode.NoContent, status, "$message Status should be No Content")
             }
 
             /**
@@ -547,16 +537,11 @@ class ApplicationTest {
 
             /**
              * Test: GET /users/me/selected-schedule (After permanent delete)
-             * Should return null after the selected schedule is permanently deleted.
+             * Should return 204 No Content after the selected schedule is permanently deleted.
              */
             client.getSelectedSchedule().apply {
                 val message = "[GET /users/me/selected-schedule] After permanent delete"
-                assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
-                assertEquals(
-                    null,
-                    body<ApiV1.Users.Me.SelectedSchedule.Response>().scheduleId,
-                    "$message Should return null after schedule is permanently deleted"
-                )
+                assertEquals(HttpStatusCode.NoContent, status, "$message Status should be No Content")
             }
 
             /**

@@ -57,4 +57,16 @@ class DataRepository(
     override suspend fun updateSyncedAt(syncedAt: Instant?) {
         settingsDataStore.updateSyncedAt(syncedAt)
     }
+
+    override suspend fun updateAccessToken(token: String?) {
+        settingsDataStore.updateAccessToken(token)
+    }
+
+    override suspend fun updateRefreshToken(token: String?, expiresAt: Instant?) {
+        settingsDataStore.updateRefreshToken(token, expiresAt)
+    }
+
+    override suspend fun updateApiEndpoint(endpoint: String?) {
+        settingsDataStore.updateApiEndpoint(endpoint)
+    }
 }

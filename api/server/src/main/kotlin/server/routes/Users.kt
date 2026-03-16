@@ -27,7 +27,12 @@ fun Route.usersRoutes(repository: DataRepository) {
 
         // GET /users/me/selected-schedule
         authedGet<ApiV1.Users.Me.SelectedSchedule>(repository) { _, user ->
-            call.respond(HttpStatusCode.OK, repository.getSelectedScheduleId(user.id))
+            val selected = repository.getSelectedScheduleId(user.id)
+            if (selected.scheduleId != null) {
+                call.respond(HttpStatusCode.OK, selected)
+            } else {
+                call.respond(HttpStatusCode.NoContent)
+            }
         }
 
         // PUT /users/me/selected-schedule

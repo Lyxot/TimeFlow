@@ -26,4 +26,7 @@ interface IDataRepository {
     suspend fun upsertSchedule(id: Short, schedule: Schedule)
     suspend fun deleteSchedule(id: Short)
     suspend fun updateSyncedAt(syncedAt: Instant?)
+    suspend fun updateAccessToken(token: String?)
+    suspend fun updateRefreshToken(token: String?, expiresAt: Instant?)
+    suspend fun updateApiEndpoint(endpoint: String?)
 }
