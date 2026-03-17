@@ -151,7 +151,12 @@ fun ScheduleScreen(
                             ).size.width.toDp()
                         }
                         Text(
-                            text = stringResource(Res.string.schedule_title_week_x, pagerState.currentPage + 1),
+                            text =
+                                if (pagerState.currentPage in 0 until schedule!!.totalWeeks) stringResource(
+                                    Res.string.schedule_title_week_x,
+                                    pagerState.currentPage + 1
+                                )
+                                else stringResource(Res.string.schedule_title_week_vacation),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.width(xWidth),
                             textAlign = TextAlign.Center
