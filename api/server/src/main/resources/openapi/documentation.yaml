@@ -362,13 +362,15 @@ paths:
     get:
       tags: [ Users ]
       summary: Get the currently selected schedule
-      description: Returns the selected schedule ID, or null if no schedule is selected, the schedule doesn't exist, or the schedule is deleted.
+      description: Returns the selected schedule ID and timestamp. Returns 204 No Content if no schedule is selected, the schedule doesn't exist, or the schedule is deleted.
       security: [ { bearerAuth: [ ] } ]
       responses:
         '200':
           description: The selected schedule ID
           content:
             application/json: { schema: { $ref: '#/components/schemas/SelectedScheduleResponse' } }
+        '204':
+          description: No schedule is currently selected
         '401':
           description: Unauthorized
           content:

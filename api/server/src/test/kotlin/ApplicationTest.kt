@@ -61,12 +61,6 @@ class ApplicationTest {
                 val message = "[GET /ping]"
                 assertEquals(HttpStatusCode.OK, status, "$message Status should be OK")
                 assertEquals(Ping.Response(), body<Ping.Response>(), "$message Body should be default Ping.Response")
-                contentType()?.let {
-                    assertTrue(
-                        it.match(ContentType.Application.ProtoBuf),
-                        "$message Content-Type should be ProtoBuf"
-                    )
-                }
             }
 
             /**

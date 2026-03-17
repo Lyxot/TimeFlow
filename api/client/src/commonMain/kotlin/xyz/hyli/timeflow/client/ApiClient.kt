@@ -25,9 +25,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.serialization.kotlinx.protobuf.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.protobuf.ProtoBuf
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.Ping
 import xyz.hyli.timeflow.api.models.Version
@@ -39,7 +36,7 @@ class ApiClient(
     val endpoint: String? = null,
     client: HttpClient? = null,
 ) : AutoCloseable {
-    @OptIn(ExperimentalUuidApi::class, ExperimentalSerializationApi::class)
+    @OptIn(ExperimentalUuidApi::class)
     private fun HttpClientConfig<*>.configureBase() {
         install(Logging) {
             sanitizeHeader { header ->
@@ -66,12 +63,6 @@ class ApiClient(
             deflate()
         }
         install(ContentNegotiation) {
-            // highest priority for protobuf
-            protobuf(
-                ProtoBuf {
-                    encodeDefaults = false
-                }
-            )
             json()
         }
         defaultRequest {
@@ -98,8 +89,6 @@ class ApiClient(
         }
     }
 
-    private var contentType = ContentType.Application.Json
-
     typealias Version = Version.Response
 
     lateinit var apiVersion: Version
@@ -111,13 +100,6 @@ class ApiClient(
 
     suspend fun ping() =
         httpClient.get(Ping())
-            .apply {
-                contentType()?.let {
-                    if (it.match(ContentType.Application.ProtoBuf)) {
-                        contentType = ContentType.Application.ProtoBuf
-                    }
-                }
-            }
 
     suspend fun version() =
         httpClient.get(Version())
@@ -165,7 +147,7 @@ class ApiClient(
     }
 
     private inline fun <reified T> payloadBuilder(payload: T): HttpRequestBuilder.() -> Unit = {
-        contentType(contentType)
+        contentType(ContentType.Application.Json)
         setBody(payload)
     }
 
