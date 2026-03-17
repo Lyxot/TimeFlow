@@ -62,6 +62,7 @@ class TimeFlowViewModel(
     private val syncManager = SyncManager(repository, { settings.value }, tokenManager, viewModelScope)
 
     val syncState: StateFlow<SyncState> = syncManager.syncState
+    val userInfo = syncManager.userInfo
 
     val isLoggedIn: StateFlow<Boolean> =
         settings.map { it.isLoggedIn }
@@ -73,8 +74,17 @@ class TimeFlowViewModel(
 
     init {
         viewModelScope.launch {
-            repository.settings.collect { s ->
+            var initialSyncDone = false
+            settings.collect { s ->
                 tokenManager.syncFromSettings(s)
+                if (s.isLoggedIn && !s.apiEndpoint.isNullOrBlank()) {
+                    syncManager.loadCachedUserInfo(s)
+                    if (!initialSyncDone) {
+                        initialSyncDone = true
+                        syncManager.fetchUserInfo()
+                        syncManager.sync()
+                    }
+                }
             }
         }
     }
@@ -107,6 +117,7 @@ class TimeFlowViewModel(
         viewModelScope.launch {
             repository.updateSelectedScheduleID(id)
             repository.updateSelectedScheduleUpdatedAt(updatedAt)
+            syncIfLoggedIn()
         }
     }
 
@@ -117,6 +128,7 @@ class TimeFlowViewModel(
             repository.upsertSchedule(id, schedule)
             repository.updateSelectedScheduleID(id)
             repository.updateSelectedScheduleUpdatedAt(schedule.updatedAt)
+            syncIfLoggedIn()
         }
     }
 
@@ -125,6 +137,7 @@ class TimeFlowViewModel(
     ) {
         viewModelScope.launch {
             repository.upsertSchedule(id, schedule.copy(updatedAt = updatedAt))
+            syncIfLoggedIn()
         }
     }
 
@@ -142,6 +155,13 @@ class TimeFlowViewModel(
                 repository.updateSelectedScheduleID(Settings.ZERO_ID)
                 repository.updateSelectedScheduleUpdatedAt(Clock.System.now())
             }
+            syncIfLoggedIn()
+        }
+    }
+
+    private fun syncIfLoggedIn() {
+        if (settings.value.isLoggedIn) {
+            syncManager.sync()
         }
     }
 

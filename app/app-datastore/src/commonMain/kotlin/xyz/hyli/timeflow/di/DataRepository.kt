@@ -58,15 +58,15 @@ class DataRepository(
         settingsDataStore.updateSyncedAt(syncedAt)
     }
 
-    override suspend fun updateAccessToken(token: String?) {
-        settingsDataStore.updateAccessToken(token)
-    }
-
-    override suspend fun updateRefreshToken(token: String?, expiresAt: Instant?) {
-        settingsDataStore.updateRefreshToken(token, expiresAt)
+    override suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?) {
+        settingsDataStore.updateTokens(tokens)
     }
 
     override suspend fun updateApiEndpoint(endpoint: String?) {
         settingsDataStore.updateApiEndpoint(endpoint)
+    }
+
+    override suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?) {
+        settingsDataStore.updateCachedUserInfo(user)
     }
 }

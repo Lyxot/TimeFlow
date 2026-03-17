@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,9 +26,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
+import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import xyz.hyli.timeflow.BuildConfig
@@ -40,8 +38,10 @@ import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LoginDialog
+import xyz.hyli.timeflow.ui.pages.settings.subpage.LogoutConfirmDialog
 import xyz.hyli.timeflow.ui.pages.settings.subpage.RegisterDialog
 import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
+import xyz.hyli.timeflow.ui.sync.SyncManager
 import xyz.hyli.timeflow.ui.sync.SyncStatus
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
@@ -63,6 +63,7 @@ fun SettingsScreen(
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val uriHandler = LocalUriHandler.current
+    val validationMessages = localizedValidationMessages()
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
         title = {
@@ -162,7 +163,7 @@ fun SettingsScreen(
                     subtitle = stringResource(Res.string.settings_subtitle_create_schedule),
                     validator = rememberDialogInputValidator(
                         validate = {
-                            val error = InputValidation.validateName(it)
+                            val error = InputValidation.validateName(it, messages = validationMessages)
                             if (error == null)
                                 DialogInputValidator.Result.Valid
                             else
@@ -201,7 +202,7 @@ fun SettingsScreen(
                     enabled = scheduleDependency,
                     validator = rememberDialogInputValidator(
                         validate = {
-                            val error = InputValidation.validateName(it)
+                            val error = InputValidation.validateName(it, messages = validationMessages)
                             if (error == null)
                                 DialogInputValidator.Result.Valid
                             else
@@ -426,9 +427,11 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
     val settings by viewModel.settings.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val userInfo by viewModel.userInfo.collectAsState()
 
     var showLoginDialog by remember { mutableStateOf(false) }
     var showRegisterDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     var loginError by remember { mutableStateOf<String?>(null) }
     var registerError by remember { mutableStateOf<String?>(null) }
 
@@ -457,7 +460,7 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
                     }
                 }
             },
-            errorMessage = loginError
+            errorMessage = resolveErrorMessage(loginError)
         )
     }
 
@@ -477,13 +480,30 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
                     }
                 }
             },
-            errorMessage = registerError
+            errorMessage = resolveErrorMessage(registerError)
+        )
+    }
+
+    if (showLogoutDialog) {
+        LogoutConfirmDialog(
+            onDismiss = { showLogoutDialog = false },
+            onConfirm = {
+                showLogoutDialog = false
+                viewModel.logout()
+            }
         )
     }
 
     PreferenceSection(
         title = stringResource(Res.string.settings_title_account)
     ) {
+        if (isLoggedIn && userInfo != null) {
+            BasePreference(
+                title = userInfo!!.username,
+                subtitle = userInfo!!.email,
+            )
+        }
+
         // Server endpoint
         PreferenceInputText(
             value = settings.apiEndpoint ?: "",
@@ -491,8 +511,9 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
                 viewModel.updateApiEndpoint(endpoint.ifBlank { null })
             },
             title = stringResource(Res.string.settings_title_server_endpoint),
-            subtitle = settings.apiEndpoint
-                ?: stringResource(Res.string.settings_subtitle_server_endpoint),
+            subtitle = stringResource(Res.string.settings_subtitle_server_endpoint).takeIf {
+                settings.apiEndpoint.isNullOrEmpty()
+            },
         )
 
         if (!isLoggedIn) {
@@ -511,11 +532,18 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
             // Sync button
             val syncSubtitle = when (syncState.status) {
                 SyncStatus.SYNCING -> stringResource(Res.string.settings_value_syncing)
-                SyncStatus.ERROR -> stringResource(Res.string.settings_value_sync_error, syncState.error ?: "")
+                SyncStatus.ERROR -> stringResource(
+                    Res.string.settings_value_sync_error,
+                    resolveErrorMessage(syncState.error) ?: ""
+                )
                 else -> {
                     val lastSynced = syncState.lastSyncedAt ?: settings.syncedAt
                     if (lastSynced != null) {
-                        stringResource(Res.string.settings_subtitle_sync_last, lastSynced.toString())
+                        val local = lastSynced.toLocalDateTime(TimeZone.currentSystemDefault())
+                            .let { LocalDateTime(it.date, LocalTime(it.hour, it.minute, it.second)) }
+                        val format =
+                            LocalDateTime.Format { date(LocalDate.Formats.ISO); char(' '); time(LocalTime.Formats.ISO) }
+                        stringResource(Res.string.settings_subtitle_sync_last, format.format(local))
                     } else {
                         stringResource(Res.string.settings_subtitle_sync_never)
                     }
@@ -529,17 +557,30 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
                     it.status != SyncStatus.SYNCING
                 }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = null
-                )
+                SyncIconButton(viewModel)
             }
             // Logout button
             BasePreference(
                 title = stringResource(Res.string.settings_title_logout),
-                subtitle = stringResource(Res.string.settings_subtitle_logged_in),
-                onClick = { viewModel.logout() }
+                onClick = { showLogoutDialog = true }
             )
         }
+    }
+}
+
+@Composable
+private fun resolveErrorMessage(error: String?): String? {
+    if (error == null) return null
+    return when (error) {
+        SyncManager.ERROR_INVALID_CREDENTIALS -> stringResource(Res.string.error_invalid_credentials)
+        SyncManager.ERROR_TOO_MANY_REQUESTS -> stringResource(Res.string.error_too_many_requests)
+        SyncManager.ERROR_EMAIL_ALREADY_EXISTS -> stringResource(Res.string.error_email_already_exists)
+        SyncManager.ERROR_NOT_FOUND -> stringResource(Res.string.error_not_found)
+        SyncManager.ERROR_INVALID_INPUT -> stringResource(Res.string.error_invalid_input, "")
+        SyncManager.ERROR_UNAUTHORIZED -> stringResource(Res.string.error_unauthorized)
+        SyncManager.ERROR_SERVER -> stringResource(Res.string.error_server)
+        SyncManager.ERROR_NETWORK -> stringResource(Res.string.error_network)
+        SyncManager.ERROR_API_NOT_CONFIGURED -> stringResource(Res.string.error_api_not_configured)
+        else -> error
     }
 }

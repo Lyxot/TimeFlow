@@ -17,6 +17,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.shared.generated.resources.*
+import xyz.hyli.timeflow.ui.components.localizedValidationMessages
+import xyz.hyli.timeflow.utils.InputValidation
+import xyz.hyli.timeflow.utils.InputValidation.codePointCount
 
 @Composable
 fun LoginDialog(
@@ -26,6 +29,11 @@ fun LoginDialog(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val messages = localizedValidationMessages()
+
+    val emailError = remember(email, messages) {
+        if (email.isEmpty()) null else InputValidation.validateEmail(email, messages)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -36,6 +44,9 @@ fun LoginDialog(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text(stringResource(Res.string.account_title_email)) },
+                    placeholder = { Text(stringResource(Res.string.account_hint_email)) },
+                    supportingText = emailError?.let { { Text(it) } },
+                    isError = emailError != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -59,7 +70,7 @@ fun LoginDialog(
         confirmButton = {
             TextButton(
                 onClick = { onLogin(email, password) },
-                enabled = email.isNotBlank() && password.isNotBlank()
+                enabled = email.isNotBlank() && password.isNotBlank() && emailError == null
             ) {
                 Text(stringResource(Res.string.settings_title_login))
             }
@@ -82,7 +93,29 @@ fun RegisterDialog(
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
+    val messages = localizedValidationMessages()
+
+    val usernameError = remember(username, messages) {
+        if (username.isEmpty()) null else InputValidation.validateUsername(username, messages)
+    }
+    val emailError = remember(email, messages) {
+        if (email.isEmpty()) null else InputValidation.validateEmail(email, messages)
+    }
+    val passwordError = remember(password, messages) {
+        if (password.isEmpty()) null else InputValidation.validatePassword(password, messages)
+    }
+    val confirmPasswordError = remember(password, confirmPassword) {
+        if (confirmPassword.isEmpty()) null
+        else if (confirmPassword != password) "" // placeholder, actual message from string resource
+        else null
+    }
+
+    val hasValidationError = usernameError != null || emailError != null ||
+            passwordError != null || confirmPasswordError != null
+    val allFieldsFilled = username.isNotBlank() && email.isNotBlank() &&
+            password.isNotBlank() && confirmPassword.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -93,6 +126,14 @@ fun RegisterDialog(
                     value = username,
                     onValueChange = { username = it },
                     label = { Text(stringResource(Res.string.account_title_username)) },
+                    suffix = {
+                        Text(
+                            "${username.codePointCount()}/${InputValidation.MAX_USERNAME_LENGTH}",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    supportingText = usernameError?.let { { Text(it) } },
+                    isError = usernameError != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -100,6 +141,9 @@ fun RegisterDialog(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text(stringResource(Res.string.account_title_email)) },
+                    placeholder = { Text(stringResource(Res.string.account_hint_email)) },
+                    supportingText = emailError?.let { { Text(it) } },
+                    isError = emailError != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -107,6 +151,29 @@ fun RegisterDialog(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text(stringResource(Res.string.account_title_password)) },
+                    placeholder = {
+                        Text(
+                            stringResource(
+                                Res.string.account_hint_password,
+                                InputValidation.MIN_PASSWORD_LENGTH
+                            )
+                        )
+                    },
+                    supportingText = passwordError?.let { { Text(it) } },
+                    isError = passwordError != null,
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text(stringResource(Res.string.account_title_confirm_password)) },
+                    placeholder = { Text(stringResource(Res.string.account_hint_confirm_password)) },
+                    supportingText = if (confirmPasswordError != null) {
+                        { Text(stringResource(Res.string.account_error_password_mismatch)) }
+                    } else null,
+                    isError = confirmPasswordError != null,
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
@@ -125,7 +192,7 @@ fun RegisterDialog(
                         )
                         TextButton(
                             onClick = { onSendCode(email) },
-                            enabled = email.isNotBlank(),
+                            enabled = email.isNotBlank() && emailError == null,
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
                             Text(stringResource(Res.string.account_button_send_code))
@@ -144,9 +211,31 @@ fun RegisterDialog(
         confirmButton = {
             TextButton(
                 onClick = { onRegister(username, email, password, code.ifBlank { null }) },
-                enabled = username.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+                enabled = allFieldsFilled && !hasValidationError
             ) {
                 Text(stringResource(Res.string.settings_title_register))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun LogoutConfirmDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.settings_title_logout)) },
+        text = { Text(stringResource(Res.string.account_subtitle_confirm_logout)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(Res.string.settings_title_logout))
             }
         },
         dismissButton = {

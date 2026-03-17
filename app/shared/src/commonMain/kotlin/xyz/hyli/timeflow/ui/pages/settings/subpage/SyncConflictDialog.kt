@@ -17,8 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
+import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.sync.ConflictResolution
@@ -29,8 +29,12 @@ fun SyncConflictDialog(
     conflict: ScheduleConflict,
     onResolve: (ConflictResolution) -> Unit,
 ) {
+    val format = LocalDateTime.Format { date(LocalDate.Formats.ISO); char(' '); time(LocalTime.Formats.ISO) }
+
     val localTime = conflict.localUpdatedAt.toLocalDateTime(TimeZone.currentSystemDefault())
+        .let { LocalDateTime(it.date, LocalTime(it.hour, it.minute, it.second)) }
     val serverTime = conflict.serverUpdatedAt.toLocalDateTime(TimeZone.currentSystemDefault())
+        .let { LocalDateTime(it.date, LocalTime(it.hour, it.minute, it.second)) }
 
     AlertDialog(
         onDismissRequest = { },
@@ -41,11 +45,11 @@ fun SyncConflictDialog(
                     stringResource(Res.string.sync_subtitle_conflict, conflict.localSchedule.name)
                 )
                 Text(
-                    stringResource(Res.string.sync_value_local_updated_at, localTime.toString()),
+                    stringResource(Res.string.sync_value_local_updated_at, format.format(localTime)),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    stringResource(Res.string.sync_value_server_updated_at, serverTime.toString()),
+                    stringResource(Res.string.sync_value_server_updated_at, format.format(serverTime)),
                     style = MaterialTheme.typography.bodySmall
                 )
             }

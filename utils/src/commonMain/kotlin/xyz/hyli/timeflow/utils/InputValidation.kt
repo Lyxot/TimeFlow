@@ -70,14 +70,35 @@ object InputValidation {
     }
 
     /**
+     * Localizable validation messages. Default values are English.
+     * Pass a custom instance with localized strings from the UI layer.
+     */
+    data class Messages(
+        val emailBlank: String = "Email cannot be blank",
+        val emailTooLong: String = "Email is too long (max $MAX_EMAIL_LENGTH characters)",
+        val emailInvalidFormat: String = "Invalid email format",
+        val usernameBlank: String = "Username cannot be blank",
+        val usernameTooLong: String = "Username is too long (max $MAX_USERNAME_LENGTH characters)",
+        val passwordTooShort: String = "Password is too short (min $MIN_PASSWORD_LENGTH characters)",
+        val passwordTooLong: String = "Password is too long (max $MAX_PASSWORD_LENGTH characters)",
+        val nameBlank: String = "Name cannot be blank",
+        val nameTooLong: String = "Name is too long (max $MAX_NAME_LENGTH characters)",
+        val noteTooLong: String = "Note is too long (max $MAX_NOTE_LENGTH characters)",
+        val teacherTooLong: String = "Teacher name is too long (max $MAX_TEACHER_LENGTH characters)",
+        val classroomTooLong: String = "Classroom name is too long (max $MAX_CLASSROOM_LENGTH characters)",
+    )
+
+    val defaultMessages = Messages()
+
+    /**
      * Validates email format and length
      * @return error message if invalid, null if valid
      */
-    fun validateEmail(email: String): String? {
+    fun validateEmail(email: String, messages: Messages = defaultMessages): String? {
         return when {
-            email.isBlank() -> "Email cannot be blank"
-            email.codePointCount() > MAX_EMAIL_LENGTH -> "Email is too long (max $MAX_EMAIL_LENGTH characters)"
-            !EMAIL_REGEX.matches(email) -> "Invalid email format"
+            email.isBlank() -> messages.emailBlank
+            email.codePointCount() > MAX_EMAIL_LENGTH -> messages.emailTooLong
+            !EMAIL_REGEX.matches(email) -> messages.emailInvalidFormat
             else -> null
         }
     }
@@ -86,10 +107,10 @@ object InputValidation {
      * Validates username (nickname-style, accepts any characters)
      * @return error message if invalid, null if valid
      */
-    fun validateUsername(username: String): String? {
+    fun validateUsername(username: String, messages: Messages = defaultMessages): String? {
         return when {
-            username.isBlank() -> "Username cannot be blank"
-            username.codePointCount() > MAX_USERNAME_LENGTH -> "Username is too long (max $MAX_USERNAME_LENGTH characters)"
+            username.isBlank() -> messages.usernameBlank
+            username.codePointCount() > MAX_USERNAME_LENGTH -> messages.usernameTooLong
             else -> null
         }
     }
@@ -98,10 +119,10 @@ object InputValidation {
      * Validates password strength
      * @return error message if invalid, null if valid
      */
-    fun validatePassword(password: String): String? {
+    fun validatePassword(password: String, messages: Messages = defaultMessages): String? {
         return when {
-            password.length < MIN_PASSWORD_LENGTH -> "Password is too short (min $MIN_PASSWORD_LENGTH characters)"
-            password.length > MAX_PASSWORD_LENGTH -> "Password is too long (max $MAX_PASSWORD_LENGTH characters)"
+            password.length < MIN_PASSWORD_LENGTH -> messages.passwordTooShort
+            password.length > MAX_PASSWORD_LENGTH -> messages.passwordTooLong
             else -> null
         }
     }
@@ -110,10 +131,10 @@ object InputValidation {
      * Validates schedule/course name
      * @return error message if invalid, null if valid
      */
-    fun validateName(name: String, fieldName: String = "Name"): String? {
+    fun validateName(name: String, messages: Messages = defaultMessages): String? {
         return when {
-            name.isBlank() -> "$fieldName cannot be blank"
-            name.codePointCount() > MAX_NAME_LENGTH -> "$fieldName is too long (max $MAX_NAME_LENGTH characters)"
+            name.isBlank() -> messages.nameBlank
+            name.codePointCount() > MAX_NAME_LENGTH -> messages.nameTooLong
             else -> null
         }
     }
@@ -122,9 +143,9 @@ object InputValidation {
      * Validates note/description text
      * @return error message if invalid, null if valid
      */
-    fun validateNote(note: String): String? {
+    fun validateNote(note: String, messages: Messages = defaultMessages): String? {
         return when {
-            note.codePointCount() > MAX_NOTE_LENGTH -> "Note is too long (max $MAX_NOTE_LENGTH characters)"
+            note.codePointCount() > MAX_NOTE_LENGTH -> messages.noteTooLong
             else -> null
         }
     }
@@ -133,9 +154,9 @@ object InputValidation {
      * Validates teacher name
      * @return error message if invalid, null if valid
      */
-    fun validateTeacher(teacher: String): String? {
+    fun validateTeacher(teacher: String, messages: Messages = defaultMessages): String? {
         return when {
-            teacher.codePointCount() > MAX_TEACHER_LENGTH -> "Teacher name is too long (max $MAX_TEACHER_LENGTH characters)"
+            teacher.codePointCount() > MAX_TEACHER_LENGTH -> messages.teacherTooLong
             else -> null
         }
     }
@@ -144,9 +165,9 @@ object InputValidation {
      * Validates classroom name
      * @return error message if invalid, null if valid
      */
-    fun validateClassroom(classroom: String): String? {
+    fun validateClassroom(classroom: String, messages: Messages = defaultMessages): String? {
         return when {
-            classroom.codePointCount() > MAX_CLASSROOM_LENGTH -> "Classroom name is too long (max $MAX_CLASSROOM_LENGTH characters)"
+            classroom.codePointCount() > MAX_CLASSROOM_LENGTH -> messages.classroomTooLong
             else -> null
         }
     }

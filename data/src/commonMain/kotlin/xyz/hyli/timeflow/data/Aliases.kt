@@ -29,6 +29,10 @@ typealias WeekDescriptionEnum = WeekDescriptionEnumV2
 typealias WeekRange = WeekRangeV2
 typealias WeekList = WeekListV2
 
+typealias Tokens = xyz.hyli.timeflow.data.v2.Tokens
+typealias User = xyz.hyli.timeflow.data.v2.User
+typealias SelectedSchedule = xyz.hyli.timeflow.data.v2.SelectedSchedule
+
 // V1 Data Structures
 typealias SettingsV1 = xyz.hyli.timeflow.data.v1.Settings
 

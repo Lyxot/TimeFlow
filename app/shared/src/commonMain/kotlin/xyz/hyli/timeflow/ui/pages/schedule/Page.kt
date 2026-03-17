@@ -30,7 +30,9 @@ import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
@@ -47,6 +49,7 @@ import xyz.hyli.timeflow.data.toProtoBufByteArray
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
+import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isWeb
@@ -73,10 +76,20 @@ fun ScheduleScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     val schedule by viewModel.selectedSchedule.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
     val columns = if (schedule?.displayWeekends == true) 7 else 5
     val rows = schedule?.lessonTimePeriodInfo?.totalLessonsCount
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Conflict dialog
+    val firstConflict = syncState.conflicts.firstOrNull()
+    if (firstConflict != null) {
+        SyncConflictDialog(
+            conflict = firstConflict,
+            onResolve = { resolution -> viewModel.resolveConflict(resolution) }
+        )
+    }
 
     @Composable
     fun BoxScope.ScheduleScreenContent(
@@ -129,55 +142,20 @@ fun ScheduleScreen(
                                 contentDescription = null
                             )
                         }
-                        SubcomposeLayout { constraints ->
-                            val list = listOf(
-                                "part1" to Res.string.schedule_title_week_x_part_1,
-                                "part2" to Res.string.schedule_title_week_x_part_2,
-                                "part3" to Res.string.schedule_title_week_x_part_3,
-                                "vacation" to Res.string.schedule_title_week_vacation
-                            ).map {
-                                subcompose(it.first) {
-                                    Text(
-                                        text =
-                                            if (it.first == "part2") "${pagerState.currentPage + 1}"
-                                            else stringResource(it.second),
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }[0].measure(constraints)
-                            }
-                            val part2Max = subcompose("part2max") {
-                                Text(
-                                    text = stringResource(
-                                        Res.string.schedule_title_week_x_part_2,
-                                        pagerState.pageCount + 1
-                                    ),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }[0].measure(constraints)
-                            val width =
-                                maxOf(
-                                    list[0].width + part2Max.width + list[2].width,
-                                    list[3].width
-                                )
-                            layout(width, constraints.minHeight) {
-                                if (pagerState.currentPage < pagerState.pageCount - 1) {
-                                    list[0].placeRelative(0, -list[0].height / 2)
-                                    list[1].placeRelative(
-                                        (width - list[1].width) / 2,
-                                        -list[1].height / 2
-                                    )
-                                    list[2].placeRelative(
-                                        width - list[2].width,
-                                        -list[2].height / 2
-                                    )
-                                } else {
-                                    list[3].placeRelative(
-                                        (width - list[3].width) / 2,
-                                        -list[3].height / 2
-                                    )
-                                }
-                            }
+                        val textMeasurer = rememberTextMeasurer()
+                        val density = LocalDensity.current
+                        val xWidth = with(density) {
+                            textMeasurer.measure(
+                                text = stringResource(Res.string.schedule_title_week_x, "xxx"),
+                                style = MaterialTheme.typography.bodyLarge
+                            ).size.width.toDp()
                         }
+                        Text(
+                            text = stringResource(Res.string.schedule_title_week_x, pagerState.currentPage + 1),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.width(xWidth),
+                            textAlign = TextAlign.Center
+                        )
                         IconButton(
                             onClick = {
                                 coroutineScope.launch {
@@ -195,26 +173,29 @@ fun ScheduleScreen(
                 }
             },
             navigationIcon = {
-                IconButton(
-                    onClick = {
-                        navHostController.navigate(Destination.Schedule.ScheduleList)
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SyncAlt,
-                        contentDescription = stringResource(Res.string.save)
-                    )
+                Row {
+                    IconButton(
+                        onClick = {
+                            navHostController.navigate(Destination.Schedule.ScheduleList)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SyncAlt,
+                            contentDescription = stringResource(Res.string.save)
+                        )
+                    }
+                    IconButton(
+                        onClick = { isOverviewMode = !isOverviewMode },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarViewMonth,
+                            contentDescription = stringResource(Res.string.schedule_title_overview)
+                        )
+                    }
                 }
             },
             actions = {
-                IconButton(
-                    onClick = { isOverviewMode = !isOverviewMode },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarViewMonth,
-                        contentDescription = stringResource(Res.string.schedule_title_overview)
-                    )
-                }
+                SyncIconButton(viewModel)
                 IconButton(
                     onClick = { showAddScheduleDialog.value = true },
                 ) {

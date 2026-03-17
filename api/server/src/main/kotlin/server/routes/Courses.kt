@@ -45,7 +45,7 @@ fun Route.coursesRoutes(repository: DataRepository) {
 
         authedPut<ApiV1.Schedules.ScheduleId.Courses.CourseId>(repository) { resource, user ->
             val courseData = call.receive<xyz.hyli.timeflow.data.Course>()
-            InputValidation.validateName(courseData.name, "Course name")?.let { error ->
+            InputValidation.validateName(courseData.name)?.let { error ->
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
                 return@authedPut
             }

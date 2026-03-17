@@ -41,7 +41,7 @@ fun Route.schedulesRoutes(repository: DataRepository) {
 
         authedPut<ApiV1.Schedules.ScheduleId>(repository) { resource, user ->
             val scheduleData = call.receive<ApiV1.Schedules.ScheduleId.Payload>()
-            InputValidation.validateName(scheduleData.name, "Schedule name")?.let { error ->
+            InputValidation.validateName(scheduleData.name)?.let { error ->
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
                 return@authedPut
             }

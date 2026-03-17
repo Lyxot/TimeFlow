@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.client.TokenManager
 import xyz.hyli.timeflow.data.Settings
+import xyz.hyli.timeflow.data.Tokens
 import xyz.hyli.timeflow.di.IDataRepository
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -26,58 +27,49 @@ class RepositoryTokenManager(
     private val scope: CoroutineScope,
 ) : TokenManager {
 
-    private var cachedAccessToken: String? = null
-
-    private var cachedRefreshToken: String? = null
-
-    private var cachedRefreshTokenExpiresAt: Instant? = null
+    private var cachedTokens: Tokens? = null
 
     fun syncFromSettings(settings: Settings) {
-        cachedAccessToken = settings.accessToken
-        cachedRefreshToken = settings.refreshToken
-        cachedRefreshTokenExpiresAt = settings.refreshTokenExpiresAt
+        cachedTokens = settings.tokens
     }
 
     override fun getAccessToken(): String {
-        return cachedAccessToken ?: settingsSnapshot().accessToken ?: ""
+        return cachedTokens?.accessToken ?: settingsSnapshot().tokens?.accessToken ?: ""
     }
 
     override fun getRefreshToken(): String {
-        return cachedRefreshToken ?: settingsSnapshot().refreshToken ?: ""
+        return cachedTokens?.refreshToken ?: settingsSnapshot().tokens?.refreshToken ?: ""
     }
 
     override fun setAccessToken(accessToken: String) {
-        cachedAccessToken = accessToken
-        scope.launch { repository.updateAccessToken(accessToken) }
+        cachedTokens = (cachedTokens ?: Tokens(accessToken = "")).copy(accessToken = accessToken)
+        scope.launch { repository.updateTokens(cachedTokens) }
     }
 
     override fun setRefreshToken(refreshToken: String, expiresAt: Instant) {
-        cachedRefreshToken = refreshToken
-        cachedRefreshTokenExpiresAt = expiresAt
-        scope.launch { repository.updateRefreshToken(refreshToken, expiresAt) }
+        cachedTokens = (cachedTokens ?: Tokens(accessToken = "")).copy(
+            refreshToken = refreshToken,
+            refreshTokenExpiresAt = expiresAt
+        )
+        scope.launch { repository.updateTokens(cachedTokens) }
     }
 
     override fun isRefreshTokenNeedRotate(): Boolean {
-        val expiresAt = cachedRefreshTokenExpiresAt
-            ?: settingsSnapshot().refreshTokenExpiresAt
+        val expiresAt = cachedTokens?.refreshTokenExpiresAt
+            ?: settingsSnapshot().tokens?.refreshTokenExpiresAt
             ?: return false
         return (expiresAt - Clock.System.now()) < 7.days
     }
 
     override fun isRefreshTokenExpired(): Boolean {
-        val expiresAt = cachedRefreshTokenExpiresAt
-            ?: settingsSnapshot().refreshTokenExpiresAt
+        val expiresAt = cachedTokens?.refreshTokenExpiresAt
+            ?: settingsSnapshot().tokens?.refreshTokenExpiresAt
             ?: return true
         return Clock.System.now() > expiresAt
     }
 
     override fun clearTokens() {
-        cachedAccessToken = null
-        cachedRefreshToken = null
-        cachedRefreshTokenExpiresAt = null
-        scope.launch {
-            repository.updateAccessToken(null)
-            repository.updateRefreshToken(null, null)
-        }
+        cachedTokens = null
+        scope.launch { repository.updateTokens(null) }
     }
 }

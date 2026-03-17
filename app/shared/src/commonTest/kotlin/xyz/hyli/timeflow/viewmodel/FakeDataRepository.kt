@@ -61,16 +61,16 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(syncedAt = syncedAt)
     }
 
-    override suspend fun updateAccessToken(token: String?) {
-        _settings.value = _settings.value.copy(accessToken = token)
-    }
-
-    override suspend fun updateRefreshToken(token: String?, expiresAt: Instant?) {
-        _settings.value = _settings.value.copy(refreshToken = token, refreshTokenExpiresAt = expiresAt)
+    override suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?) {
+        _settings.value = _settings.value.copy(tokens = tokens)
     }
 
     override suspend fun updateApiEndpoint(endpoint: String?) {
         _settings.value = _settings.value.copy(apiEndpoint = endpoint)
+    }
+
+    override suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?) {
+        _settings.value = _settings.value.copy(cachedUserInfo = user)
     }
 
     // Helper function for tests to manually set the settings

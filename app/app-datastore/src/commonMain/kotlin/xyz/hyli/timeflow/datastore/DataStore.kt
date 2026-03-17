@@ -117,21 +117,21 @@ class SettingsDataStore(
         }
     }
 
-    suspend fun updateAccessToken(token: String?) {
+    suspend fun updateTokens(tokens: Tokens?) {
         db.updateData { currentSettings ->
-            currentSettings.copy(accessToken = token)
-        }
-    }
-
-    suspend fun updateRefreshToken(token: String?, expiresAt: Instant?) {
-        db.updateData { currentSettings ->
-            currentSettings.copy(refreshToken = token, refreshTokenExpiresAt = expiresAt)
+            currentSettings.copy(tokens = tokens)
         }
     }
 
     suspend fun updateApiEndpoint(endpoint: String?) {
         db.updateData { currentSettings ->
             currentSettings.copy(apiEndpoint = endpoint)
+        }
+    }
+
+    suspend fun updateCachedUserInfo(user: User?) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(cachedUserInfo = user)
         }
     }
 

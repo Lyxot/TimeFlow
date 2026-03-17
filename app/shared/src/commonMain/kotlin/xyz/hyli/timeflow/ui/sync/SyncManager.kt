@@ -10,6 +10,7 @@
 package xyz.hyli.timeflow.ui.sync
 
 import io.ktor.client.call.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.SelectedSchedule
+import xyz.hyli.timeflow.api.models.User
 import xyz.hyli.timeflow.client.ApiClient
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
@@ -36,6 +38,9 @@ class SyncManager(
     private val _syncState = MutableStateFlow(SyncState())
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
+    private val _userInfo = MutableStateFlow<User?>(null)
+    val userInfo: StateFlow<User?> = _userInfo.asStateFlow()
+
     private var apiClient: ApiClient? = null
     private var currentEndpoint: String? = null
 
@@ -51,30 +56,52 @@ class SyncManager(
     }
 
     suspend fun login(email: String, password: String): Result<Unit> {
-        val client = getOrCreateClient() ?: return Result.failure(IllegalStateException("API endpoint not configured"))
+        val client = getOrCreateClient() ?: return Result.failure(Exception(ERROR_API_NOT_CONFIGURED))
         return try {
             val response = client.login(ApiV1.Auth.Login.Payload(email, password))
             if (response.status == HttpStatusCode.OK) {
+                fetchUserInfo()
+                sync()
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Login failed: ${response.status}"))
+                Result.failure(Exception(errorMessage(response, isAuth = true)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ERROR_NETWORK, e))
+        }
+    }
+
+    fun loadCachedUserInfo(settings: Settings) {
+        if (_userInfo.value == null && settings.cachedUserInfo != null) {
+            _userInfo.value = settings.cachedUserInfo
+        }
+    }
+
+    suspend fun fetchUserInfo() {
+        val client = getOrCreateClient() ?: return
+        try {
+            val response = client.me()
+            if (response.status == HttpStatusCode.OK) {
+                val user: User = response.body()
+                _userInfo.value = user
+                repository.updateCachedUserInfo(user)
+            }
+        } catch (_: Exception) {
+            // Best effort
         }
     }
 
     suspend fun register(username: String, email: String, password: String, code: String?): Result<Unit> {
-        val client = getOrCreateClient() ?: return Result.failure(IllegalStateException("API endpoint not configured"))
+        val client = getOrCreateClient() ?: return Result.failure(Exception(ERROR_API_NOT_CONFIGURED))
         return try {
             val response = client.register(ApiV1.Auth.Register.Payload(username, email, password, code))
             if (response.status == HttpStatusCode.Created) {
-                Result.success(Unit)
+                login(email, password)
             } else {
-                Result.failure(Exception("Registration failed: ${response.status}"))
+                Result.failure(Exception(errorMessage(response, isAuth = true)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ERROR_NETWORK, e))
         }
     }
 
@@ -85,7 +112,10 @@ class SyncManager(
             // Best effort
         }
         tokenManager.clearTokens()
+        _userInfo.value = null
         _syncState.value = SyncState()
+        repository.updateSyncedAt(null)
+        repository.updateCachedUserInfo(null)
     }
 
     suspend fun checkEmail(email: String): Result<Boolean> {
@@ -142,7 +172,7 @@ class SyncManager(
         val client = getOrCreateClient() ?: run {
             _syncState.value = _syncState.value.copy(
                 status = SyncStatus.ERROR,
-                error = "API endpoint not configured"
+                error = ERROR_API_NOT_CONFIGURED
             )
             return
         }
@@ -151,7 +181,7 @@ class SyncManager(
         if (!settings.isLoggedIn) {
             _syncState.value = _syncState.value.copy(
                 status = SyncStatus.ERROR,
-                error = "Not logged in"
+                error = ERROR_UNAUTHORIZED
             )
             return
         }
@@ -164,7 +194,7 @@ class SyncManager(
             if (schedulesResponse.status != HttpStatusCode.OK) {
                 _syncState.value = _syncState.value.copy(
                     status = SyncStatus.ERROR,
-                    error = "Failed to fetch schedules: ${schedulesResponse.status}"
+                    error = errorMessage(schedulesResponse)
                 )
                 return
             }
@@ -206,19 +236,23 @@ class SyncManager(
 
                         when {
                             localChanged && serverChanged -> {
-                                // Both changed - conflict
-                                val fullResponse = client.getSchedule(id)
-                                if (fullResponse.status == HttpStatusCode.OK) {
-                                    val serverSchedule: Schedule = fullResponse.body()
-                                    conflicts.add(
-                                        ScheduleConflict(
-                                            scheduleId = id,
-                                            localSchedule = localSchedule,
-                                            serverSchedule = serverSchedule,
-                                            localUpdatedAt = localSchedule.updatedAt,
-                                            serverUpdatedAt = serverSummary.updatedAt,
+                                if (localSchedule.updatedAt == serverSummary.updatedAt) {
+                                    // Same timestamp — no real conflict, skip
+                                } else {
+                                    // Both changed - conflict
+                                    val fullResponse = client.getSchedule(id)
+                                    if (fullResponse.status == HttpStatusCode.OK) {
+                                        val serverSchedule: Schedule = fullResponse.body()
+                                        conflicts.add(
+                                            ScheduleConflict(
+                                                scheduleId = id,
+                                                localSchedule = localSchedule,
+                                                serverSchedule = serverSchedule,
+                                                localUpdatedAt = localSchedule.updatedAt,
+                                                serverUpdatedAt = serverSummary.updatedAt,
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
 
@@ -278,7 +312,7 @@ class SyncManager(
         } catch (e: Exception) {
             _syncState.value = _syncState.value.copy(
                 status = SyncStatus.ERROR,
-                error = e.message ?: "Sync failed"
+                error = ERROR_NETWORK
             )
         }
     }
@@ -307,5 +341,36 @@ class SyncManager(
     fun close() {
         apiClient?.close()
         apiClient = null
+    }
+
+    private suspend fun errorMessage(response: HttpResponse, isAuth: Boolean = false): String {
+        val serverMessage = try {
+            val body = response.bodyAsText()
+            val match = Regex("\"error\"\\s*:\\s*\"(.+?)\"").find(body)
+            match?.groupValues?.get(1)
+        } catch (_: Exception) {
+            null
+        }
+        return when (response.status) {
+            HttpStatusCode.Unauthorized -> if (isAuth) ERROR_INVALID_CREDENTIALS else ERROR_UNAUTHORIZED
+            HttpStatusCode.TooManyRequests -> ERROR_TOO_MANY_REQUESTS
+            HttpStatusCode.Conflict -> ERROR_EMAIL_ALREADY_EXISTS
+            HttpStatusCode.NotFound -> ERROR_NOT_FOUND
+            HttpStatusCode.BadRequest -> serverMessage ?: ERROR_INVALID_INPUT
+            else -> if (response.status.value >= 500) ERROR_SERVER
+            else serverMessage ?: "${response.status}"
+        }
+    }
+
+    companion object {
+        const val ERROR_INVALID_CREDENTIALS = "error.invalid_credentials"
+        const val ERROR_TOO_MANY_REQUESTS = "error.too_many_requests"
+        const val ERROR_EMAIL_ALREADY_EXISTS = "error.email_already_exists"
+        const val ERROR_NOT_FOUND = "error.not_found"
+        const val ERROR_INVALID_INPUT = "error.invalid_input"
+        const val ERROR_UNAUTHORIZED = "error.unauthorized"
+        const val ERROR_SERVER = "error.server"
+        const val ERROR_NETWORK = "error.network"
+        const val ERROR_API_NOT_CONFIGURED = "error.api_not_configured"
     }
 }

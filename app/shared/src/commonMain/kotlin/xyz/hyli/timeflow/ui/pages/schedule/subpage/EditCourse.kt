@@ -36,15 +36,15 @@ import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
+import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
+import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
+import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.InputValidation
 import xyz.hyli.timeflow.utils.InputValidation.codePointCount
 import xyz.hyli.timeflow.utils.InputValidation.truncateClassroom
 import xyz.hyli.timeflow.utils.InputValidation.truncateName
 import xyz.hyli.timeflow.utils.InputValidation.truncateNote
 import xyz.hyli.timeflow.utils.InputValidation.truncateTeacher
-import xyz.hyli.timeflow.ui.components.ColorDefinitions.COLORS
-import xyz.hyli.timeflow.ui.pages.schedule.CourseTimeDialog
-import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
 enum class EditCourseStyle {
     Screen,
@@ -147,7 +147,13 @@ fun EditCourseContent(
     var isClassroomChanged by remember { mutableStateOf(false) }
     var isTeacherChanged by remember { mutableStateOf(false) }
 
-    val nameError = remember(course.name) { InputValidation.validateName(course.name) }
+    val validationMessages = localizedValidationMessages()
+    val nameError = remember(course.name, validationMessages) {
+        InputValidation.validateName(
+            course.name,
+            messages = validationMessages
+        )
+    }
     val isNameValid = nameError == null
     val isTimeValid = remember(course.time, schedule) {
         if (course.time.start > course.time.end) {
