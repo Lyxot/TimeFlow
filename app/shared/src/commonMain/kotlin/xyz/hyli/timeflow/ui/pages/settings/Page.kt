@@ -505,15 +505,24 @@ private fun AccountSection(viewModel: TimeFlowViewModel) {
         }
 
         // Server endpoint
+        val insecureWarning = stringResource(Res.string.settings_warning_insecure_http)
         PreferenceInputText(
             value = settings.apiEndpoint ?: "",
             onValueChange = { endpoint ->
                 viewModel.updateApiEndpoint(endpoint.ifBlank { null })
             },
             title = stringResource(Res.string.settings_title_server_endpoint),
-            subtitle = stringResource(Res.string.settings_subtitle_server_endpoint).takeIf {
-                settings.apiEndpoint.isNullOrEmpty()
-            },
+            subtitle = stringResource(Res.string.settings_subtitle_server_endpoint),
+            dialogHint = { currentValue ->
+                if (currentValue.startsWith("http://")) {
+                    Text(
+                        text = insecureWarning,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
         )
 
         if (!isLoggedIn) {

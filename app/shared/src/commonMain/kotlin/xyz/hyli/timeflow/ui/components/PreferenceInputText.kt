@@ -23,10 +23,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.shared.generated.resources.Res
-import xyz.hyli.timeflow.utils.InputValidation.codePointCount
-import xyz.hyli.timeflow.utils.InputValidation.takeCodePoints
 import xyz.hyli.timeflow.shared.generated.resources.cancel
 import xyz.hyli.timeflow.shared.generated.resources.confirm
+import xyz.hyli.timeflow.utils.InputValidation.codePointCount
+import xyz.hyli.timeflow.utils.InputValidation.takeCodePoints
 
 // ==================== Preference Input Text ====================
 
@@ -39,7 +39,8 @@ fun PreferenceInputText(
     enabled: Dependency = Dependency.Enabled,
     visible: Dependency = Dependency.Enabled,
     validator: DialogInputValidator? = null,
-    maxLength: Int? = null
+    maxLength: Int? = null,
+    dialogHint: (@Composable (currentValue: String) -> Unit)? = null,
 ) {
     val isEnabled by enabled.asState()
     var showDialog by remember { mutableStateOf(false) }
@@ -71,7 +72,8 @@ fun PreferenceInputText(
             },
             onDismiss = { showDialog = false },
             validator = validator,
-            maxLength = maxLength
+            maxLength = maxLength,
+            hint = dialogHint
         )
     }
 }
@@ -83,7 +85,8 @@ fun TextInputDialog(
     onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
     validator: DialogInputValidator? = null,
-    maxLength: Int? = null
+    maxLength: Int? = null,
+    hint: (@Composable (currentValue: String) -> Unit)? = null,
 ) {
     var textValue by remember { mutableStateOf(initialValue) }
     var isValid by remember { mutableStateOf(true) }
@@ -163,6 +166,7 @@ fun TextInputDialog(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
+                hint?.invoke(textValue)
             }
         }
     }
