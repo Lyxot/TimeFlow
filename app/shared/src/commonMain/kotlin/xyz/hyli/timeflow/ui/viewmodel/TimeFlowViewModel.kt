@@ -30,10 +30,7 @@ import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
-import xyz.hyli.timeflow.ui.sync.ConflictResolution
-import xyz.hyli.timeflow.ui.sync.RepositoryTokenManager
-import xyz.hyli.timeflow.ui.sync.SyncManager
-import xyz.hyli.timeflow.ui.sync.SyncState
+import xyz.hyli.timeflow.ui.sync.*
 import xyz.hyli.timeflow.utils.writeBytesToFile
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -58,26 +55,26 @@ class TimeFlowViewModel(
                 initialValue = null
             )
 
-    private val tokenManager = RepositoryTokenManager(repository, { settings.value }, viewModelScope)
+    private val secureTokenStorage = createSecureTokenStorage()
+    private val tokenManager = RepositoryTokenManager(secureTokenStorage)
     private val syncManager = SyncManager(repository, { settings.value }, tokenManager, viewModelScope)
 
     val syncState: StateFlow<SyncState> = syncManager.syncState
     val userInfo = syncManager.userInfo
 
     val isLoggedIn: StateFlow<Boolean> =
-        settings.map { it.isLoggedIn }
+        settings.map { tokenManager.hasTokens() }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = false
+                initialValue = tokenManager.hasTokens()
             )
 
     init {
         viewModelScope.launch {
             var initialSyncDone = false
             settings.collect { s ->
-                tokenManager.syncFromSettings(s)
-                if (s.isLoggedIn && !s.apiEndpoint.isNullOrBlank()) {
+                if (tokenManager.hasTokens() && !s.apiEndpoint.isNullOrBlank()) {
                     syncManager.loadCachedUserInfo(s)
                     if (!initialSyncDone) {
                         initialSyncDone = true
@@ -160,7 +157,7 @@ class TimeFlowViewModel(
     }
 
     private fun syncIfLoggedIn() {
-        if (settings.value.isLoggedIn) {
+        if (tokenManager.hasTokens()) {
             syncManager.sync()
         }
     }

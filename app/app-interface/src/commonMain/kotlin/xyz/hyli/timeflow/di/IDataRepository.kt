@@ -26,7 +26,6 @@ interface IDataRepository {
     suspend fun upsertSchedule(id: Short, schedule: Schedule)
     suspend fun deleteSchedule(id: Short)
     suspend fun updateSyncedAt(syncedAt: Instant?)
-    suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?)
     suspend fun updateApiEndpoint(endpoint: String?)
     suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?)
 }

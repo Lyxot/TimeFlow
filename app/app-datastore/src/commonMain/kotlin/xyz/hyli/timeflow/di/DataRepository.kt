@@ -58,10 +58,6 @@ class DataRepository(
         settingsDataStore.updateSyncedAt(syncedAt)
     }
 
-    override suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?) {
-        settingsDataStore.updateTokens(tokens)
-    }
-
     override suspend fun updateApiEndpoint(endpoint: String?) {
         settingsDataStore.updateApiEndpoint(endpoint)
     }

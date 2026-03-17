@@ -49,18 +49,14 @@ data class Settings(
     @ProtoNumber(6) val selectedScheduleID: Short = ZERO_ID,
     @ProtoNumber(7) val selectedScheduleUpdatedAt: Instant? = null,
     @ProtoNumber(8) val syncedAt: Instant? = null,
-    @ProtoNumber(9) val tokens: Tokens? = null,
-    @ProtoNumber(10) val apiEndpoint: String? = null,
-    @ProtoNumber(11) val cachedUserInfo: User? = null,
-    @ProtoNumber(12) val reserved: String? = null,
+    @ProtoNumber(9) val apiEndpoint: String? = null,
+    @ProtoNumber(10) val cachedUserInfo: User? = null,
+    @ProtoNumber(11) val reserved11: String? = null,
+    @ProtoNumber(12) val reserved12: String? = null
 ) {
     companion object {
         const val ZERO_ID = 0.toShort()
     }
-
-    @Transient
-    val isLoggedIn: Boolean =
-        !tokens?.accessToken.isNullOrBlank() && !tokens.refreshToken.isNullOrBlank()
 
     /** 未被删除（仍在回收站外）的所有课程表。 */
     @Transient

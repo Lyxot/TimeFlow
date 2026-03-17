@@ -71,10 +71,6 @@ class DataRepository(
         store.update { it.copy(syncedAt = syncedAt) }
     }
 
-    override suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?) {
-        store.update { it.copy(tokens = tokens) }
-    }
-
     override suspend fun updateApiEndpoint(endpoint: String?) {
         store.update { it.copy(apiEndpoint = endpoint) }
     }

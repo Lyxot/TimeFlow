@@ -117,12 +117,6 @@ class SettingsDataStore(
         }
     }
 
-    suspend fun updateTokens(tokens: Tokens?) {
-        db.updateData { currentSettings ->
-            currentSettings.copy(tokens = tokens)
-        }
-    }
-
     suspend fun updateApiEndpoint(endpoint: String?) {
         db.updateData { currentSettings ->
             currentSettings.copy(apiEndpoint = endpoint)

@@ -61,10 +61,6 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(syncedAt = syncedAt)
     }
 
-    override suspend fun updateTokens(tokens: xyz.hyli.timeflow.data.Tokens?) {
-        _settings.value = _settings.value.copy(tokens = tokens)
-    }
-
     override suspend fun updateApiEndpoint(endpoint: String?) {
         _settings.value = _settings.value.copy(apiEndpoint = endpoint)
     }

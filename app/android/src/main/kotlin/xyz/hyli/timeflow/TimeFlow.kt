@@ -12,12 +12,14 @@ package xyz.hyli.timeflow
 import android.app.Application
 import xyz.hyli.timeflow.di.AppContainer
 import xyz.hyli.timeflow.di.Factory
+import xyz.hyli.timeflow.ui.sync.AndroidSecureTokenStorageHolder
 
 class TimeFlow: Application() {
     lateinit var container: AppContainer
 
     override fun onCreate() {
         super.onCreate()
+        AndroidSecureTokenStorageHolder.context = applicationContext
         container = AppContainer(Factory())
     }
 }

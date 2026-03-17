@@ -178,7 +178,7 @@ class SyncManager(
         }
 
         val settings = settingsSnapshot()
-        if (!settings.isLoggedIn) {
+        if (!tokenManager.hasTokens()) {
             _syncState.value = _syncState.value.copy(
                 status = SyncStatus.ERROR,
                 error = ERROR_UNAUTHORIZED
