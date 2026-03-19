@@ -833,6 +833,7 @@ class ApplicationTest {
                 "http.httpsRedirect.permanentRedirect" to "true",
                 "webApp.serveEnabled" to "true",
                 "webApp.zipPath" to "/static/app.zip",
+                "webApp.location" to "app",
                 "turnstile.enabled" to "false",
                 "turnstile.secretKey" to "",
                 "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"

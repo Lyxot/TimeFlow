@@ -223,6 +223,7 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "http.httpsRedirect.permanentRedirect" to "true",
     "webApp.serveEnabled" to BuildConfig.BUNDLED_WEB_APP_ZIP.toString(),
     "webApp.zipPath" to "",
+    "webApp.location" to "app",
     "turnstile.enabled" to "false",
     "turnstile.secretKey" to "",
     "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"

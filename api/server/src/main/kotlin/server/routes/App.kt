@@ -31,6 +31,7 @@ fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
         return
     }
 
+    val location = config.property("webApp.location").getString().trim('/')
     val configuredZipPath = config.property("webApp.zipPath").getString().takeIf { it.isNotBlank() }
     val appZipPath = when {
         configuredZipPath != null -> resolveZipPath(configuredZipPath)
@@ -44,7 +45,9 @@ fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
         return
     }
 
-    staticZip("/app/", "TimeFlow", appZipPath) {
+    log.info("Serving web app at '/{}'", location)
+
+    staticZip("/$location/", "TimeFlow", appZipPath) {
         enableAutoHeadResponse()
         etag(ETagProvider.StrongSha256)
         cacheControl { file ->
@@ -121,10 +124,12 @@ fun Route.appRoutes(config: ApplicationConfig, log: Logger) {
         }
     }
 
-    route("/app") {
-        // Redirect /app to /app/
-        handle {
-            call.respondRedirect("/app/")
+    if (location.isNotEmpty()) {
+        route("/$location") {
+            // Redirect /{location} to /{location}/
+            handle {
+                call.respondRedirect("/$location/")
+            }
         }
     }
 }
