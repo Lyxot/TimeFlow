@@ -99,7 +99,7 @@ class ScheduleExtractor(
      * @return 提取出的课程列表
      */
     suspend fun extract(imageBase64: String, format: String? = null): List<ExtractedCourse> {
-        val prompt = buildPrompt(imageBase64, format ?: detectFormat(imageBase64))
+        val prompt = buildPrompt(imageBase64, format ?: detectImageFormatFromBase64(imageBase64))
         val llmModel = resolveModel()
         val responses = executor.execute(prompt, llmModel, emptyList())
         val text = responses.joinToString("") { it.content }
@@ -113,7 +113,7 @@ class ScheduleExtractor(
      * @return 文本增量的 Flow
      */
     fun extractStreaming(imageBase64: String, format: String? = null): Flow<String> {
-        val prompt = buildPrompt(imageBase64, format ?: detectFormat(imageBase64))
+        val prompt = buildPrompt(imageBase64, format ?: detectImageFormatFromBase64(imageBase64))
         val llmModel = resolveModel()
         return executor.executeStreaming(prompt, llmModel, emptyList())
             .filterIsInstance<StreamFrame.TextDelta>()
@@ -139,20 +139,6 @@ class ScheduleExtractor(
     }
 
     companion object {
-        /**
-         * Detect image format from the first few base64-decoded bytes (magic bytes).
-         */
-        internal fun detectFormat(imageBase64: String): String {
-            // Check base64 prefix for common magic bytes
-            return when {
-                imageBase64.startsWith("/9j/") -> "jpeg"          // JPEG
-                imageBase64.startsWith("iVBORw0KGgo") -> "png"    // PNG
-                imageBase64.startsWith("R0lGOD") -> "gif"         // GIF
-                imageBase64.startsWith("UklGR") -> "webp"         // WebP (RIFF)
-                else -> "png" // default assumption
-            }
-        }
-
         /**
          * Parse a full endpoint URL into (baseUrl, chatCompletionsPath).
          * e.g. "https://integrate.api.nvidia.com/v1/chat/completions"

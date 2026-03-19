@@ -20,18 +20,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import xyz.hyli.timeflow.ai.ScheduleExtractor
+import xyz.hyli.timeflow.ai.resizeImage
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.utils.authedGet
 import xyz.hyli.timeflow.server.utils.authedPost
-import java.awt.RenderingHints
-import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.math.sqrt
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
@@ -118,9 +113,7 @@ fun Route.aiRoutes(config: ApplicationConfig, repository: DataRepository, log: L
 
                 // 3. Resize image if needed (by file size or resolution)
                 val resized = resizeImage(imageBytes, maxImageSizeBytes, maxImageResolution)
-                val wasResized = resized !== imageBytes
-                val imageBase64 = if (wasResized) Base64.encode(resized) else payload.image
-                val imageFormat = if (wasResized) "jpeg" else null // resized images are always JPEG
+                val imageBase64 = if (resized.wasResized) Base64.encode(resized.data) else payload.image
 
                 // 4. Set quota headers before sending the response
                 call.response.header("X-Ai-Quota-Used", (used + 1).toString())
@@ -140,7 +133,7 @@ fun Route.aiRoutes(config: ApplicationConfig, repository: DataRepository, log: L
                 try {
                     if (payload.stream) {
                         call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                            extractor.extractStreaming(imageBase64, imageFormat).collect { chunk ->
+                            extractor.extractStreaming(imageBase64, resized.format).collect { chunk ->
                                 withContext(Dispatchers.IO) {
                                     write("data: $chunk\n\n")
                                     flush()
@@ -152,7 +145,7 @@ fun Route.aiRoutes(config: ApplicationConfig, repository: DataRepository, log: L
                             }
                         }
                     } else {
-                        val courses = extractor.extract(imageBase64, imageFormat)
+                        val courses = extractor.extract(imageBase64, resized.format)
                         call.respond(HttpStatusCode.OK, courses)
                     }
 
@@ -172,37 +165,4 @@ fun Route.aiRoutes(config: ApplicationConfig, repository: DataRepository, log: L
             }
         }
     }
-}
-
-/**
- * Resize an image if it exceeds the byte size limit or max resolution.
- * Returns the original byte array (same reference) if no resize is needed.
- */
-private fun resizeImage(imageBytes: ByteArray, maxSizeBytes: Long, maxResolution: Int): ByteArray {
-    val originalImage = ImageIO.read(ByteArrayInputStream(imageBytes)) ?: return imageBytes
-
-    val w = originalImage.width
-    val h = originalImage.height
-    val maxDim = maxOf(w, h)
-
-    val resolutionScale = if (maxDim > maxResolution) maxResolution.toDouble() / maxDim else 1.0
-    val sizeScale = if (imageBytes.size > maxSizeBytes) {
-        sqrt(maxSizeBytes.toDouble() / imageBytes.size)
-    } else 1.0
-
-    val scale = minOf(resolutionScale, sizeScale)
-    if (scale >= 1.0) return imageBytes
-
-    val newWidth = (w * scale).toInt().coerceAtLeast(1)
-    val newHeight = (h * scale).toInt().coerceAtLeast(1)
-
-    val resized = BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB)
-    val g2d = resized.createGraphics()
-    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-    g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null)
-    g2d.dispose()
-
-    val outputStream = ByteArrayOutputStream()
-    ImageIO.write(resized, "jpeg", outputStream)
-    return outputStream.toByteArray()
 }
