@@ -65,6 +65,7 @@ afterEvaluate {
 
 dependencies {
     api(project(":api:models"))
+    implementation(project(":api:ai"))
     implementation(project(":utils"))
     implementation(libs.argon2)
     implementation(libs.asyncapi.ktor)

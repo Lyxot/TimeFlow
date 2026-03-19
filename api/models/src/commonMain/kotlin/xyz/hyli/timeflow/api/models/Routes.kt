@@ -94,6 +94,20 @@ class ApiV1 {
     }
 
     @Serializable
+    @Resource("ai")
+    class Ai(val parent: ApiV1 = ApiV1()) {
+        @Serializable
+        @Resource("extract-schedule")
+        class ExtractSchedule(val parent: Ai = Ai()) {
+            @Serializable
+            data class Payload(
+                val image: String,
+                val stream: Boolean = false
+            )
+        }
+    }
+
+    @Serializable
     @Resource("users")
     class Users(val parent: ApiV1 = ApiV1()) {
         @Serializable

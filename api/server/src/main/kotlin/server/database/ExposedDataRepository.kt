@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.server.database
 
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import xyz.hyli.timeflow.api.models.SelectedSchedule
@@ -372,5 +373,28 @@ class ExposedDataRepository : DataRepository {
         } else {
             false
         }
+    }
+
+    override suspend fun countAiUsage(userId: Int, since: kotlin.time.Instant): Int = dbQuery {
+        AiUsageEntity
+            .find {
+                (AiUsageTable.userId eq userId) and
+                        (AiUsageTable.usedAt greaterEq since)
+            }
+            .count()
+            .toInt()
+    }
+
+    override suspend fun recordAiUsage(userId: Int) {
+        dbQuery {
+            AiUsageEntity.new {
+                this.user = UserEntity[userId]
+                this.usedAt = Clock.System.now()
+            }
+        }
+    }
+
+    override suspend fun isAiUnlimited(userId: Int): Boolean = dbQuery {
+        UserEntity[userId].aiUnlimited
     }
 }

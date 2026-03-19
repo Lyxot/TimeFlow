@@ -25,6 +25,7 @@ fun Application.configureRouting(repository: DataRepository, turnstileService: T
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)
+        aiRoutes(environment.config, repository, log)
         appRoutes(environment.config, log)
     }
 }

@@ -76,7 +76,115 @@
 
 ---
 
-## 5. 云同步逻辑
+## 5. AI API (`/ai`)
+
+使用 LLM 从课程表图片中提取课程信息。
+
+| 方法     | 端点                     | 描述                          | 认证       |
+|:-------|:-----------------------|:----------------------------|:---------|
+| `POST` | `/ai/extract-schedule` | 从课程表图片中提取课程信息。支持流式和非流式两种模式。 | &#10004; |
+
+### 配额限制
+
+每个用户默认每 6 个月可使用 4 次 AI 提取功能。管理员可在数据库中将用户的 `ai_unlimited` 设为 `true` 以解除限制。
+
+### 请求
+
+```json
+POST /api/v1/ai/extract-schedule
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+"image": "<base64_encoded_image>",
+"stream": false
+}
+```
+
+- `image`: Base64 编码的图片。服务端会在图片超过大小或分辨率限制时自动缩放。
+- `stream`: 是否启用流式响应，默认 `false`。
+
+### 非流式响应（`stream: false`，默认）
+
+直接返回 JSON 数组：
+
+```json
+[
+  {"name":"高等数学","teacher":"张三","classroom":"A101","time":[1,2],"weekday":0,"week":[1,2,3,...,16],"note":"必修 3学分"},
+  {"name":"英语","teacher":"李四","classroom":"B202","time":[3,4],"weekday":1,"week":[1,2,3,...,16],"note":null}
+]
+```
+
+### 流式响应（`stream: true`）
+
+与 OpenAI Streaming API 格式一致：
+
+```
+data: <text chunk>
+
+data: <text chunk>
+
+data: [DONE]
+```
+
+客户端累积所有 `data:` 行的文本（忽略 `[DONE]`），然后解析完整文本为 JSONL 格式的课程列表。
+
+### 响应头
+
+| Header             | 描述                     |
+|:-------------------|:-----------------------|
+| `X-Ai-Quota-Used`  | 本次请求后的已用次数             |
+| `X-Ai-Quota-Limit` | 配额上限，`unlimited` 表示无限制 |
+
+### 提取的课程 Schema
+
+每个 JSONL 行对应一个课程，字段如下：
+
+| 字段          | 类型      | 描述                       |
+|:------------|:--------|:-------------------------|
+| `name`      | string  | 课程名称                     |
+| `teacher`   | string? | 授课教师，多位教师用 "/" 分隔        |
+| `classroom` | string? | 上课教室                     |
+| `time`      | int[]   | 节次范围，如 `[1, 3]` 表示第1-3节  |
+| `weekday`   | int     | 星期几，0=周一, 6=周日           |
+| `week`      | int[]?  | 教学周列表，如 `[1,2,3,...,16]` |
+| `note`      | string? | 备注信息（课程类型、学分、课程代码、选课人数等） |
+
+### 服务端配置
+
+| 配置项                     | 环境变量                               | 默认值             | 描述                    |
+|:------------------------|:-----------------------------------|:----------------|:----------------------|
+| `ai.enabled`            | `TIMEFLOW_AI_ENABLED`              | `false`         | 是否启用 AI 提取功能          |
+| `ai.provider`           | `TIMEFLOW_AI_PROVIDER`             | `openai`        | LLM 提供商               |
+| `ai.apiKey`             | `TIMEFLOW_AI_API_KEY`              | (空)             | LLM API 密钥            |
+| `ai.model`              | `TIMEFLOW_AI_MODEL`                | `gpt-4.1-mini`  | 模型 ID                 |
+| `ai.endpoint`           | `TIMEFLOW_AI_ENDPOINT`             | (空)             | 自定义 API 端点 URL        |
+| `ai.maxImageSizeBytes`  | `TIMEFLOW_AI_MAX_IMAGE_SIZE_BYTES` | `2097152` (2MB) | 图片最大字节数，超出时自动缩放       |
+| `ai.maxImageResolution` | `TIMEFLOW_AI_MAX_IMAGE_RESOLUTION` | `2048`          | 图片最大分辨率（长边像素），超出时自动缩放 |
+| `ai.quotaPerHalfYear`   | `TIMEFLOW_AI_QUOTA_PER_HALF_YEAR`  | `4`             | 每用户每6个月的默认配额          |
+
+支持的 `provider` 值: `openai`, `openrouter`, `google`, `anthropic`。
+设置 `ai.endpoint` 后将使用 OpenAI 兼容协议访问该端点（如 NVIDIA API、本地代理等），此时 `provider` 值被忽略。
+
+### 客户端直连 LLM
+
+如果用户提供自己的 API 密钥，客户端可直接使用 `api:ai` 模块中的 `ScheduleExtractor` 调用 LLM，无需经过服务端：
+
+```kotlin
+val extractor = ScheduleExtractor(
+   provider = "openai",
+   apiKey = userApiKey,
+   model = "gpt-4.1-mini",
+   endpoint = "https://integrate.api.nvidia.com/v1/chat/completions" // 可选
+)
+val courses = extractor.extract(imageBase64)
+// 或流式
+extractor.extractStreaming(imageBase64).collect { delta -> ... }
+```
+
+---
+
+## 6. 云同步逻辑
 
 API 不提供专门的 `/sync` 端点。客户端应使用现有的 CRUD API 实现同步功能。
 

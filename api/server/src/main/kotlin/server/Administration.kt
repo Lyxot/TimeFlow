@@ -35,5 +35,10 @@ fun Application.configureAdministration() {
             val limit = if (testing) 2 else 1
             rateLimiter(limit = limit, refillPeriod = 1.minutes)
         }
+        // burst protection for AI extraction (per-user quota is handled in application logic)
+        register(RateLimitName("ai")) {
+            val limit = if (testing) 4 else 2
+            rateLimiter(limit = limit, refillPeriod = 1.minutes)
+        }
     }
 }

@@ -36,6 +36,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var passwordHash by UsersTable.passwordHash
     var selectedScheduleId by UsersTable.selectedScheduleId
     var selectedScheduleUpdatedAt by UsersTable.selectedScheduleUpdatedAt
+    var aiUnlimited by UsersTable.aiUnlimited
 
 
     @OptIn(ExperimentalUuidApi::class)
@@ -136,6 +137,16 @@ class CourseEntity(id: EntityID<Long>) : LongEntity(id) {
             color = color,
             note = note ?: ""
         )
+}
+
+/**
+ * 与 AiUsageTable 对应的 DAO 实体。
+ */
+class AiUsageEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<AiUsageEntity>(AiUsageTable)
+
+    var user by UserEntity referencedOn AiUsageTable.userId
+    var usedAt by AiUsageTable.usedAt
 }
 
 /**

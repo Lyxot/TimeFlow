@@ -96,6 +96,26 @@ http:
     # 是否使用永久重定向（301/308）
     permanentRedirect: true
 
+# AI 课程表识别配置
+ai:
+  # 是否启用 AI 课程表图片提取功能
+  enabled: false
+  # LLM 提供商：openai, openrouter, google, anthropic
+  provider: "openai"
+  # LLM API 密钥
+  apiKey: ""
+  # 模型 ID，如 gpt-4.1-mini, google/gemini-2.5-flash 等
+  model: "gpt-4.1-mini"
+  # 自定义 API 端点 URL（用于 NVIDIA API、本地代理等 OpenAI 兼容服务）
+  # 设置后将忽略 provider，直接使用此端点
+  endpoint: ""
+  # 图片最大字节数，超出时服务端会自动缩放（默认 2MB）
+  maxImageSizeBytes: 2097152
+  # 图片最大分辨率（长边像素），超出时自动缩放
+  maxImageResolution: 2048
+  # 每用户每 6 个月的默认 AI 提取配额
+  quotaPerHalfYear: 4
+
 # Web 应用静态包配置
 webApp:
   # 是否由后端直接托管前端 Web 应用
@@ -103,6 +123,9 @@ webApp:
   # 留空时：若当前构建包含内置 web zip，则直接使用内置资源。
   # 非空时：直接使用这里指定的文件系统路径中的 web app zip。
   zipPath: ""
+  # Web 应用的 URL 路径，默认 "app" 即 /app/
+  # 设置为 "/" 可在根路径提供 Web 应用
+  location: "app"
 
 # Cloudflare Turnstile 人机校验配置
 turnstile:

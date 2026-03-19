@@ -68,6 +68,7 @@ include(":app:ios")
 include(":app:desktop")
 include(":app:web")
 include(":api:models")
+include(":api:ai")
 include(":api:server")
 include(":api:client")
 

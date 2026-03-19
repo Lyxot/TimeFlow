@@ -201,4 +201,25 @@ interface DataRepository {
      * @return True if a course was found and deleted, false otherwise.
      */
     suspend fun deleteCourse(userId: Int, scheduleLocalId: Short, courseLocalId: Short): Boolean
+
+    /**
+     * Counts the number of AI extraction requests made by a user since a given time.
+     * @param userId The ID of the user.
+     * @param since Only count usage after this timestamp.
+     * @return The number of requests.
+     */
+    suspend fun countAiUsage(userId: Int, since: kotlin.time.Instant): Int
+
+    /**
+     * Records an AI extraction request for a user.
+     * @param userId The ID of the user.
+     */
+    suspend fun recordAiUsage(userId: Int)
+
+    /**
+     * Checks if a user has unlimited AI extraction access.
+     * @param userId The ID of the user.
+     * @return True if the user has unlimited access.
+     */
+    suspend fun isAiUnlimited(userId: Int): Boolean
 }

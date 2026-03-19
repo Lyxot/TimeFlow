@@ -36,6 +36,7 @@ object UsersTable : IntIdTable("users") {
     val passwordHash = varchar("password_hash", 255)
     val selectedScheduleId = short("selected_schedule_id").nullable()
     val selectedScheduleUpdatedAt = timestamp("selected_schedule_updated_at").nullable()
+    val aiUnlimited = bool("ai_unlimited").default(false)
 }
 
 /**
@@ -107,6 +108,18 @@ object CoursesTable : LongIdTable("courses") {
     init {
         uniqueIndex(scheduleId, localId)
     }
+}
+
+/**
+ * AI 功能使用记录表
+ */
+object AiUsageTable : IntIdTable("ai_usage") {
+    val userId = reference(
+        "user_id",
+        UsersTable.id,
+        ReferenceOption.CASCADE
+    ).index()
+    val usedAt = timestamp("used_at")
 }
 
 /**

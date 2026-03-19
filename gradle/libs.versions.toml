@@ -73,6 +73,7 @@ jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jb
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 koog-ktor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
 korlibs-compression = { module = "com.soywiz:korlibs-compression", version.ref = "korlibs" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: TimeFlow API
   description: The RESTful API for the TimeFlow application, supporting cloud sync and data management.
-  version: 1.2.0
+  version: 1.3.0
 
 servers:
   - url: /api/v1
@@ -177,6 +177,45 @@ components:
       type: object
       properties:
         enabled: { type: boolean, description: "Whether email verification is enabled for registration." }
+
+    # AI Schemas
+    AiExtractScheduleRequest:
+      type: object
+      required: [ image ]
+      properties:
+        image:
+          type: string
+          description: "Base64-encoded image of a schedule/timetable."
+        stream:
+          type: boolean
+          default: false
+          description: "If true, stream the response in OpenAI-compatible format. If false (default), return a JSON array."
+    AiExtractedCourse:
+      type: object
+      description: "A single course extracted from a schedule image by the LLM."
+      properties:
+        name: { type: string, description: "Course name." }
+        teacher: { type: string, nullable: true, description: "Teacher name. Multiple teachers separated by '/'." }
+        classroom: { type: string, nullable: true, description: "Classroom or location." }
+        time:
+          type: array
+          items: { type: integer }
+          minItems: 2
+          maxItems: 2
+          description: "Class period range, e.g. [1, 3] for periods 1-3."
+        weekday: { type: integer, description: "Day of the week. 0=Monday, 6=Sunday." }
+        week:
+          type: array
+          nullable: true
+          items: { type: integer }
+          description: "Teaching week numbers, e.g. [1,2,3,...,16]."
+        note: { type: string, nullable: true, description: "Additional info such as course type, credits, course code, enrollment." }
+    AiQuotaExceededResponse:
+      type: object
+      properties:
+        error: { type: string }
+        used: { type: integer, description: "Number of requests used in the current 6-month period." }
+        limit: { type: integer, description: "Maximum requests allowed per 6-month period." }
 
 # API Paths
 paths:
@@ -387,6 +426,60 @@ paths:
         '204': { description: Selected schedule updated successfully }
         '401':
           description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
+  # AI Endpoints
+  /ai/extract-schedule:
+    post:
+      tags: [ AI ]
+      summary: Extract courses from a schedule image
+      description: >
+        Uses an LLM to extract course information from a schedule/timetable image.
+        Set `stream: true` for OpenAI-compatible streaming, or omit for a JSON array response.
+        Each user has a quota of requests per 6-month period (default: 4).
+        Quota info is returned in response headers.
+      security: [ { bearerAuth: [ ] } ]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/AiExtractScheduleRequest' } }
+      responses:
+        '200':
+          description: >
+            When stream=false (default): JSON array of extracted courses.
+            When stream=true: OpenAI-compatible streaming with `data:` lines, terminated by `data: [DONE]`.
+          headers:
+            X-Ai-Quota-Used:
+              schema: { type: integer }
+              description: "Number of requests used after this request."
+            X-Ai-Quota-Limit:
+              schema: { type: string }
+              description: "Quota limit, or 'unlimited'."
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AiExtractedCourse' }
+                description: "Returned when stream=false."
+            text/event-stream:
+              schema:
+                type: string
+                description: "Returned when stream=true. `data:` lines with text chunks, terminated by `data: [DONE]`."
+        '400':
+          description: Invalid base64 image data or empty image
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '429':
+          description: AI extraction quota exceeded
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/AiQuotaExceededResponse' } }
+        '500':
+          description: AI extraction failed (LLM error)
           content:
             application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
