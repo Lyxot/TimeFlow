@@ -22,6 +22,7 @@ import org.slf4j.Logger
 import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.server.database.DataRepository
+import xyz.hyli.timeflow.server.utils.authedGet
 import xyz.hyli.timeflow.server.utils.authedPost
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -57,7 +58,32 @@ fun Route.aiRoutes(config: ApplicationConfig, repository: DataRepository, log: L
 
     log.info("AI schedule extraction enabled with provider '{}', model '{}'", provider, model)
 
+    val quotaWindow = 182.days
+
     authenticate("access-auth") {
+        authedGet<ApiV1.Ai.Info>(repository) { _, user ->
+            val since = Clock.System.now() - quotaWindow
+            val used = repository.countAiUsage(user.id, since)
+            val unlimited = repository.isAiUnlimited(user.id)
+
+            // Next quota refresh = earliest usage in window + 182 days (when that slot expires)
+            val refreshAt = if (!unlimited && used >= quotaPerHalfYear) {
+                repository.earliestAiUsage(user.id, since)?.let { it + quotaWindow }
+            } else null
+
+            call.respond(
+                HttpStatusCode.OK,
+                ApiV1.Ai.Info.Response(
+                    enabled = true,
+                    quotaUsed = used,
+                    quotaLimit = if (unlimited) null else quotaPerHalfYear,
+                    quotaRefreshAt = refreshAt,
+                    maxImageSizeBytes = maxImageSizeBytes,
+                    maxImageResolution = maxImageResolution
+                )
+            )
+        }
+
         rateLimit(RateLimitName("ai")) {
             authedPost<ApiV1.Ai.ExtractSchedule>(repository) { _, user ->
                 // 1. Check quota

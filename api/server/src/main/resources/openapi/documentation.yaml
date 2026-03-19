@@ -216,6 +216,14 @@ components:
         error: { type: string }
         used: { type: integer, description: "Number of requests used in the current 6-month period." }
         limit: { type: integer, description: "Maximum requests allowed per 6-month period." }
+    AiInfoResponse:
+      type: object
+      properties:
+        enabled: { type: boolean, description: "Whether AI extraction is enabled on this server." }
+        quotaUsed: { type: integer, description: "Number of requests used in the current 6-month period." }
+        quotaLimit: { type: integer, nullable: true, description: "Quota limit per 6-month period. Null if unlimited." }
+        maxImageSizeBytes: { type: integer, format: int64, description: "Maximum image file size in bytes before auto-resize." }
+        maxImageResolution: { type: integer, description: "Maximum image resolution (longest edge in pixels) before auto-resize." }
 
 # API Paths
 paths:
@@ -430,6 +438,20 @@ paths:
             application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
   # AI Endpoints
+  /ai/info:
+    get:
+      tags: [ AI ]
+      summary: Get AI feature info, quota, and image limits
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: AI feature status and limits for the current user
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/AiInfoResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
   /ai/extract-schedule:
     post:
       tags: [ AI ]

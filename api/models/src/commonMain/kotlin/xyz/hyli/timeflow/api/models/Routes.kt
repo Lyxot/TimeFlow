@@ -17,6 +17,7 @@ import xyz.hyli.timeflow.data.Course
 import xyz.hyli.timeflow.data.CourseSummary
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
+import kotlin.time.Instant
 
 @Serializable
 @Resource("/ping")
@@ -103,6 +104,20 @@ class ApiV1 {
             data class Payload(
                 val image: String,
                 val stream: Boolean = false
+            )
+        }
+
+        @Serializable
+        @Resource("info")
+        class Info(val parent: Ai = Ai()) {
+            @Serializable
+            data class Response(
+                val enabled: Boolean,
+                val quotaUsed: Int,
+                val quotaLimit: Int?,
+                val quotaRefreshAt: Instant?,
+                val maxImageSizeBytes: Long,
+                val maxImageResolution: Int
             )
         }
     }

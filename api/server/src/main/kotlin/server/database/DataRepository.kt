@@ -211,6 +211,13 @@ interface DataRepository {
     suspend fun countAiUsage(userId: Int, since: kotlin.time.Instant): Int
 
     /**
+     * Returns the earliest AI usage timestamp within the given window.
+     * Used to calculate when the next quota slot frees up.
+     * @return The earliest usage timestamp, or null if no usage exists in the window.
+     */
+    suspend fun earliestAiUsage(userId: Int, since: kotlin.time.Instant): kotlin.time.Instant?
+
+    /**
      * Records an AI extraction request for a user.
      * @param userId The ID of the user.
      */

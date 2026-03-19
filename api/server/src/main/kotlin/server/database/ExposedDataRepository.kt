@@ -385,6 +385,16 @@ class ExposedDataRepository : DataRepository {
             .toInt()
     }
 
+    override suspend fun earliestAiUsage(userId: Int, since: kotlin.time.Instant): kotlin.time.Instant? = dbQuery {
+        AiUsageEntity
+            .find {
+                (AiUsageTable.userId eq userId) and
+                        (AiUsageTable.usedAt greaterEq since)
+            }
+            .minByOrNull { it.usedAt }
+            ?.usedAt
+    }
+
     override suspend fun recordAiUsage(userId: Int) {
         dbQuery {
             AiUsageEntity.new {
