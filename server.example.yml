@@ -100,21 +100,58 @@ http:
 ai:
   # 是否启用 AI 课程表图片提取功能
   enabled: false
-  # LLM 提供商：openai, openrouter, google, anthropic
-  provider: "openai"
-  # LLM API 密钥
-  apiKey: ""
-  # 模型 ID，如 gpt-4.1-mini, google/gemini-2.5-flash 等
-  model: "gpt-4.1-mini"
-  # 自定义 API 端点 URL（用于 NVIDIA API、本地代理等 OpenAI 兼容服务）
-  # 设置后将忽略 provider，直接使用此端点
-  endpoint: ""
   # 图片最大字节数，超出时服务端会自动缩放（默认 2MB）
   maxImageSizeBytes: 2097152
   # 图片最大分辨率（长边像素），超出时自动缩放
   maxImageResolution: 2048
   # 每用户每 6 个月的默认 AI 提取配额
   quotaPerHalfYear: 4
+
+  # LLM 提供商配置，每个提供商定义协议格式、API 密钥和可选的自定义端点
+  # format 支持: openai, openrouter, google, anthropic, ollama
+  # 每个 format 都支持通过 endpoint 自定义 API 地址
+  providers:
+    # 示例: NVIDIA API (OpenAI 兼容)
+    nvidia:
+      format: "openai"
+      apiKey: ""
+      endpoint: "https://integrate.api.nvidia.com/v1/chat/completions"
+    # 示例: OpenRouter
+    # openrouter:
+    #   format: "openrouter"
+    #   apiKey: ""
+    # 示例: OpenAI 直连
+    # openai:
+    #   format: "openai"
+    #   apiKey: ""
+    # 示例: Google Gemini
+    # google:
+    #   format: "google"
+    #   apiKey: ""
+    # 示例: Anthropic Claude
+    # anthropic:
+    #   format: "anthropic"
+    #   apiKey: ""
+    # 示例: 本地 Ollama
+    # ollama:
+    #   format: "ollama"
+    #   apiKey: ""
+    #   endpoint: "http://localhost:11434"
+
+  # 可用模型列表，每个模型引用一个 provider
+  # weight: 权重，越大被选中概率越高（默认 1）
+  # rpm: 每分钟请求上限，0 表示不限（可选）
+  # rpd: 每天请求上限，0 表示不限（可选）
+  # 请求时按权重随机选择模型，若失败则自动尝试其他模型，全部失败才返回错误
+  models:
+    - id: "qwen/qwen3.5-122b-a10b"
+      provider: nvidia
+      weight: 1
+    # - id: "google/gemini-2.5-flash"
+    #   provider: openrouter
+    #   weight: 2
+    #   rpm: 10
+    #   rpd: 1000
 
 # Web 应用静态包配置
 webApp:

@@ -18,6 +18,8 @@ import xyz.hyli.timeflow.server.routes.*
 fun Application.configureRouting(repository: DataRepository, turnstileService: TurnstileService, tokenManager: TokenManager) {
     install(Resources)
     val emailService = EmailService(environment.config)
+    val aiConfig = AiConfig.parse(environment.config)
+    val modelSelector = ModelSelector(aiConfig.providers, aiConfig.models)
 
     routing {
         utilRoutes()
@@ -25,7 +27,7 @@ fun Application.configureRouting(repository: DataRepository, turnstileService: T
         usersRoutes(repository)
         schedulesRoutes(repository)
         coursesRoutes(repository)
-        aiRoutes(environment.config, repository, log)
+        aiRoutes(aiConfig, modelSelector, repository, log)
         appRoutes(environment.config, log)
     }
 }

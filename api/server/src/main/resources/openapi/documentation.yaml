@@ -222,6 +222,7 @@ components:
         enabled: { type: boolean, description: "Whether AI extraction is enabled on this server." }
         quotaUsed: { type: integer, description: "Number of requests used in the current 6-month period." }
         quotaLimit: { type: integer, nullable: true, description: "Quota limit per 6-month period. Null if unlimited." }
+        quotaRefreshAt: { type: string, format: date-time, nullable: true, description: "When the next quota slot becomes available. Null if quota not exhausted or unlimited." }
         maxImageSizeBytes: { type: integer, format: int64, description: "Maximum image file size in bytes before auto-resize." }
         maxImageResolution: { type: integer, description: "Maximum image resolution (longest edge in pixels) before auto-resize." }
 
@@ -472,6 +473,9 @@ paths:
             When stream=false (default): JSON array of extracted courses.
             When stream=true: OpenAI-compatible streaming with `data:` lines, terminated by `data: [DONE]`.
           headers:
+            X-Ai-Model:
+              schema: { type: string }
+              description: "The model ID that handled this request."
             X-Ai-Quota-Used:
               schema: { type: integer }
               description: "Number of requests used after this request."
@@ -501,7 +505,11 @@ paths:
           content:
             application/json: { schema: { $ref: '#/components/schemas/AiQuotaExceededResponse' } }
         '500':
-          description: AI extraction failed (LLM error)
+          description: All AI models failed
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '503':
+          description: All AI models are currently rate-limited
           content:
             application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 

@@ -134,6 +134,7 @@ data: [DONE]
 
 | Header             | 描述                     |
 |:-------------------|:-----------------------|
+| `X-Ai-Model`       | 处理本次请求的模型 ID           |
 | `X-Ai-Quota-Used`  | 本次请求后的已用次数             |
 | `X-Ai-Quota-Limit` | 配额上限，`unlimited` 表示无限制 |
 
@@ -153,19 +154,60 @@ data: [DONE]
 
 ### 服务端配置
 
-| 配置项                     | 环境变量                               | 默认值             | 描述                    |
-|:------------------------|:-----------------------------------|:----------------|:----------------------|
-| `ai.enabled`            | `TIMEFLOW_AI_ENABLED`              | `false`         | 是否启用 AI 提取功能          |
-| `ai.provider`           | `TIMEFLOW_AI_PROVIDER`             | `openai`        | LLM 提供商               |
-| `ai.apiKey`             | `TIMEFLOW_AI_API_KEY`              | (空)             | LLM API 密钥            |
-| `ai.model`              | `TIMEFLOW_AI_MODEL`                | `gpt-4.1-mini`  | 模型 ID                 |
-| `ai.endpoint`           | `TIMEFLOW_AI_ENDPOINT`             | (空)             | 自定义 API 端点 URL        |
-| `ai.maxImageSizeBytes`  | `TIMEFLOW_AI_MAX_IMAGE_SIZE_BYTES` | `2097152` (2MB) | 图片最大字节数，超出时自动缩放       |
-| `ai.maxImageResolution` | `TIMEFLOW_AI_MAX_IMAGE_RESOLUTION` | `2048`          | 图片最大分辨率（长边像素），超出时自动缩放 |
-| `ai.quotaPerHalfYear`   | `TIMEFLOW_AI_QUOTA_PER_HALF_YEAR`  | `4`             | 每用户每6个月的默认配额          |
+**基础配置：**
 
-支持的 `provider` 值: `openai`, `openrouter`, `google`, `anthropic`。
-设置 `ai.endpoint` 后将使用 OpenAI 兼容协议访问该端点（如 NVIDIA API、本地代理等），此时 `provider` 值被忽略。
+| 配置项                     | 默认值             | 描述                    |
+|:------------------------|:----------------|:----------------------|
+| `ai.enabled`            | `false`         | 是否启用 AI 提取功能          |
+| `ai.maxImageSizeBytes`  | `2097152` (2MB) | 图片最大字节数，超出时自动缩放       |
+| `ai.maxImageResolution` | `2048`          | 图片最大分辨率（长边像素），超出时自动缩放 |
+| `ai.quotaPerHalfYear`   | `4`             | 每用户每6个月的默认配额          |
+
+**提供商配置 (`ai.providers.<name>`)：**
+
+每个提供商有一个自定义名称，配置协议格式、API 密钥和可选的自定义端点。
+
+| 字段         | 描述                                                       |
+|:-----------|:---------------------------------------------------------|
+| `format`   | 协议格式：`openai`、`openrouter`、`google`、`anthropic`、`ollama` |
+| `apiKey`   | API 密钥                                                   |
+| `endpoint` | 自定义端点 URL（可选，用于 NVIDIA API、本地代理等）                        |
+
+**模型配置 (`ai.models[]`)：**
+
+| 字段         | 默认值  | 描述             |
+|:-----------|:-----|:---------------|
+| `id`       | (必填) | 模型 ID          |
+| `provider` | (必填) | 引用的提供商名称       |
+| `weight`   | `1`  | 权重，越大被选中概率越高   |
+| `rpm`      | `0`  | 每分钟请求上限，0 表示不限 |
+| `rpd`      | `0`  | 每天请求上限，0 表示不限  |
+
+请求时按权重随机选择模型；若选中的模型调用失败，自动尝试其他模型；仅当所有模型均不可用时才返回错误。
+
+**配置示例：**
+
+```yaml
+ai:
+  enabled: true
+  providers:
+    nvidia:
+      format: "openai"
+      apiKey: "nvapi-..."
+      endpoint: "https://integrate.api.nvidia.com/v1/chat/completions"
+    openrouter:
+      format: "openrouter"
+      apiKey: "sk-or-..."
+  models:
+    - id: "qwen/qwen3.5-122b-a10b"
+      provider: nvidia
+      weight: 1
+    - id: "google/gemini-2.5-flash"
+      provider: openrouter
+      weight: 2
+      rpm: 10
+      rpd: 1000
+```
 
 ### 客户端直连 LLM
 

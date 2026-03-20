@@ -10,13 +10,16 @@
 package xyz.hyli.timeflow.ai
 
 import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.anthropic.AnthropicClientSettings
+import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
+import ai.koog.prompt.executor.clients.google.GoogleClientSettings
+import ai.koog.prompt.executor.clients.google.GoogleLLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAIClientSettings
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
+import ai.koog.prompt.executor.clients.openrouter.OpenRouterClientSettings
+import ai.koog.prompt.executor.clients.openrouter.OpenRouterLLMClient
 import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
-import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
-import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenRouterExecutor
+import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
@@ -30,7 +33,12 @@ import kotlinx.serialization.json.Json
 
 /**
  * 使用 Koog 从课程表图片中提取课程信息。
- * 支持 OpenAI、Google、OpenRouter、Anthropic 及任何 OpenAI 兼容 API。
+ * 支持 OpenAI、OpenRouter、Google、Anthropic、Mistral、Ollama 及任何 OpenAI 兼容 API。
+ *
+ * @param provider 协议格式: "openai", "openrouter", "google", "anthropic", "ollama"
+ * @param apiKey API 密钥（ollama 不需要）
+ * @param model 模型 ID
+ * @param endpoint 自定义端点 URL（可选，每个 provider 都支持）
  */
 class ScheduleExtractor(
     private val provider: String,
@@ -43,29 +51,64 @@ class ScheduleExtractor(
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun createExecutor(): SingleLLMPromptExecutor {
-        // If a custom endpoint is provided, use OpenAI-compatible client with that base URL
-        if (!endpoint.isNullOrBlank()) {
-            // Parse endpoint: e.g. "https://integrate.api.nvidia.com/v1/chat/completions"
-            // Extract base URL and chat completions path
-            val (baseUrl, chatPath) = parseEndpoint(endpoint)
-            val settings = OpenAIClientSettings(baseUrl, chatCompletionsPath = chatPath)
-            return SingleLLMPromptExecutor(OpenAILLMClient(apiKey, settings))
-        }
+        val ep = endpoint?.takeIf { it.isNotBlank() }
 
         return when (provider.lowercase()) {
-            "openrouter" -> simpleOpenRouterExecutor(apiKey)
-            "google" -> simpleGoogleAIExecutor(apiKey)
-            "anthropic" -> simpleAnthropicExecutor(apiKey)
-            else -> simpleOpenAIExecutor(apiKey)
+            "openrouter" -> {
+                if (ep != null) {
+                    val (baseUrl, chatPath) = parseEndpoint(ep)
+                    SingleLLMPromptExecutor(OpenRouterLLMClient(apiKey, OpenRouterClientSettings(baseUrl, chatPath)))
+                } else {
+                    SingleLLMPromptExecutor(OpenRouterLLMClient(apiKey))
+                }
+            }
+
+            "google" -> {
+                if (ep != null) {
+                    val (baseUrl, _) = parseEndpoint(ep)
+                    SingleLLMPromptExecutor(GoogleLLMClient(apiKey, GoogleClientSettings(baseUrl)))
+                } else {
+                    SingleLLMPromptExecutor(GoogleLLMClient(apiKey))
+                }
+            }
+
+            "anthropic" -> {
+                if (ep != null) {
+                    val (baseUrl, _) = parseEndpoint(ep)
+                    SingleLLMPromptExecutor(AnthropicLLMClient(apiKey, AnthropicClientSettings(baseUrl = baseUrl)))
+                } else {
+                    SingleLLMPromptExecutor(AnthropicLLMClient(apiKey))
+                }
+            }
+
+            "ollama" -> {
+                SingleLLMPromptExecutor(OllamaClient(ep ?: "http://localhost:11434"))
+            }
+
+            else -> {
+                // "openai" and any unknown format: use OpenAI-compatible client
+                if (ep != null) {
+                    val (baseUrl, chatPath) = parseEndpoint(ep)
+                    SingleLLMPromptExecutor(
+                        OpenAILLMClient(
+                            apiKey,
+                            OpenAIClientSettings(baseUrl, chatCompletionsPath = chatPath)
+                        )
+                    )
+                } else {
+                    SingleLLMPromptExecutor(OpenAILLMClient(apiKey))
+                }
+            }
         }
     }
 
     private fun resolveModel(): LLModel {
-        val llmProvider = when {
-            !endpoint.isNullOrBlank() -> LLMProvider.OpenAI // custom endpoint uses OpenAI-compatible protocol
-            provider.lowercase() == "openrouter" -> LLMProvider.OpenRouter
-            provider.lowercase() == "google" -> LLMProvider.Google
-            provider.lowercase() == "anthropic" -> LLMProvider.Anthropic
+        val llmProvider = when (provider.lowercase()) {
+            "openrouter" -> LLMProvider.OpenRouter
+            "google" -> LLMProvider.Google
+            "anthropic" -> LLMProvider.Anthropic
+            "mistral" -> LLMProvider.MistralAI
+            "ollama" -> LLMProvider.Ollama
             else -> LLMProvider.OpenAI
         }
         return LLModel(
@@ -140,13 +183,12 @@ class ScheduleExtractor(
 
     companion object {
         /**
-         * Parse a full endpoint URL into (baseUrl, chatCompletionsPath).
+         * Parse a full endpoint URL into (baseUrl, path).
          * e.g. "https://integrate.api.nvidia.com/v1/chat/completions"
          *   -> ("https://integrate.api.nvidia.com", "v1/chat/completions")
          */
         internal fun parseEndpoint(endpoint: String): Pair<String, String> {
             val url = endpoint.trimEnd('/')
-            // Find the path after the host
             val protocolEnd = url.indexOf("://")
             if (protocolEnd == -1) {
                 return url to "v1/chat/completions"
