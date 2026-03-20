@@ -40,6 +40,11 @@ data class AiConfig(
     companion object {
         fun parse(config: ApplicationConfig): AiConfig {
             val enabled = config.propertyOrNull("ai.enabled")?.getString()?.toBoolean() ?: false
+            if (!enabled) return AiConfig(false, emptyMap(), emptyList(),
+                config.propertyOrNull("ai.maxImageSizeBytes")?.getString()?.toLongOrNull() ?: 2_097_152L,
+                config.propertyOrNull("ai.maxImageResolution")?.getString()?.toIntOrNull() ?: 2048,
+                config.propertyOrNull("ai.quotaPerHalfYear")?.getString()?.toIntOrNull() ?: 4
+            )
 
             val providers = parseProviders(config)
             val models = parseModels(config, providers)

@@ -70,13 +70,16 @@ fun Application.module() {
     configureRouting(repository, turnstileService, tokenManager)
 
     // Periodic cleanup of expired tokens and verification codes (every hour)
-    launch {
-        while (isActive) {
-            delay(3_600_000L)
-            try {
-                repository.cleanupExpiredTokens()
-            } catch (e: Exception) {
-                log.warn("Token cleanup failed: {}", e.message)
+    // Skipped in test mode to avoid UncompletedCoroutinesError
+    if (!isTestMode) {
+        launch {
+            while (isActive) {
+                delay(3_600_000L)
+                try {
+                    repository.cleanupExpiredTokens()
+                } catch (e: Exception) {
+                    log.warn("Token cleanup failed: {}", e.message)
+                }
             }
         }
     }

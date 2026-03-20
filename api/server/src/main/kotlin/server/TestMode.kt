@@ -14,4 +14,4 @@ package xyz.hyli.timeflow.server
  * Cannot be activated through config files or environment variables,
  * preventing accidental use in production.
  */
-internal val isTestMode: Boolean = System.getProperty("timeflow.testing")?.toBoolean() ?: false
+internal val isTestMode: Boolean get() = System.getProperty("timeflow.testing")?.toBoolean() ?: false
