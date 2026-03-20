@@ -97,7 +97,7 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                 val payload = call.receive<ApiV1.Ai.ExtractSchedule.Payload>()
                 val imageBytes = try {
                     Base64.decode(payload.image)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid base64 image data"))
                     return@authedPost
                 }
@@ -154,8 +154,8 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                                 }
                             }
                         } else {
-                            val courses = extractor.extract(imageBase64, resized.format)
-                            call.respond(HttpStatusCode.OK, courses)
+                            val result = extractor.extractFull(imageBase64, resized.format)
+                            call.respond(HttpStatusCode.OK, result.toSchedule())
                         }
 
                         // Success — record usage and rate limit hit

@@ -247,33 +247,7 @@ private fun ColorContent(
 // ==================== 颜色定义和工具类 ====================
 
 object ColorDefinitions {
-    val COLORS_RED = Color(0xFFF44336)
-    val COLORS_PINK = Color(0xFFE91E63)
-    val COLORS_PURPLE = Color(0xFF9C27B0)
-    val COLORS_DEEP_PURPLE = Color(0xFF673AB7)
-    val COLORS_INDIGO = Color(0xFF3F51B5)
-    val COLORS_BLUE = Color(0xFF2196F3)
-    val COLORS_LIGHT_BLUE = Color(0xFF03A9F4)
-    val COLORS_CYAN = Color(0xFF00BCD4)
-    val COLORS_TEAL = Color(0xFF009688)
-    val COLORS_GREEN = Color(0xFF4CAF50)
-    val COLORS_LIGHT_GREEN = Color(0xFF8BC34A)
-    val COLORS_LIME = Color(0xFFCDDC39)
-    val COLORS_YELLOW = Color(0xFFFFEB3B)
-    val COLORS_AMBER = Color(0xFFFFC107)
-    val COLORS_ORANGE = Color(0xFFFF9800)
-    val COLORS_DEEP_ORANGE = Color(0xFFFF5722)
-    val COLORS_BROWN = Color(0xFF795548)
-    val COLORS_GRAY = Color(0xFF9E9E9E)
-    val COLORS_BLUE_GRAY = Color(0xFF607D8B)
-
-    val COLORS = listOf(
-        COLORS_RED, COLORS_PINK, COLORS_PURPLE, COLORS_DEEP_PURPLE,
-        COLORS_INDIGO, COLORS_BLUE, COLORS_LIGHT_BLUE, COLORS_CYAN,
-        COLORS_TEAL, COLORS_GREEN, COLORS_LIGHT_GREEN, COLORS_LIME,
-        COLORS_YELLOW, COLORS_AMBER, COLORS_ORANGE, COLORS_DEEP_ORANGE,
-        COLORS_BROWN, COLORS_GRAY, COLORS_BLUE_GRAY
-    )
+    val COLORS = xyz.hyli.timeflow.utils.CourseColors.ALL.map { Color(it) }
 }
 
 @Composable

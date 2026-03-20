@@ -107,13 +107,20 @@ Authorization: Bearer <access_token>
 
 ### 非流式响应（`stream: false`，默认）
 
-直接返回 JSON 数组：
+直接返回完整的 `Schedule` 对象（与 `GET /schedules/{id}` 返回格式一致），包含从图片中提取的所有课程和课程表元数据：
 
 ```json
-[
-  {"name":"高等数学","teacher":"张三","classroom":"A101","time":[1,2],"weekday":0,"week":[1,2,3,...,16],"note":"必修 3学分"},
-  {"name":"英语","teacher":"李四","classroom":"B202","time":[3,4],"weekday":1,"week":[1,2,3,...,16],"note":null}
-]
+{
+  "name": "课程表",
+  "courses": {
+    "0": {"name":"高等数学","teacher":"张三","classroom":"A101","time":{"start":1,"end":2},...},
+    "1": {"name":"英语","teacher":"李四","classroom":"B202","time":{"start":3,"end":4},...}
+  },
+  "termStartDate": {"year":2026,"month":3,"day":1},
+  "termEndDate": {"year":2026,"month":7,"day":10},
+  "displayWeekends": false,
+  ...
+}
 ```
 
 ### 流式响应（`stream: true`）

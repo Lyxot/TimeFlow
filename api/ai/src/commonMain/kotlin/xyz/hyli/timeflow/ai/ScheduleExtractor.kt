@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * 使用 Koog 从课程表图片中提取课程信息。
@@ -136,17 +138,17 @@ class ScheduleExtractor(
     }
 
     /**
-     * 从图片中提取课程信息（非流式）。
+     * 从图片中提取完整信息（非流式），包括课程表元数据和课程列表。
      * @param imageBase64 Base64 编码的图片数据
      * @param format 图片格式，如 "png"、"jpeg"，默认自动检测
-     * @return 提取出的课程列表
+     * @return 提取结果，包含课程表信息和课程列表
      */
-    suspend fun extract(imageBase64: String, format: String? = null): List<ExtractedCourse> {
+    suspend fun extractFull(imageBase64: String, format: String? = null): ExtractionResult {
         val prompt = buildPrompt(imageBase64, format ?: detectImageFormatFromBase64(imageBase64))
         val llmModel = resolveModel()
         val responses = executor.execute(prompt, llmModel, emptyList())
         val text = responses.joinToString("") { it.content }
-        return parseJsonLines(text)
+        return parseResult(text)
     }
 
     /**
@@ -164,17 +166,32 @@ class ScheduleExtractor(
     }
 
     /**
-     * 解析 JSONL 格式的 LLM 输出为 ExtractedCourse 列表。
+     * 解析 JSONL 格式的 LLM 输出为完整结果，包含课程表信息和课程列表。
      */
-    fun parseJsonLines(text: String): List<ExtractedCourse> {
-        return text.lines()
-            .map { it.trim() }
-            .filter { it.startsWith("{") && it.endsWith("}") }
-            .mapNotNull { line ->
+    fun parseResult(text: String): ExtractionResult {
+        var scheduleInfo: ExtractedScheduleInfo? = null
+        val courses = mutableListOf<ExtractedCourse>()
+
+        for (line in text.lines().map { it.trim() }) {
+            if (!line.startsWith("{") || !line.endsWith("}")) continue
+            // Check if this is a schedule info line (has "_schedule" field)
+            val isScheduleLine = runCatching {
+                val obj = json.decodeFromString(JsonObject.serializer(), line)
+                obj["_schedule"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() == true
+            }.getOrDefault(false)
+
+            if (isScheduleLine) {
+                scheduleInfo = runCatching {
+                    json.decodeFromString(ExtractedScheduleInfo.serializer(), line)
+                }.getOrNull()
+            } else {
                 runCatching {
                     json.decodeFromString(ExtractedCourse.serializer(), line)
-                }.getOrNull()
+                }.getOrNull()?.let { courses.add(it) }
             }
+        }
+
+        return ExtractionResult(scheduleInfo, courses)
     }
 
     override fun close() {

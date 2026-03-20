@@ -38,6 +38,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":data"))
+            implementation(project(":utils"))
             implementation(libs.koog.agents)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)

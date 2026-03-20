@@ -14,8 +14,7 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ScheduleExtractorTest {
 
@@ -28,19 +27,41 @@ class ScheduleExtractorTest {
         )
 
         val jsonl = """
+            {"_schedule":true,"name":"测试课程表","totalWeeks":16,"displayWeekends":false,"morningLessons":4,"afternoonLessons":4}
             {"name":"数学","teacher":"张三","classroom":"A101","time":[1,2],"weekday":0,"week":[1,2,3,4,5]}
             {"name":"英语","teacher":"李四","classroom":"B202","time":[3,4],"weekday":1,"week":[1,2,3]}
             some garbage line
             {"name":"物理","teacher":null,"classroom":null,"time":[5,6],"weekday":2,"week":[1,3,5,7]}
         """.trimIndent()
 
-        val courses = extractor.parseJsonLines(jsonl)
-        assertTrue(courses.size == 3, "Expected 3 courses, got ${courses.size}")
-        assertTrue(courses[0].name == "数学")
-        assertTrue(courses[0].weekday == 0)
-        assertTrue(courses[0].time == listOf(1, 2))
-        assertTrue(courses[1].name == "英语")
-        assertTrue(courses[2].teacher == null)
+        val result = extractor.parseResult(jsonl)
+
+        // Schedule info
+        val info = result.scheduleInfo
+        assertNotNull(info, "Expected schedule info")
+        assertEquals("测试课程表", info.name)
+        assertEquals(16, info.totalWeeks)
+        assertEquals(false, info.displayWeekends)
+        assertEquals(4, info.morningLessons)
+        assertEquals(4, info.afternoonLessons)
+        assertNull(info.eveningLessons)
+
+        // Courses
+        val courses = result.courses
+        assertEquals(3, courses.size)
+        assertEquals("数学", courses[0].name)
+        assertEquals(0, courses[0].weekday)
+        assertEquals(listOf(1, 2), courses[0].time)
+        assertEquals("英语", courses[1].name)
+        assertNull(courses[2].teacher)
+
+        // toSchedule
+        val schedule = result.toSchedule()
+        assertEquals("测试课程表", schedule.name)
+        assertEquals(3, schedule.courses.size)
+        assertEquals(false, schedule.displayWeekends)
+        assertEquals(4, schedule.lessonTimePeriodInfo.morning.size)
+        assertEquals(4, schedule.lessonTimePeriodInfo.afternoon.size)
 
         extractor.close()
     }
@@ -100,7 +121,7 @@ class ScheduleExtractorTest {
         runBlocking {
             // Try non-streaming first
             println("--- Non-streaming extraction ---")
-            val courses = extractor.extract(imageBase64)
+            val courses = extractor.extractFull(imageBase64).courses
             println("Extracted ${courses.size} courses:")
             courses.forEach { course ->
                 println("  ${course.name} | ${course.teacher} | ${course.classroom} | time=${course.time} | weekday=${course.weekday} | weeks=${course.week}")
@@ -119,7 +140,7 @@ class ScheduleExtractorTest {
             println("\n--- End streaming ---")
 
             val fullText = chunks.joinToString("")
-            val streamedCourses = extractor.parseJsonLines(fullText)
+            val streamedCourses = extractor.parseResult(fullText).courses
             println("Streamed ${streamedCourses.size} courses")
             assertTrue(streamedCourses.isNotEmpty(), "Expected at least one course from streaming")
         }
