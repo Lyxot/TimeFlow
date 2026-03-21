@@ -17,6 +17,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.slf4j.Logger
 import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.ai.resizeImage
@@ -84,11 +86,11 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                 if (!unlimited && used >= aiConfig.quotaPerHalfYear) {
                     call.respond(
                         HttpStatusCode.TooManyRequests,
-                        mapOf(
-                            "error" to "AI extraction quota exceeded",
-                            "used" to used,
-                            "limit" to aiConfig.quotaPerHalfYear
-                        )
+                        buildJsonObject {
+                            put("error", "AI extraction quota exceeded")
+                            put("used", used)
+                            put("limit", aiConfig.quotaPerHalfYear)
+                        }
                     )
                     return@authedPost
                 }
@@ -98,12 +100,14 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                 val imageBytes = try {
                     Base64.decode(payload.image)
                 } catch (_: IllegalArgumentException) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid base64 image data"))
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        buildJsonObject { put("error", "Invalid base64 image data") })
                     return@authedPost
                 }
 
                 if (imageBytes.isEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Empty image data"))
+                    call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "Empty image data") })
                     return@authedPost
                 }
 
@@ -123,7 +127,7 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                 if (candidates.isEmpty()) {
                     call.respond(
                         HttpStatusCode.ServiceUnavailable,
-                        mapOf("error" to "All AI models are currently rate-limited, try again later")
+                        buildJsonObject { put("error", "All AI models are currently rate-limited, try again later") }
                     )
                     return@authedPost
                 }
@@ -179,7 +183,7 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
                 if (!call.response.isCommitted) {
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        mapOf("error" to "All AI models failed: ${errors.last().second.message}")
+                        buildJsonObject { put("error", "All AI models failed: ${errors.last().second.message}") }
                     )
                 }
             }
