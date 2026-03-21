@@ -59,6 +59,7 @@ import xyz.hyli.timeflow.shared.generated.resources.page_settings
 import xyz.hyli.timeflow.shared.generated.resources.page_today
 import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.pages.schedule.ScheduleScreen
+import xyz.hyli.timeflow.ui.pages.schedule.subpage.AiPreviewScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.ScheduleListScreen
 import xyz.hyli.timeflow.ui.pages.settings.SettingsScreen
@@ -80,6 +81,9 @@ sealed class Destination {
     data object Schedule : Destination() {
         @Serializable
         object ScheduleList : Destination()
+
+        @Serializable
+        object AiPreview : Destination()
 
         @Serializable
         data class EditCourse(
@@ -245,6 +249,9 @@ fun TimeFlowNavHost(
             composable<Destination.Schedule> { ScheduleScreen(viewModel, navHostController) }
             subScreenComposable<Destination.Schedule.ScheduleList> {
                 ScheduleListScreen(viewModel, navHostController)
+            }
+            subScreenComposable<Destination.Schedule.AiPreview> {
+                AiPreviewScreen(viewModel, navHostController)
             }
             composable<Destination.Schedule.EditCourse>(
                 enterTransition = NavigationAnimation.enterSlideIn,

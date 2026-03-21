@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.ai
 
+import xyz.hyli.timeflow.api.models.detectImageFormat
+
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream

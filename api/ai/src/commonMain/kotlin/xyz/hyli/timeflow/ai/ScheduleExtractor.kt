@@ -29,9 +29,9 @@ import ai.koog.prompt.streaming.StreamFrame
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import xyz.hyli.timeflow.api.models.ExtractionResult
+import xyz.hyli.timeflow.api.models.detectImageFormatFromBase64
+import xyz.hyli.timeflow.api.models.parseExtractionResult
 
 /**
  * 使用 Koog 从课程表图片中提取课程信息。
@@ -50,7 +50,6 @@ class ScheduleExtractor(
 ) : AutoCloseable {
 
     private val executor: SingleLLMPromptExecutor = createExecutor()
-    private val json = Json { ignoreUnknownKeys = true }
 
     private fun createExecutor(): SingleLLMPromptExecutor {
         val ep = endpoint?.takeIf { it.isNotBlank() }
@@ -168,31 +167,7 @@ class ScheduleExtractor(
     /**
      * 解析 JSONL 格式的 LLM 输出为完整结果，包含课程表信息和课程列表。
      */
-    fun parseResult(text: String): ExtractionResult {
-        var scheduleInfo: ExtractedScheduleInfo? = null
-        val courses = mutableListOf<ExtractedCourse>()
-
-        for (line in text.lines().map { it.trim() }) {
-            if (!line.startsWith("{") || !line.endsWith("}")) continue
-            // Check if this is a schedule info line (has "_schedule" field)
-            val isScheduleLine = runCatching {
-                val obj = json.decodeFromString(JsonObject.serializer(), line)
-                obj["_schedule"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() == true
-            }.getOrDefault(false)
-
-            if (isScheduleLine) {
-                scheduleInfo = runCatching {
-                    json.decodeFromString(ExtractedScheduleInfo.serializer(), line)
-                }.getOrNull()
-            } else {
-                runCatching {
-                    json.decodeFromString(ExtractedCourse.serializer(), line)
-                }.getOrNull()?.let { courses.add(it) }
-            }
-        }
-
-        return ExtractionResult(scheduleInfo, courses)
-    }
+    fun parseResult(text: String): ExtractionResult = parseExtractionResult(text)
 
     override fun close() {
         executor.close()

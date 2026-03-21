@@ -38,7 +38,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":data"))
+            implementation(project(":utils"))
             implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
             implementation(ktorLibs.resources)
         }
     }

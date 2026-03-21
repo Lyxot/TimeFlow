@@ -19,22 +19,37 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
+import xyz.hyli.timeflow.api.models.isImageBytes
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.sync.*
 import xyz.hyli.timeflow.utils.writeBytesToFile
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
+
+enum class AiExtractionStatus {
+    IDLE, EXTRACTING, DONE, ERROR
+}
+
+data class AiExtractionState(
+    val status: AiExtractionStatus = AiExtractionStatus.IDLE,
+    val extractedSchedule: Schedule? = null,
+    val error: String? = null
+)
 
 class TimeFlowViewModel(
     private val repository: IDataRepository
@@ -69,6 +84,39 @@ class TimeFlowViewModel(
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = tokenManager.hasTokens()
             )
+
+    private val _aiExtractionState = MutableStateFlow(AiExtractionState())
+    val aiExtractionState: StateFlow<AiExtractionState> = _aiExtractionState.asStateFlow()
+
+    @OptIn(ExperimentalEncodingApi::class)
+    fun startAiExtraction(imageBytes: ByteArray) {
+        _aiExtractionState.value = AiExtractionState(status = AiExtractionStatus.EXTRACTING)
+        viewModelScope.launch {
+            val imageBase64 = Base64.encode(imageBytes)
+            syncManager.extractSchedule(imageBase64)
+                .onSuccess { schedule ->
+                    _aiExtractionState.value = AiExtractionState(
+                        status = AiExtractionStatus.DONE,
+                        extractedSchedule = schedule
+                    )
+                }
+                .onFailure { e ->
+                    _aiExtractionState.value = AiExtractionState(
+                        status = AiExtractionStatus.ERROR,
+                        error = e.message
+                    )
+                }
+        }
+    }
+
+    fun confirmAiImport(schedule: Schedule) {
+        createSchedule(schedule)
+        clearAiExtractionState()
+    }
+
+    fun clearAiExtractionState() {
+        _aiExtractionState.value = AiExtractionState()
+    }
 
     init {
         viewModelScope.launch {
@@ -208,7 +256,8 @@ class TimeFlowViewModel(
     @OptIn(ExperimentalSerializationApi::class)
     fun importScheduleFromFile(
         file: PlatformFile,
-        showMessage: (String) -> Unit
+        showMessage: (String) -> Unit,
+        onAiExtractionAvailable: (suspend (ByteArray) -> Unit)? = null
     ) {
         viewModelScope.launch {
             try {
@@ -218,13 +267,24 @@ class TimeFlowViewModel(
                 } else {
                     readScheduleFromByteArray(bytes) ?: readScheduleFromPng(bytes)
                 }
-                createSchedule(importedSchedule!!)
-                showMessage(
-                    getString(
-                        Res.string.schedule_value_import_schedule_success,
-                        importedSchedule.name
+                if (importedSchedule != null) {
+                    createSchedule(importedSchedule)
+                    showMessage(
+                        getString(
+                            Res.string.schedule_value_import_schedule_success,
+                            importedSchedule.name
+                        )
                     )
-                )
+                } else if (onAiExtractionAvailable != null && isImageBytes(bytes)) {
+                    onAiExtractionAvailable(bytes)
+                } else {
+                    showMessage(
+                        getString(
+                            Res.string.schedule_value_import_schedule_failed,
+                            "Unsupported file format"
+                        )
+                    )
+                }
             } catch (e: Exception) {
                 showMessage(
                     getString(

@@ -18,6 +18,7 @@ import platform.Foundation.create
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.posix.memcpy
+import xyz.hyli.timeflow.api.models.detectImageFormat
 import kotlin.math.sqrt
 
 @OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)

@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.ai
 
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import xyz.hyli.timeflow.api.models.ExtractedCourse
 import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi

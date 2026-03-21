@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.ai
 
+import xyz.hyli.timeflow.api.models.detectImageFormat
+
 // TODO: Browser Canvas API for image resizing is asynchronous, which does not fit
 //  the synchronous `expect fun` signature. Web clients should resize images via
 //  Canvas/OffscreenCanvas before encoding to base64 and passing to ScheduleExtractor.

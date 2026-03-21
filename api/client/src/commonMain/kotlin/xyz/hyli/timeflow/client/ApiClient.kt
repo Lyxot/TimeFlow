@@ -48,6 +48,7 @@ class ApiClient(
                 }
             }
         }
+        install(HttpTimeout)
         install(HttpRequestRetry)
         install(HttpCache)
         install(Resources)
@@ -226,4 +227,16 @@ class ApiClient(
                 courseId = courseId
             )
         )
+
+    suspend fun aiInfo() =
+        authenticatedClient.get(ApiV1.Ai.Info())
+
+    suspend fun extractSchedule(payload: ApiV1.Ai.ExtractSchedule.Payload) =
+        authenticatedClient.post(ApiV1.Ai.ExtractSchedule()) {
+            payloadBuilder(payload).invoke(this)
+            timeout {
+                requestTimeoutMillis = 120_000
+                socketTimeoutMillis = 120_000
+            }
+        }
 }

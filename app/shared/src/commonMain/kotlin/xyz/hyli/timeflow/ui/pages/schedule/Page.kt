@@ -352,6 +352,7 @@ fun ScheduleScreen(
                     ScheduleFAB(
                         modifier = Modifier.align(Alignment.BottomEnd),
                         viewModel = viewModel,
+                        navHostController = navHostController,
                         visible = fabVisible,
                         showMessage = { message ->
                             scope.launch {
@@ -371,13 +372,18 @@ fun ScheduleScreen(
 fun ScheduleFAB(
     modifier: Modifier = Modifier,
     viewModel: TimeFlowViewModel,
+    navHostController: NavHostController,
     visible: Boolean,
     showMessage: (String) -> Unit,
     onExportAsImage: () -> Unit,
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     var showContent by remember { mutableStateOf(false) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
+    var showAiConfirmDialog by remember { mutableStateOf(false) }
+    var pendingImageBytes by remember { mutableStateOf<ByteArray?>(null) }
 
     @Suppress("DEPRECATION")
     val saver = rememberFileSaverLauncher { file ->
@@ -394,9 +400,48 @@ fun ScheduleFAB(
         if (file != null) {
             viewModel.importScheduleFromFile(
                 file = file,
-                showMessage = showMessage
+                showMessage = showMessage,
+                onAiExtractionAvailable = { bytes ->
+                    if (isLoggedIn && !settings.apiEndpoint.isNullOrBlank()) {
+                        pendingImageBytes = bytes
+                        showAiConfirmDialog = true
+                    } else {
+                        showMessage(getString(Res.string.ai_value_not_logged_in))
+                    }
+                }
             )
         }
+    }
+
+    if (showAiConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showAiConfirmDialog = false
+                pendingImageBytes = null
+            },
+            title = { Text(stringResource(Res.string.ai_title_upload_confirm)) },
+            text = { Text(stringResource(Res.string.ai_subtitle_upload_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAiConfirmDialog = false
+                    pendingImageBytes?.let { bytes ->
+                        viewModel.startAiExtraction(bytes)
+                        navHostController.navigate(Destination.Schedule.AiPreview)
+                    }
+                    pendingImageBytes = null
+                }) {
+                    Text(stringResource(Res.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAiConfirmDialog = false
+                    pendingImageBytes = null
+                }) {
+                    Text(stringResource(Res.string.cancel))
+                }
+            }
+        )
     }
 
     if (showExportChoiceDialog && schedule != null) {

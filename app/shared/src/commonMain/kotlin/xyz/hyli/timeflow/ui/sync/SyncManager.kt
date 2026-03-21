@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.SelectedSchedule
 import xyz.hyli.timeflow.api.models.User
+import xyz.hyli.timeflow.api.models.parseExtractionResult
 import xyz.hyli.timeflow.client.ApiClient
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ScheduleSummary
@@ -336,6 +337,46 @@ class SyncManager(
         }
 
         _syncState.value = _syncState.value.copy(conflicts = currentConflicts)
+    }
+
+    suspend fun extractSchedule(imageBase64: String): Result<Schedule> {
+        val client = getOrCreateClient()
+            ?: return Result.failure(Exception(ERROR_API_NOT_CONFIGURED))
+        if (!tokenManager.hasTokens()) {
+            return Result.failure(Exception(ERROR_UNAUTHORIZED))
+        }
+        return try {
+            // Use stream=true so the server sends data incrementally,
+            // keeping the socket alive during LLM inference.
+            val response = client.extractSchedule(
+                ApiV1.Ai.ExtractSchedule.Payload(image = imageBase64, stream = true)
+            )
+            if (response.status != HttpStatusCode.OK) {
+                return Result.failure(Exception(errorMessage(response)))
+            }
+            // bodyAsText() collects the full SSE response.
+            val sseText = response.bodyAsText()
+            // Strip SSE framing: remove "data: " prefixes and [DONE] marker,
+            // then concatenate to reconstruct the raw LLM output.
+            val llmOutput = stripSseFraming(sseText)
+            val result = parseExtractionResult(llmOutput)
+            Result.success(result.toSchedule())
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: ERROR_NETWORK, e))
+        }
+    }
+
+    private fun stripSseFraming(sseText: String): String {
+        return sseText.lines()
+            .map { line ->
+                when {
+                    line.startsWith("data: ") -> line.removePrefix("data: ")
+                    line.startsWith("data:") -> line.removePrefix("data:")
+                    else -> line
+                }
+            }
+            .filter { it != "[DONE]" }
+            .joinToString("")
     }
 
     fun close() {

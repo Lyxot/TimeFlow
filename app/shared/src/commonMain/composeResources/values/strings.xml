@@ -224,4 +224,17 @@
     <string name="url_changelog">https://github.com/Lyxot/TimeFlow/blob/v%1$s/CHANGELOG.md</string>
     <string name="url_license">https://www.gnu.org/licenses/agpl-3.0.html</string>
 
+    <!--    AI extraction-->
+    <string name="ai_title_extracting">AI 识别中</string>
+    <string name="ai_title_preview">AI 识别结果</string>
+    <string name="ai_title_confirm_import">确认导入</string>
+    <string name="ai_title_confirm_discard">放弃识别结果</string>
+    <string name="ai_subtitle_confirm_discard">确定要放弃当前识别结果吗？</string>
+    <string name="ai_title_upload_confirm">AI 识别课程表</string>
+    <string name="ai_subtitle_upload_confirm">未检测到课程表数据，但检测到图片文件。是否上传到服务器进行 AI 识别？</string>
+    <string name="ai_value_extraction_error">AI 识别失败：%1$s</string>
+    <string name="ai_button_retry">重试</string>
+    <string name="ai_value_not_logged_in">请先登录并设置服务器地址</string>
+    <string name="ai_title_schedule_name">课程表名称</string>
+
 </resources>

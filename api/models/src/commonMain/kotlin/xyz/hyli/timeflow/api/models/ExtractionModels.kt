@@ -7,9 +7,12 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.ai
+package xyz.hyli.timeflow.api.models
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.utils.CourseColors
 
@@ -131,6 +134,76 @@ data class ExtractionResult(
     }
 }
 
+private val extractionJson = Json { ignoreUnknownKeys = true }
+
+/**
+ * 解析 LLM 输出为完整结果。
+ * 使用大括号深度匹配提取 JSON 对象，不依赖换行符分隔。
+ * 同时兼容 JSONL 和拼接在一起的 JSON（如 SSE 流式输出）。
+ */
+fun parseExtractionResult(text: String): ExtractionResult {
+    var scheduleInfo: ExtractedScheduleInfo? = null
+    val courses = mutableListOf<ExtractedCourse>()
+
+    for (jsonStr in extractJsonObjects(text)) {
+        val isScheduleLine = runCatching {
+            val obj = extractionJson.decodeFromString(JsonObject.serializer(), jsonStr)
+            obj["_schedule"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() == true
+        }.getOrDefault(false)
+
+        if (isScheduleLine) {
+            scheduleInfo = runCatching {
+                extractionJson.decodeFromString(ExtractedScheduleInfo.serializer(), jsonStr)
+            }.getOrNull()
+        } else {
+            runCatching {
+                extractionJson.decodeFromString(ExtractedCourse.serializer(), jsonStr)
+            }.getOrNull()?.let { courses.add(it) }
+        }
+    }
+
+    return ExtractionResult(scheduleInfo, courses)
+}
+
+/**
+ * Extract top-level JSON objects from text using brace-depth matching.
+ * Correctly handles braces inside JSON string values.
+ */
+private fun extractJsonObjects(text: String): List<String> {
+    val objects = mutableListOf<String>()
+    var depth = 0
+    var start = -1
+    var inString = false
+    var escape = false
+    for (i in text.indices) {
+        val c = text[i]
+        if (escape) {
+            escape = false; continue
+        }
+        if (c == '\\' && inString) {
+            escape = true; continue
+        }
+        if (c == '"') {
+            inString = !inString; continue
+        }
+        if (inString) continue
+        when (c) {
+            '{' -> {
+                if (depth == 0) start = i; depth++
+            }
+
+            '}' -> {
+                depth--
+                if (depth == 0 && start >= 0) {
+                    objects.add(text.substring(start, i + 1))
+                    start = -1
+                }
+            }
+        }
+    }
+    return objects
+}
+
 /**
  * Parse "YYYY-MM-DD" to Date. Returns null on failure.
  */
@@ -141,4 +214,43 @@ private fun parseDate(s: String): Date? {
     val month = parts[1].toIntOrNull() ?: return null
     val day = parts[2].toIntOrNull() ?: return null
     return Date(year, month, day)
+}
+
+/**
+ * Detect image format from the first bytes of base64-encoded data.
+ */
+fun detectImageFormatFromBase64(base64: String): String = when {
+    base64.startsWith("/9j/") -> "jpeg"
+    base64.startsWith("iVBORw0KGgo") -> "png"
+    base64.startsWith("R0lGOD") -> "gif"
+    base64.startsWith("UklGR") -> "webp"
+    else -> "png"
+}
+
+/**
+ * Detect image format from raw bytes (magic bytes).
+ */
+fun detectImageFormat(bytes: ByteArray): String {
+    if (bytes.size < 4) return "png"
+    return when {
+        bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() -> "jpeg"
+        bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() -> "png"
+        bytes[0] == 0x47.toByte() && bytes[1] == 0x49.toByte() -> "gif"
+        bytes[0] == 0x52.toByte() && bytes[1] == 0x49.toByte() -> "webp"
+        else -> "png"
+    }
+}
+
+/**
+ * Check if bytes look like a supported image format (JPEG, PNG, GIF, WebP).
+ */
+fun isImageBytes(bytes: ByteArray): Boolean {
+    if (bytes.size < 4) return false
+    return when {
+        bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() -> true // JPEG
+        bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() -> true // PNG
+        bytes[0] == 0x47.toByte() && bytes[1] == 0x49.toByte() -> true // GIF
+        bytes[0] == 0x52.toByte() && bytes[1] == 0x49.toByte() -> true // WebP
+        else -> false
+    }
 }

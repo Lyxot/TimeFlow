@@ -11,6 +11,7 @@ package xyz.hyli.timeflow.ai
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import xyz.hyli.timeflow.api.models.detectImageFormat
 import java.io.ByteArrayOutputStream
 import kotlin.math.sqrt
 

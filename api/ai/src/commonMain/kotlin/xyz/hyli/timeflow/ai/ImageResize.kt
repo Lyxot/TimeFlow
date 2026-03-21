@@ -44,28 +44,3 @@ data class ResizedImage(
  * @return [ResizedImage] with the result.
  */
 expect fun resizeImage(imageBytes: ByteArray, maxSizeBytes: Long, maxResolution: Int): ResizedImage
-
-/**
- * Detect image format from the first bytes of base64-encoded data.
- */
-fun detectImageFormatFromBase64(base64: String): String = when {
-    base64.startsWith("/9j/") -> "jpeg"
-    base64.startsWith("iVBORw0KGgo") -> "png"
-    base64.startsWith("R0lGOD") -> "gif"
-    base64.startsWith("UklGR") -> "webp"
-    else -> "png"
-}
-
-/**
- * Detect image format from raw bytes (magic bytes).
- */
-fun detectImageFormat(bytes: ByteArray): String {
-    if (bytes.size < 4) return "png"
-    return when {
-        bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() -> "jpeg"
-        bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() -> "png"
-        bytes[0] == 0x47.toByte() && bytes[1] == 0x49.toByte() -> "gif"
-        bytes[0] == 0x52.toByte() && bytes[1] == 0x49.toByte() -> "webp"
-        else -> "png"
-    }
-}
