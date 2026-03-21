@@ -69,14 +69,15 @@ data class AiConfig(
             for (name in names) {
                 val pConfig = runCatching { providersConfig.config(name) }.getOrNull() ?: continue
                 val apiKey = pConfig.propertyOrNull("apiKey")?.getString() ?: ""
-                // ollama doesn't require apiKey
                 val format = pConfig.propertyOrNull("format")?.getString() ?: "openai"
-                if (apiKey.isBlank() && format != "ollama") continue
+                val endpoint = pConfig.propertyOrNull("endpoint")?.getString()?.takeIf { it.isNotBlank() }
+                // Skip providers with no API key unless they have a custom endpoint (local LLM) or use ollama
+                if (apiKey.isBlank() && format != "ollama" && endpoint == null) continue
                 providers[name] = AiProviderConfig(
                     name = name,
                     format = format,
                     apiKey = apiKey,
-                    endpoint = pConfig.propertyOrNull("endpoint")?.getString()?.takeIf { it.isNotBlank() }
+                    endpoint = endpoint
                 )
             }
             return providers
