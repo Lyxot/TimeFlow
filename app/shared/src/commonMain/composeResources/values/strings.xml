@@ -21,8 +21,11 @@
     <string name="export">导出</string>
     <string name="export_as_image">导出为图片</string>
     <string name="export_as_file">导出为文件</string>
+    <string name="import_from_file">从文件导入</string>
+    <string name="import_from_image">从图片导入</string>
     <string name="import">导入</string>
     <string name="undo">撤回</string>
+    <string name="preview">预览</string>
 
     <string name="page_today">今日</string>
     <string name="page_schedule">课程表</string>
@@ -72,6 +75,19 @@
     <string name="schedule_value_import_schedule_success">已成功导入课程表“%1$s”</string>
     <string name="schedule_value_export_schedule_failed">导出课程表失败：%1$s</string>
     <string name="schedule_value_import_schedule_failed">导入课程表失败：%1$s</string>
+
+    <!--    AI extraction-->
+    <string name="ai_title_extracting">AI 识别中</string>
+    <string name="ai_title_result">AI 识别结果</string>
+    <string name="ai_title_confirm_import">确认导入</string>
+    <string name="ai_title_confirm_discard">放弃识别结果</string>
+    <string name="ai_subtitle_confirm_discard">确定要放弃当前识别结果吗？</string>
+    <string name="ai_value_extraction_error">AI 识别失败：%1$s</string>
+    <string name="ai_value_not_logged_in">请先登录并设置服务器地址</string>
+    <string name="ai_value_not_enabled">服务器未启用 AI 识别功能</string>
+    <string name="ai_value_quota_exceeded">AI 识别次数已用完（已使用 %1$s/%2$s 次）</string>
+    <string name="ai_value_no_courses">未能从图片中识别出课程信息</string>
+    <string name="ai_value_name_empty_hint">请输入课程表名称后再确认导入</string>
 
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>
@@ -223,18 +239,5 @@
     <string name="url_homepage">https://timeflow.hyli.xyz</string>
     <string name="url_changelog">https://github.com/Lyxot/TimeFlow/blob/v%1$s/CHANGELOG.md</string>
     <string name="url_license">https://www.gnu.org/licenses/agpl-3.0.html</string>
-
-    <!--    AI extraction-->
-    <string name="ai_title_extracting">AI 识别中</string>
-    <string name="ai_title_preview">AI 识别结果</string>
-    <string name="ai_title_confirm_import">确认导入</string>
-    <string name="ai_title_confirm_discard">放弃识别结果</string>
-    <string name="ai_subtitle_confirm_discard">确定要放弃当前识别结果吗？</string>
-    <string name="ai_title_upload_confirm">AI 识别课程表</string>
-    <string name="ai_subtitle_upload_confirm">未检测到课程表数据，但检测到图片文件。是否上传到服务器进行 AI 识别？</string>
-    <string name="ai_value_extraction_error">AI 识别失败：%1$s</string>
-    <string name="ai_button_retry">重试</string>
-    <string name="ai_value_not_logged_in">请先登录并设置服务器地址</string>
-    <string name="ai_title_schedule_name">课程表名称</string>
 
 </resources>

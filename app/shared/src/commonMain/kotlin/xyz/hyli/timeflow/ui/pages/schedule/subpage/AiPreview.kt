@@ -9,23 +9,26 @@
 
 package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import xyz.hyli.timeflow.shared.generated.resources.*
-import xyz.hyli.timeflow.ui.components.CustomScaffold
-import xyz.hyli.timeflow.ui.components.bottomPadding
+import xyz.hyli.timeflow.ui.components.*
+import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.pages.schedule.ReadOnlyScheduleTable
+import xyz.hyli.timeflow.ui.pages.settings.ScheduleSettingsContent
+import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayContent
 import xyz.hyli.timeflow.ui.viewmodel.AiExtractionStatus
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
@@ -37,22 +40,20 @@ fun AiPreviewScreen(
 ) {
     val aiState by viewModel.aiExtractionState.collectAsState()
     var showDiscardDialog by remember { mutableStateOf(false) }
-    var editedName by remember { mutableStateOf<String?>(null) }
 
-    // Update editedName when schedule first arrives
-    LaunchedEffect(aiState.extractedSchedule) {
-        if (aiState.extractedSchedule != null && editedName == null) {
-            editedName = aiState.extractedSchedule!!.name
-        }
+    // If not DONE (e.g. navigated here but state was cleared), go back
+    if (aiState.status != AiExtractionStatus.DONE || aiState.editedSchedule == null) {
+        return
     }
 
+    val schedule = aiState.editedSchedule!!
+    val isValid = schedule.name.isNotBlank()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val nameEmptyHint = stringResource(Res.string.ai_value_name_empty_hint)
+
     val handleBack: () -> Unit = {
-        if (aiState.status == AiExtractionStatus.DONE) {
-            showDiscardDialog = true
-        } else {
-            viewModel.clearAiExtractionState()
-            navHostController.popBackStack()
-        }
+        showDiscardDialog = true
     }
 
     if (showDiscardDialog) {
@@ -79,16 +80,7 @@ fun AiPreviewScreen(
 
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
-        title = {
-            Text(
-                when (aiState.status) {
-                    AiExtractionStatus.EXTRACTING -> stringResource(Res.string.ai_title_extracting)
-                    AiExtractionStatus.DONE -> stringResource(Res.string.ai_title_preview)
-                    AiExtractionStatus.ERROR -> stringResource(Res.string.ai_title_extracting)
-                    AiExtractionStatus.IDLE -> stringResource(Res.string.ai_title_extracting)
-                }
-            )
-        },
+        title = { Text(stringResource(Res.string.ai_title_result)) },
         navigationIcon = {
             IconButton(onClick = handleBack) {
                 Icon(
@@ -98,141 +90,86 @@ fun AiPreviewScreen(
             }
         },
         actions = {
-            if (aiState.status == AiExtractionStatus.DONE && aiState.extractedSchedule != null) {
-                IconButton(onClick = {
-                    val schedule = aiState.extractedSchedule!!.let {
-                        if (editedName != null) it.copy(name = editedName!!) else it
-                    }
-                    viewModel.confirmAiImport(schedule)
-                    navHostController.popBackStack()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Done,
-                        contentDescription = stringResource(Res.string.ai_title_confirm_import)
-                    )
-                }
-            }
-        }
-    ) {
-        when (aiState.status) {
-            AiExtractionStatus.IDLE, AiExtractionStatus.EXTRACTING -> {
-                ExtractingContent()
-            }
-
-            AiExtractionStatus.DONE -> {
-                DoneContent(
-                    viewModel = viewModel,
-                    schedule = aiState.extractedSchedule!!,
-                    editedName = editedName ?: "",
-                    onNameChanged = { editedName = it }
-                )
-            }
-
-            AiExtractionStatus.ERROR -> {
-                ErrorContent(
-                    error = aiState.error ?: "",
-                    onRetry = {
-                        // Cannot retry without the original bytes; navigate back
-                        viewModel.clearAiExtractionState()
+            IconButton(
+                onClick = {
+                    if (isValid) {
+                        viewModel.confirmAiImport(schedule)
                         navHostController.popBackStack()
+                    } else {
+                        scope.launch { snackbarHostState.showSnackbar(nameEmptyHint) }
                     }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Done,
+                    contentDescription = stringResource(Res.string.ai_title_confirm_import)
                 )
             }
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.fillMaxWidth(0.75f)
+            )
         }
-    }
-}
-
-@Composable
-private fun ExtractingContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(Res.string.ai_title_extracting),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun DoneContent(
-    viewModel: TimeFlowViewModel,
-    schedule: xyz.hyli.timeflow.data.Schedule,
-    editedName: String,
-    onNameChanged: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .bottomPadding()
-    ) {
-        // Schedule info section
-        Column(
+        PreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .bottomPadding()
         ) {
-            OutlinedTextField(
-                value = editedName,
-                onValueChange = onNameChanged,
-                label = { Text(stringResource(Res.string.ai_title_schedule_name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                text = "${stringResource(Res.string.settings_title_schedule_term_start_date)}: ${schedule.termStartDate}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${stringResource(Res.string.settings_title_schedule_term_end_date)}: ${schedule.termEndDate}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${stringResource(Res.string.settings_title_schedule_total_weeks)}: ${schedule.totalWeeks}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            PreferenceSection(
+                title = stringResource(Res.string.settings_title_schedule)
+            ) {
+                ScheduleSettingsContent(
+                    schedule = schedule,
+                    onScheduleChanged = { viewModel.updateEditedSchedule(it) },
+                    lessonsPerDayContent = {
+                        BasePreference(
+                            title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
+                            subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
+                            onClick = {
+                                navHostController.navigate(Destination.Schedule.AiLessonsPerDay)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                )
+            }
+            PreferenceSection(
+                title = stringResource(Res.string.preview)
+            ) {
+                ReadOnlyScheduleTable(
+                    schedule = schedule,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 1.dp)
+                )
+            }
         }
-
-        // Schedule preview table
-        ReadOnlyScheduleTable(
-            schedule = schedule,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
+/**
+ * LessonsPerDay screen for AI Preview, reads/writes to ViewModel's editedSchedule.
+ */
 @Composable
-private fun ErrorContent(
-    error: String,
-    onRetry: () -> Unit
+fun AiLessonsPerDayScreen(
+    viewModel: TimeFlowViewModel,
+    navHostController: NavHostController
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(Res.string.ai_value_extraction_error, error),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRetry) {
-            Text(stringResource(Res.string.back))
+    val aiState by viewModel.aiExtractionState.collectAsState()
+    val schedule = aiState.editedSchedule ?: return
+
+    LessonsPerDayContent(
+        initialInfo = schedule.lessonTimePeriodInfo,
+        navHostController = navHostController,
+        onSave = { info ->
+            viewModel.updateEditedSchedule(schedule.copy(lessonTimePeriodInfo = info))
         }
-    }
+    )
 }

@@ -16,7 +16,10 @@ import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,23 +29,16 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import kotlinx.datetime.*
-import kotlinx.datetime.format.char
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import xyz.hyli.timeflow.BuildConfig
-import xyz.hyli.timeflow.data.Date
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
-import xyz.hyli.timeflow.ui.pages.settings.subpage.LoginDialog
-import xyz.hyli.timeflow.ui.pages.settings.subpage.LogoutConfirmDialog
-import xyz.hyli.timeflow.ui.pages.settings.subpage.RegisterDialog
-import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
-import xyz.hyli.timeflow.ui.sync.SyncManager
-import xyz.hyli.timeflow.ui.sync.SyncStatus
 import xyz.hyli.timeflow.ui.theme.LocalThemeIsDark
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.Files.settingsFilePath
@@ -190,118 +186,27 @@ fun SettingsScreen(
                 enabled = scheduleDependency
             ) {
                 val schedule by viewModel.selectedSchedule.collectAsState()
-                // Schedule Name
-                PreferenceInputText(
-                    value = settings.schedules[settings.selectedScheduleID]?.name ?: "",
-                    onValueChange = { newName ->
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(name = newName)
-                        )
-                    },
-                    title = stringResource(Res.string.settings_title_schedule_name),
-                    enabled = scheduleDependency,
-                    validator = rememberDialogInputValidator(
-                        validate = {
-                            val error = InputValidation.validateName(it, messages = validationMessages)
-                            if (error == null)
-                                DialogInputValidator.Result.Valid
-                            else
-                                DialogInputValidator.Result.Error(error)
-                        }
-                    ),
-                    maxLength = InputValidation.MAX_NAME_LENGTH
-                )
-                // Term Start and End Dates
-                PreferenceDate(
-                    value = schedule?.termStartDate?.toLocalDate()
-                        ?: Schedule.defaultTermStartDate().toLocalDate(),
-                    onValueChange = { newDate ->
-                        val newTermStartDate = Date.fromLocalDate(newDate)
-                        val currentTermEndDate = schedule!!.termEndDate
-                        val newTermEndDate =
-                            if (newTermStartDate.weeksTill(currentTermEndDate) in 1..60) {
-                                currentTermEndDate
-                            } else newTermStartDate.addWeeks(schedule!!.totalWeeks)
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(
-                                termStartDate = newTermStartDate,
-                                termEndDate = newTermEndDate
-                            )
-                        )
-                    },
-
-                    title = stringResource(Res.string.settings_title_schedule_term_start_date),
-                    enabled = scheduleDependency
-                )
-                PreferenceDate(
-                    value = schedule?.termEndDate?.toLocalDate()
-                        ?: Schedule.defaultTermEndDate().toLocalDate(),
-                    onValueChange = { newDate ->
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(
-                                termEndDate = Date.fromLocalDate(
-                                    newDate
+                if (schedule != null) {
+                    ScheduleSettingsContent(
+                        schedule = schedule!!,
+                        onScheduleChanged = { viewModel.updateSchedule(schedule = it) },
+                        lessonsPerDayContent = {
+                            BasePreference(
+                                title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
+                                subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
+                                onClick = {
+                                    navHostController.navigate(Destination.Settings.LessonsPerDay)
+                                },
+                                enabled = scheduleDependency
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                    contentDescription = null
                                 )
-                            )
-                        )
-                    },
-                    selectableDates = object : SelectableDates {
-                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                            val termStartDate = schedule?.termStartDate
-                                ?: Schedule.defaultTermStartDate()
-                            val epochDays = (utcTimeMillis / (MILLIS_PER_DAY)).toInt()
-                            val date = LocalDate.fromEpochDays(epochDays)
-                            return termStartDate.weeksTill(date) in 1..60
+                            }
                         }
-                    },
-                    title = stringResource(Res.string.settings_title_schedule_term_end_date),
-                    enabled = scheduleDependency
-                )
-                // Term Weeks
-                PreferenceNumber(
-                    style =
-                        if (currentPlatform().isDesktop())
-                            PreferenceNumberStyle.TextField()
-                        else
-                            PreferenceNumberStyle.Wheel,
-                    value = schedule?.totalWeeks
-                        ?: 16,
-                    min = 1,
-                    max = 60,
-                    onValueChange = {
-                        val newEndDate = schedule!!.termStartDate.addWeeks(it)
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(termEndDate = newEndDate)
-                        )
-                    },
-                    title = stringResource(Res.string.settings_title_schedule_total_weeks),
-                    enabled = scheduleDependency,
-                )
-                // Lessons Per Day Settings
-                BasePreference(
-                    title = stringResource(Res.string.settings_title_schedule_lessons_per_day),
-                    subtitle = stringResource(Res.string.settings_subtitle_schedule_lessons_per_day),
-                    onClick = {
-                        navHostController.navigate(Destination.Settings.LessonsPerDay)
-                    },
-                    enabled = scheduleDependency
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                        contentDescription = null
                     )
                 }
-                PreferenceBool(
-                    style = PreferenceBoolStyle.Style.Switch,
-                    value = schedule?.displayWeekends == true,
-                    onValueChange = {
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(displayWeekends = it)
-                        )
-                    },
-                    title = stringResource(Res.string.settings_title_display_weekends),
-                    enabled = scheduleDependency
-                )
             }
             PreferenceDivider()
             // Account & Sync
@@ -422,174 +327,3 @@ fun SettingsScreen(
     }
 }
 
-@Composable
-private fun AccountSection(viewModel: TimeFlowViewModel) {
-    val settings by viewModel.settings.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
-    val syncState by viewModel.syncState.collectAsState()
-    val userInfo by viewModel.userInfo.collectAsState()
-
-    var showLoginDialog by remember { mutableStateOf(false) }
-    var showRegisterDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    var loginError by remember { mutableStateOf<String?>(null) }
-    var registerError by remember { mutableStateOf<String?>(null) }
-
-    // Conflict dialog
-    val firstConflict = syncState.conflicts.firstOrNull()
-    if (firstConflict != null) {
-        SyncConflictDialog(
-            conflict = firstConflict,
-            onResolve = { resolution -> viewModel.resolveConflict(resolution) }
-        )
-    }
-
-    if (showLoginDialog) {
-        LoginDialog(
-            onDismiss = {
-                showLoginDialog = false
-                loginError = null
-            },
-            onLogin = { email, password ->
-                viewModel.login(email, password) { result ->
-                    result.onSuccess {
-                        showLoginDialog = false
-                        loginError = null
-                    }.onFailure {
-                        loginError = it.message
-                    }
-                }
-            },
-            errorMessage = resolveErrorMessage(loginError)
-        )
-    }
-
-    if (showRegisterDialog) {
-        RegisterDialog(
-            onDismiss = {
-                showRegisterDialog = false
-                registerError = null
-            },
-            onRegister = { username, email, password, code ->
-                viewModel.register(username, email, password, code) { result ->
-                    result.onSuccess {
-                        showRegisterDialog = false
-                        registerError = null
-                    }.onFailure {
-                        registerError = it.message
-                    }
-                }
-            },
-            errorMessage = resolveErrorMessage(registerError)
-        )
-    }
-
-    if (showLogoutDialog) {
-        LogoutConfirmDialog(
-            onDismiss = { showLogoutDialog = false },
-            onConfirm = {
-                showLogoutDialog = false
-                viewModel.logout()
-            }
-        )
-    }
-
-    PreferenceSection(
-        title = stringResource(Res.string.settings_title_account)
-    ) {
-        if (isLoggedIn && userInfo != null) {
-            BasePreference(
-                title = userInfo!!.username,
-                subtitle = userInfo!!.email,
-            )
-        }
-
-        // Server endpoint
-        val insecureWarning = stringResource(Res.string.settings_warning_insecure_http)
-        PreferenceInputText(
-            value = settings.apiEndpoint ?: "",
-            onValueChange = { endpoint ->
-                viewModel.updateApiEndpoint(endpoint.ifBlank { null })
-            },
-            title = stringResource(Res.string.settings_title_server_endpoint),
-            subtitle = stringResource(Res.string.settings_subtitle_server_endpoint),
-            dialogHint = { currentValue ->
-                if (currentValue.startsWith("http://")) {
-                    Text(
-                        text = insecureWarning,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-        )
-
-        if (!isLoggedIn) {
-            // Login button
-            BasePreference(
-                title = stringResource(Res.string.settings_title_login),
-                subtitle = stringResource(Res.string.settings_subtitle_not_logged_in),
-                onClick = { showLoginDialog = true }
-            )
-            // Register button
-            BasePreference(
-                title = stringResource(Res.string.settings_title_register),
-                onClick = { showRegisterDialog = true }
-            )
-        } else {
-            // Sync button
-            val syncSubtitle = when (syncState.status) {
-                SyncStatus.SYNCING -> stringResource(Res.string.settings_value_syncing)
-                SyncStatus.ERROR -> stringResource(
-                    Res.string.settings_value_sync_error,
-                    resolveErrorMessage(syncState.error) ?: ""
-                )
-                else -> {
-                    val lastSynced = syncState.lastSyncedAt ?: settings.syncedAt
-                    if (lastSynced != null) {
-                        val local = lastSynced.toLocalDateTime(TimeZone.currentSystemDefault())
-                            .let { LocalDateTime(it.date, LocalTime(it.hour, it.minute, it.second)) }
-                        val format =
-                            LocalDateTime.Format { date(LocalDate.Formats.ISO); char(' '); time(LocalTime.Formats.ISO) }
-                        stringResource(Res.string.settings_subtitle_sync_last, format.format(local))
-                    } else {
-                        stringResource(Res.string.settings_subtitle_sync_never)
-                    }
-                }
-            }
-            BasePreference(
-                title = stringResource(Res.string.settings_title_sync),
-                subtitle = syncSubtitle,
-                onClick = { viewModel.sync() },
-                enabled = Dependency.State(viewModel.syncState.collectAsState()) {
-                    it.status != SyncStatus.SYNCING
-                }
-            ) {
-                SyncIconButton(viewModel)
-            }
-            // Logout button
-            BasePreference(
-                title = stringResource(Res.string.settings_title_logout),
-                onClick = { showLogoutDialog = true }
-            )
-        }
-    }
-}
-
-@Composable
-private fun resolveErrorMessage(error: String?): String? {
-    if (error == null) return null
-    return when (error) {
-        SyncManager.ERROR_INVALID_CREDENTIALS -> stringResource(Res.string.error_invalid_credentials)
-        SyncManager.ERROR_TOO_MANY_REQUESTS -> stringResource(Res.string.error_too_many_requests)
-        SyncManager.ERROR_EMAIL_ALREADY_EXISTS -> stringResource(Res.string.error_email_already_exists)
-        SyncManager.ERROR_NOT_FOUND -> stringResource(Res.string.error_not_found)
-        SyncManager.ERROR_INVALID_INPUT -> stringResource(Res.string.error_invalid_input, "")
-        SyncManager.ERROR_UNAUTHORIZED -> stringResource(Res.string.error_unauthorized)
-        SyncManager.ERROR_SERVER -> stringResource(Res.string.error_server)
-        SyncManager.ERROR_NETWORK -> stringResource(Res.string.error_network)
-        SyncManager.ERROR_API_NOT_CONFIGURED -> stringResource(Res.string.error_api_not_configured)
-        else -> error
-    }
-}

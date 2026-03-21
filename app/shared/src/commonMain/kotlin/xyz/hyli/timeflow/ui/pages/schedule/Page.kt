@@ -34,9 +34,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import io.github.vinceglb.filekit.name
@@ -50,6 +52,7 @@ import xyz.hyli.timeflow.shared.generated.resources.*
 import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
+import xyz.hyli.timeflow.ui.viewmodel.AiExtractionStatus
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isWeb
@@ -231,7 +234,7 @@ fun ScheduleScreen(
                         navHostController = navHostController,
                         viewModel = viewModel,
                         rows = rows,
-                        columns = 7,
+                        columns = if (schedule!!.displayWeekends) 7 else 5,
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(scrollState)
@@ -380,10 +383,10 @@ fun ScheduleFAB(
     val schedule by viewModel.selectedSchedule.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val aiState by viewModel.aiExtractionState.collectAsState()
     var showContent by remember { mutableStateOf(false) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
-    var showAiConfirmDialog by remember { mutableStateOf(false) }
-    var pendingImageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showImportChoiceDialog by remember { mutableStateOf(false) }
 
     @Suppress("DEPRECATION")
     val saver = rememberFileSaverLauncher { file ->
@@ -394,54 +397,144 @@ fun ScheduleFAB(
             )
         }
     }
-    val reader = rememberFilePickerLauncher(
-        mode = FileKitMode.Single
+    val fileReader = rememberFilePickerLauncher(
+        mode = FileKitMode.Single,
+        type = FileKitType.File("pb")
+    ) { file ->
+        if (file != null) {
+            viewModel.importScheduleFromFile(
+                file = file,
+                showMessage = showMessage
+            )
+        }
+    }
+    val imageReader = rememberFilePickerLauncher(
+        mode = FileKitMode.Single,
+        type = FileKitType.Image
     ) { file ->
         if (file != null) {
             viewModel.importScheduleFromFile(
                 file = file,
                 showMessage = showMessage,
                 onAiExtractionAvailable = { bytes ->
-                    if (isLoggedIn && !settings.apiEndpoint.isNullOrBlank()) {
-                        pendingImageBytes = bytes
-                        showAiConfirmDialog = true
-                    } else {
-                        showMessage(getString(Res.string.ai_value_not_logged_in))
-                    }
+                    viewModel.startAiExtraction(bytes)
                 }
             )
         }
     }
 
-    if (showAiConfirmDialog) {
+    // Extraction progress dialog (non-dismissible)
+    if (aiState.status == AiExtractionStatus.EXTRACTING) {
         AlertDialog(
-            onDismissRequest = {
-                showAiConfirmDialog = false
-                pendingImageBytes = null
+            onDismissRequest = { },
+            confirmButton = { },
+            title = { Text(stringResource(Res.string.ai_title_extracting)) },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CircularProgressIndicator()
+                }
             },
-            title = { Text(stringResource(Res.string.ai_title_upload_confirm)) },
-            text = { Text(stringResource(Res.string.ai_subtitle_upload_confirm)) },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        )
+    }
+
+    // Extraction error dialog
+    if (aiState.status == AiExtractionStatus.ERROR) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearAiExtractionState() },
             confirmButton = {
-                TextButton(onClick = {
-                    showAiConfirmDialog = false
-                    pendingImageBytes?.let { bytes ->
-                        viewModel.startAiExtraction(bytes)
-                        navHostController.navigate(Destination.Schedule.AiPreview)
-                    }
-                    pendingImageBytes = null
-                }) {
+                TextButton(onClick = { viewModel.clearAiExtractionState() }) {
                     Text(stringResource(Res.string.confirm))
                 }
             },
-            dismissButton = {
-                TextButton(onClick = {
-                    showAiConfirmDialog = false
-                    pendingImageBytes = null
-                }) {
-                    Text(stringResource(Res.string.cancel))
+            title = { Text(stringResource(Res.string.ai_value_extraction_error, "")) },
+            text = { Text(aiState.error ?: "") }
+        )
+    }
+
+    // Navigate to preview when extraction completes
+    LaunchedEffect(aiState.status) {
+        if (aiState.status == AiExtractionStatus.DONE) {
+            navHostController.navigate(Destination.Schedule.AiPreview)
+        }
+    }
+
+    if (showImportChoiceDialog) {
+        val dialogState = rememberDialogState()
+        LaunchedEffect(Unit) { dialogState.show() }
+        val notLoggedInMsg = stringResource(Res.string.ai_value_not_logged_in)
+        if (dialogState.visible) {
+            MyDialog(
+                state = dialogState,
+                title = { Text(stringResource(Res.string.import)) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null
+                    )
+                },
+                buttons = DialogDefaults.buttonsDisabled(),
+                onEvent = {
+                    if (it is DialogEvent.Dismissed) {
+                        showImportChoiceDialog = false
+                    }
+                }
+            ) {
+                Column {
+                    ListItem(
+                        headlineContent = { Text(stringResource(Res.string.import_from_file)) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            DialogStyleDefaults.containerColor,
+                            DialogStyleDefaults.contentColor,
+                            DialogStyleDefaults.iconColor
+                        ),
+                        modifier = Modifier.clickable {
+                            showImportChoiceDialog = false
+                            dialogState.dismiss()
+                            fileReader.launch()
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(Res.string.import_from_image)) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            DialogStyleDefaults.containerColor,
+                            DialogStyleDefaults.contentColor,
+                            DialogStyleDefaults.iconColor
+                        ),
+                        modifier = Modifier.clickable {
+                            showImportChoiceDialog = false
+                            dialogState.dismiss()
+                            if (!isLoggedIn || settings.apiEndpoint.isNullOrBlank()) {
+                                showMessage(notLoggedInMsg)
+                                return@clickable
+                            }
+                            viewModel.checkAiAvailable { errorMsg ->
+                                if (errorMsg == null || errorMsg.isNotEmpty()) {
+                                    showMessage(errorMsg ?: notLoggedInMsg)
+                                } else {
+                                    imageReader.launch()
+                                }
+                            }
+                        }
+                    )
                 }
             }
-        )
+        }
     }
 
     if (showExportChoiceDialog && schedule != null) {
@@ -563,7 +656,7 @@ fun ScheduleFAB(
         FloatingActionButtonMenuItem(
             onClick = {
                 showContent = false
-                reader.launch()
+                showImportChoiceDialog = true
             },
             text = {
                 Text(stringResource(Res.string.import))

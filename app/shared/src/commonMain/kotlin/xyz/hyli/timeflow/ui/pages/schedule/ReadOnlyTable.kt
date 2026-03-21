@@ -23,7 +23,7 @@ fun ReadOnlyScheduleTable(
     showDates: Boolean = false,
     currentWeek: Int? = null,
 ) {
-    val columns = 7
+    val columns = if (schedule.displayWeekends) 7 else 5
     val rows = schedule.lessonTimePeriodInfo.totalLessonsCount
     if (rows == 0) return
 

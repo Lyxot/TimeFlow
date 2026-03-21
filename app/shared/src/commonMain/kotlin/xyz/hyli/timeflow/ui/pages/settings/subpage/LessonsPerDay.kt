@@ -29,22 +29,39 @@ import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isDesktop
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * LessonsPerDay screen bound to ViewModel (used from Settings page).
+ */
 @Composable
 fun LessonsPerDayScreen(
     viewModel: TimeFlowViewModel,
     navHostController: NavHostController
 ) {
     val schedule by viewModel.selectedSchedule.collectAsState()
-    val lessonTimePeriodInfo = remember {
-        mutableStateOf(
-            schedule?.lessonTimePeriodInfo
-                ?: LessonTimePeriodInfo.fromPeriodCounts()
-        )
-    }
-    val morningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.morning.size) }
-    val afternoonCount = remember { mutableStateOf(lessonTimePeriodInfo.value.afternoon.size) }
-    val eveningCount = remember { mutableStateOf(lessonTimePeriodInfo.value.evening.size) }
+    LessonsPerDayContent(
+        initialInfo = schedule?.lessonTimePeriodInfo ?: LessonTimePeriodInfo.fromPeriodCounts(),
+        navHostController = navHostController,
+        onSave = { info ->
+            viewModel.updateSchedule(schedule = schedule!!.copy(lessonTimePeriodInfo = info))
+        }
+    )
+}
+
+/**
+ * ViewModel-independent LessonsPerDay screen.
+ * Can be used from both Settings and AI Preview.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LessonsPerDayContent(
+    initialInfo: LessonTimePeriodInfo,
+    navHostController: NavHostController,
+    onSave: (LessonTimePeriodInfo) -> Unit
+) {
+    val lessonTimePeriodInfo = remember { mutableStateOf(initialInfo) }
+    val morningCount = remember { mutableStateOf(initialInfo.morning.size) }
+    val afternoonCount = remember { mutableStateOf(initialInfo.afternoon.size) }
+    val eveningCount = remember { mutableStateOf(initialInfo.evening.size) }
     val isModified = remember { mutableStateOf(false) }
     val conflictSet = lessonTimePeriodInfo.value.conflictSet
     val snackbarHostState = remember { SnackbarHostState() }
@@ -76,9 +93,7 @@ fun LessonsPerDayScreen(
             if (isModified.value) {
                 IconButton(
                     onClick = {
-                        viewModel.updateSchedule(
-                            schedule = schedule!!.copy(lessonTimePeriodInfo = lessonTimePeriodInfo.value)
-                        )
+                        onSave(lessonTimePeriodInfo.value)
                         navHostController.popBackStack()
                     },
                     enabled = conflictSet.isEmpty() &&
@@ -199,230 +214,102 @@ fun LessonsPerDayScreen(
             // Lessons Time Settings
             if (morningCount.value > 0) {
                 PreferenceDivider()
-                PreferenceSection(
-                    title = stringResource(Res.string.settings_title_lessons_time_morning)
-                ) {
-                    for (i in 0 until morningCount.value) {
-                        val lesson = lessonTimePeriodInfo.value.morning[i]
-                        val dialogState = rememberDialogState()
-                        BasePreference(
-                            title = stringResource(Res.string.schedule_value_course_time, i + 1),
-                            onClick = { dialogState.show() }
-                        ) {
-                            if (i in conflictSet) {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            } else {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            }
-                            if (dialogState.visible) {
-                                TimePeriodPickerDialog(
-                                    style =
-                                        if (currentPlatform().isDesktop())
-                                            TimePeriodPickerStyle.TextField
-                                        else
-                                            TimePeriodPickerStyle.Wheel,
-                                    state = dialogState,
-                                    initStartTime = lesson.start,
-                                    initEndTime = lesson.end,
-                                    onTimePeriodChange = { startTime, endTime ->
-                                        if (i > 0) {
-                                            if (startTime < lessonTimePeriodInfo.value.morning[i - 1].end) {
-                                                lessonTimePeriodInfo.value =
-                                                    lessonTimePeriodInfo.value.copy(
-                                                        morning = lessonTimePeriodInfo.value.morning.toMutableList()
-                                                            .apply {
-                                                                this[i] = Lesson(
-                                                                    start = startTime,
-                                                                    end = endTime
-                                                                )
-                                                            }
-                                                    )
-                                                return@TimePeriodPickerDialog
-                                            }
-                                        }
-                                        val updatedLessons =
-                                            LessonTimePeriodInfo.generateLessons(
-                                                morningCount.value - i,
-                                                startTime,
-                                                endTime.minutesSince(startTime),
-                                                if (i == 0) 10 else startTime.minutesSince(
-                                                    lessonTimePeriodInfo.value.morning[i - 1].end
-                                                )
-                                            )
-                                        lessonTimePeriodInfo.value =
-                                            lessonTimePeriodInfo.value.copy(
-                                                morning = lessonTimePeriodInfo.value.morning.toMutableList()
-                                                    .subList(0, i) + updatedLessons
-                                            )
-                                        isModified.value = true
-                                    }
-                                )
-                            }
-                        }
+                LessonTimeSection(
+                    title = stringResource(Res.string.settings_title_lessons_time_morning),
+                    lessons = lessonTimePeriodInfo.value.morning,
+                    count = morningCount.value,
+                    indexOffset = 0,
+                    conflictSet = conflictSet,
+                    onUpdate = { updatedLessons ->
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(morning = updatedLessons)
+                        isModified.value = true
                     }
-                }
+                )
             }
             if (afternoonCount.value > 0) {
                 PreferenceDivider()
-                PreferenceSection(
+                LessonTimeSection(
                     title = stringResource(Res.string.settings_title_lessons_time_afternoon),
-                ) {
-                    for (i in 0 until afternoonCount.value) {
-                        val lesson = lessonTimePeriodInfo.value.afternoon[i]
-                        val dialogState = rememberDialogState()
-                        BasePreference(
-                            title = stringResource(
-                                Res.string.schedule_value_course_time,
-                                i + morningCount.value + 1
-                            ),
-                            onClick = { dialogState.show() }
-                        ) {
-                            if (i + morningCount.value in conflictSet) {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            } else {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            }
-                            if (dialogState.visible) {
-                                TimePeriodPickerDialog(
-                                    style =
-                                        if (currentPlatform().isDesktop())
-                                            TimePeriodPickerStyle.TextField
-                                        else
-                                            TimePeriodPickerStyle.Wheel,
-                                    state = dialogState,
-                                    initStartTime = lesson.start,
-                                    initEndTime = lesson.end,
-                                    onTimePeriodChange = { startTime, endTime ->
-                                        if (i > 0) {
-                                            if (startTime < lessonTimePeriodInfo.value.afternoon[i - 1].end) {
-                                                lessonTimePeriodInfo.value =
-                                                    lessonTimePeriodInfo.value.copy(
-                                                        afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
-                                                            .apply {
-                                                                this[i] = Lesson(
-                                                                    start = startTime,
-                                                                    end = endTime
-                                                                )
-                                                            }
-                                                    )
-                                                return@TimePeriodPickerDialog
-                                            }
-                                        }
-                                        val updatedLessons =
-                                            LessonTimePeriodInfo.generateLessons(
-                                                afternoonCount.value - i,
-                                                startTime,
-                                                endTime.minutesSince(startTime),
-                                                if (i == 0) 10 else startTime.minutesSince(
-                                                    lessonTimePeriodInfo.value.afternoon[i - 1].end
-                                                )
-                                            )
-                                        lessonTimePeriodInfo.value =
-                                            lessonTimePeriodInfo.value.copy(
-                                                afternoon = lessonTimePeriodInfo.value.afternoon.toMutableList()
-                                                    .subList(0, i) + updatedLessons
-                                            )
-                                        isModified.value = true
-                                    }
-                                )
-                            }
-                        }
+                    lessons = lessonTimePeriodInfo.value.afternoon,
+                    count = afternoonCount.value,
+                    indexOffset = morningCount.value,
+                    conflictSet = conflictSet,
+                    onUpdate = { updatedLessons ->
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(afternoon = updatedLessons)
+                        isModified.value = true
                     }
-                }
+                )
             }
             if (eveningCount.value > 0) {
                 PreferenceDivider()
-                PreferenceSection(
-                    title = stringResource(Res.string.settings_title_lessons_time_evening)
-                ) {
-                    for (i in 0 until eveningCount.value) {
-                        val lesson = lessonTimePeriodInfo.value.evening[i]
-                        val dialogState = rememberDialogState()
-                        BasePreference(
-                            title = stringResource(
-                                Res.string.schedule_value_course_time,
-                                i + morningCount.value + afternoonCount.value + 1
-                            ),
-                            onClick = { dialogState.show() }
-                        ) {
-                            if (i + morningCount.value + afternoonCount.value in conflictSet) {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            } else {
-                                Text(
-                                    text = lesson.start.toString() + " - " + lesson.end.toString(),
-                                    fontFamily = NotoSans,
-                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                )
-                            }
-                            if (dialogState.visible) {
-                                TimePeriodPickerDialog(
-                                    style =
-                                        if (currentPlatform().isDesktop())
-                                            TimePeriodPickerStyle.TextField
-                                        else
-                                            TimePeriodPickerStyle.Wheel,
-                                    state = dialogState,
-                                    initStartTime = lesson.start,
-                                    initEndTime = lesson.end,
-                                    onTimePeriodChange = { startTime, endTime ->
-                                        if (i > 0) {
-                                            if (startTime < lessonTimePeriodInfo.value.evening[i - 1].end) {
-                                                lessonTimePeriodInfo.value =
-                                                    lessonTimePeriodInfo.value.copy(
-                                                        evening = lessonTimePeriodInfo.value.evening.toMutableList()
-                                                            .apply {
-                                                                this[i] = Lesson(
-                                                                    start = startTime,
-                                                                    end = endTime
-                                                                )
-                                                            }
-                                                    )
-                                                return@TimePeriodPickerDialog
-                                            }
-                                        }
-                                        val updatedLessons =
-                                            LessonTimePeriodInfo.generateLessons(
-                                                eveningCount.value - i,
-                                                startTime,
-                                                endTime.minutesSince(startTime),
-                                                if (i == 0) 10 else startTime.minutesSince(
-                                                    lessonTimePeriodInfo.value.evening[i - 1].end
-                                                )
-                                            )
-                                        lessonTimePeriodInfo.value =
-                                            lessonTimePeriodInfo.value.copy(
-                                                evening = lessonTimePeriodInfo.value.evening.toMutableList()
-                                                    .subList(0, i) + updatedLessons
-                                            )
-                                        isModified.value = true
+                LessonTimeSection(
+                    title = stringResource(Res.string.settings_title_lessons_time_evening),
+                    lessons = lessonTimePeriodInfo.value.evening,
+                    count = eveningCount.value,
+                    indexOffset = morningCount.value + afternoonCount.value,
+                    conflictSet = conflictSet,
+                    onUpdate = { updatedLessons ->
+                        lessonTimePeriodInfo.value = lessonTimePeriodInfo.value.copy(evening = updatedLessons)
+                        isModified.value = true
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreferenceScope.LessonTimeSection(
+    title: String,
+    lessons: List<Lesson>,
+    count: Int,
+    indexOffset: Int,
+    conflictSet: Set<Int>,
+    onUpdate: (List<Lesson>) -> Unit
+) {
+    PreferenceSection(title = title) {
+        for (i in 0 until count) {
+            val lesson = lessons[i]
+            val dialogState = rememberDialogState()
+            BasePreference(
+                title = stringResource(Res.string.schedule_value_course_time, i + indexOffset + 1),
+                onClick = { dialogState.show() }
+            ) {
+                val isConflict = (i + indexOffset) in conflictSet
+                Text(
+                    text = lesson.start.toString() + " - " + lesson.end.toString(),
+                    color = if (isConflict) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurface,
+                    fontFamily = NotoSans,
+                    fontSize = MaterialTheme.typography.labelLarge.fontSize
+                )
+                if (dialogState.visible) {
+                    TimePeriodPickerDialog(
+                        style = if (currentPlatform().isDesktop())
+                            TimePeriodPickerStyle.TextField
+                        else
+                            TimePeriodPickerStyle.Wheel,
+                        state = dialogState,
+                        initStartTime = lesson.start,
+                        initEndTime = lesson.end,
+                        onTimePeriodChange = { startTime, endTime ->
+                            if (i > 0 && startTime < lessons[i - 1].end) {
+                                onUpdate(
+                                    lessons.toMutableList().apply {
+                                        this[i] = Lesson(start = startTime, end = endTime)
                                     }
                                 )
+                                return@TimePeriodPickerDialog
                             }
+                            val updatedLessons = LessonTimePeriodInfo.generateLessons(
+                                count - i,
+                                startTime,
+                                endTime.minutesSince(startTime),
+                                if (i == 0) 10 else startTime.minutesSince(lessons[i - 1].end)
+                            )
+                            onUpdate(lessons.toMutableList().subList(0, i) + updatedLessons)
                         }
-                    }
+                    )
                 }
             }
         }

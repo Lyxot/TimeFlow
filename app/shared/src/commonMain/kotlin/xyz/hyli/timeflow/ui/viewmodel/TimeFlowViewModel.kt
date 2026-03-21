@@ -19,12 +19,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
@@ -48,6 +43,7 @@ enum class AiExtractionStatus {
 data class AiExtractionState(
     val status: AiExtractionStatus = AiExtractionStatus.IDLE,
     val extractedSchedule: Schedule? = null,
+    val editedSchedule: Schedule? = null,
     val error: String? = null
 )
 
@@ -95,10 +91,18 @@ class TimeFlowViewModel(
             val imageBase64 = Base64.encode(imageBytes)
             syncManager.extractSchedule(imageBase64)
                 .onSuccess { schedule ->
-                    _aiExtractionState.value = AiExtractionState(
-                        status = AiExtractionStatus.DONE,
-                        extractedSchedule = schedule
-                    )
+                    if (schedule.courses.isEmpty()) {
+                        _aiExtractionState.value = AiExtractionState(
+                            status = AiExtractionStatus.ERROR,
+                            error = getString(Res.string.ai_value_no_courses)
+                        )
+                    } else {
+                        _aiExtractionState.value = AiExtractionState(
+                            status = AiExtractionStatus.DONE,
+                            extractedSchedule = schedule,
+                            editedSchedule = schedule
+                        )
+                    }
                 }
                 .onFailure { e ->
                     _aiExtractionState.value = AiExtractionState(
@@ -107,6 +111,29 @@ class TimeFlowViewModel(
                     )
                 }
         }
+    }
+
+    /**
+     * Check AI availability: enabled and has remaining quota.
+     * @param onResult receives null if unavailable, or error message string if blocked, or empty string if OK.
+     */
+    fun checkAiAvailable(onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val info = syncManager.getAiInfo()
+            if (info == null) {
+                onResult(null)
+            } else if (!info.enabled) {
+                onResult(getString(Res.string.ai_value_not_enabled))
+            } else if (info.quotaLimit != null && info.quotaUsed >= info.quotaLimit!!) {
+                onResult(getString(Res.string.ai_value_quota_exceeded, info.quotaUsed, info.quotaLimit!!))
+            } else {
+                onResult("")
+            }
+        }
+    }
+
+    fun updateEditedSchedule(schedule: Schedule) {
+        _aiExtractionState.value = _aiExtractionState.value.copy(editedSchedule = schedule)
     }
 
     fun confirmAiImport(schedule: Schedule) {

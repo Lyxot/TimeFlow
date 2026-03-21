@@ -339,6 +339,19 @@ class SyncManager(
         _syncState.value = _syncState.value.copy(conflicts = currentConflicts)
     }
 
+    suspend fun getAiInfo(): ApiV1.Ai.Info.Response? {
+        val client = getOrCreateClient() ?: return null
+        if (!tokenManager.hasTokens()) return null
+        return try {
+            val response = client.aiInfo()
+            if (response.status == HttpStatusCode.OK) {
+                response.body<ApiV1.Ai.Info.Response>()
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     suspend fun extractSchedule(imageBase64: String): Result<Schedule> {
         val client = getOrCreateClient()
             ?: return Result.failure(Exception(ERROR_API_NOT_CONFIGURED))
