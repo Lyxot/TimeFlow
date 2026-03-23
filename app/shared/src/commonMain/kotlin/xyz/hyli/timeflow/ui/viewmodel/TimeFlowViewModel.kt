@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
+import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.api.models.isImageBytes
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
@@ -89,8 +90,12 @@ class TimeFlowViewModel(
         _aiExtractionState.value = AiExtractionState(status = AiExtractionStatus.EXTRACTING)
         viewModelScope.launch {
             val imageBase64 = Base64.encode(imageBytes)
-            syncManager.extractSchedule(imageBase64)
-                .onSuccess { schedule ->
+            val result = if (settings.value.aiConfig?.enabled == true) {
+                extractWithCustomAi(imageBase64)
+            } else {
+                syncManager.extractSchedule(imageBase64)
+            }
+            result.onSuccess { schedule ->
                     if (schedule.courses.isEmpty()) {
                         _aiExtractionState.value = AiExtractionState(
                             status = AiExtractionStatus.ERROR,
@@ -113,21 +118,49 @@ class TimeFlowViewModel(
         }
     }
 
+    private suspend fun extractWithCustomAi(imageBase64: String): Result<Schedule> {
+        val cfg = settings.value.aiConfig ?: return Result.failure(Exception("AI config not set"))
+        val providerStr = cfg.provider.name.lowercase()
+        val extractor = ScheduleExtractor(
+            provider = providerStr,
+            apiKey = cfg.apiKey,
+            model = cfg.model,
+            endpoint = cfg.endpoint.ifBlank { null }
+        )
+        return try {
+            val extraction = extractor.extractFull(imageBase64)
+            Result.success(extraction.toSchedule())
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "AI extraction failed", e))
+        } finally {
+            extractor.close()
+        }
+    }
+
     /**
-     * Check AI availability: enabled and has remaining quota.
+     * Check AI availability: custom config enabled, or server enabled with remaining quota.
      * @param onResult receives null if unavailable, or error message string if blocked, or empty string if OK.
      */
     fun checkAiAvailable(onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            val info = syncManager.getAiInfo()
-            if (info == null) {
-                onResult(null)
-            } else if (!info.enabled) {
-                onResult(getString(Res.string.ai_value_not_enabled))
-            } else if (info.quotaLimit != null && info.quotaUsed >= info.quotaLimit!!) {
-                onResult(getString(Res.string.ai_value_quota_exceeded, info.quotaUsed, info.quotaLimit!!))
+            val aiConfig = settings.value.aiConfig
+            if (aiConfig?.enabled == true) {
+                if (aiConfig.model.isEmpty()) {
+                    onResult(getString(Res.string.ai_value_custom_model_not_set))
+                } else {
+                    onResult("")
+                }
             } else {
-                onResult("")
+                val info = syncManager.getAiInfo()
+                if (info == null) {
+                    onResult(null)
+                } else if (!info.enabled) {
+                    onResult(getString(Res.string.ai_value_not_enabled))
+                } else if (info.quotaLimit != null && info.quotaUsed >= info.quotaLimit!!) {
+                    onResult(getString(Res.string.ai_value_quota_exceeded, info.quotaUsed, info.quotaLimit!!))
+                } else {
+                    onResult("")
+                }
             }
         }
     }
@@ -355,6 +388,12 @@ class TimeFlowViewModel(
     fun updateApiEndpoint(endpoint: String?) {
         viewModelScope.launch {
             repository.updateApiEndpoint(endpoint)
+        }
+    }
+
+    fun updateAiConfig(config: AiProviderConfig?) {
+        viewModelScope.launch {
+            repository.updateAiConfig(config)
         }
     }
 

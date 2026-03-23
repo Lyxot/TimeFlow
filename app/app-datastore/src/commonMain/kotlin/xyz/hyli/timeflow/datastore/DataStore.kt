@@ -129,6 +129,12 @@ class SettingsDataStore(
         }
     }
 
+    suspend fun updateAiConfig(config: AiProviderConfig?) {
+        db.updateData { currentSettings ->
+            currentSettings.copy(aiConfig = config)
+        }
+    }
+
     suspend fun reset() {
         db.updateData { _ ->
             SettingsProtobufSerializer.defaultValue

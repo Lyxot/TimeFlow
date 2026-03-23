@@ -51,7 +51,7 @@ data class Settings(
     @ProtoNumber(8) val syncedAt: Instant? = null,
     @ProtoNumber(9) val apiEndpoint: String? = null,
     @ProtoNumber(10) val cachedUserInfo: User? = null,
-    @ProtoNumber(11) val reserved11: String? = null,
+    @ProtoNumber(11) val aiConfig: AiProviderConfig? = null,
     @ProtoNumber(12) val reserved12: String? = null
 ) {
     companion object {

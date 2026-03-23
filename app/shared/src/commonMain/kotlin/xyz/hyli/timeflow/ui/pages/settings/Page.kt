@@ -34,6 +34,8 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import xyz.hyli.timeflow.BuildConfig
+import xyz.hyli.timeflow.data.AiProviderConfig
+import xyz.hyli.timeflow.data.AiProviderFormat
 import xyz.hyli.timeflow.data.Schedule
 import xyz.hyli.timeflow.data.ThemeMode
 import xyz.hyli.timeflow.shared.generated.resources.*
@@ -211,6 +213,70 @@ fun SettingsScreen(
             PreferenceDivider()
             // Account & Sync
             AccountSection(viewModel)
+            PreferenceDivider()
+            // Advanced - AI Provider
+            PreferenceSection(
+                title = stringResource(Res.string.settings_title_advanced)
+            ) {
+                val aiConfig = settings.aiConfig ?: AiProviderConfig()
+                PreferenceBool(
+                    style = PreferenceBoolStyle.Style.Switch,
+                    value = aiConfig.enabled,
+                    onValueChange = {
+                        viewModel.updateAiConfig(aiConfig.copy(enabled = it))
+                    },
+                    title = stringResource(Res.string.settings_title_ai_custom),
+                    subtitle = stringResource(Res.string.settings_subtitle_ai_custom)
+                )
+                val aiEnabledDependency = Dependency.State(settingsState) {
+                    (it.aiConfig ?: AiProviderConfig()).enabled
+                }
+                val providerLabels = mapOf(
+                    AiProviderFormat.OPENAI to "OpenAI",
+                    AiProviderFormat.GOOGLE to "Google",
+                    AiProviderFormat.ANTHROPIC to "Anthropic"
+                )
+                PreferenceList(
+                    style = PreferenceListStyle.Style.SegmentedButtons,
+                    value = aiConfig.provider,
+                    onValueChange = { newProvider ->
+                        viewModel.updateAiConfig(aiConfig.copy(provider = newProvider))
+                    },
+                    items = AiProviderFormat.entries,
+                    itemTextProvider = { providerLabels[it] ?: it.name },
+                    title = stringResource(Res.string.settings_title_ai_provider),
+                    visible = aiEnabledDependency
+                )
+                PreferenceInputText(
+                    value = aiConfig.endpoint,
+                    onValueChange = { newEndpoint ->
+                        viewModel.updateAiConfig(aiConfig.copy(endpoint = newEndpoint))
+                    },
+                    title = stringResource(Res.string.settings_title_ai_endpoint),
+                    subtitle = stringResource(
+                        Res.string.settings_subtitle_ai_endpoint,
+                        providerLabels[aiConfig.provider] ?: ""
+                    ).takeIf { aiConfig.endpoint.isEmpty() },
+                    visible = aiEnabledDependency
+                )
+                PreferenceInputText(
+                    value = if (aiConfig.apiKey.isNotBlank()) "••••••••" else "",
+                    onValueChange = { newKey ->
+                        viewModel.updateAiConfig(aiConfig.copy(apiKey = newKey))
+                    },
+                    title = stringResource(Res.string.settings_title_ai_api_key),
+                    visible = aiEnabledDependency
+                )
+                PreferenceInputText(
+                    value = aiConfig.model,
+                    onValueChange = { newModel ->
+                        viewModel.updateAiConfig(aiConfig.copy(model = newModel))
+                    },
+                    title = stringResource(Res.string.settings_title_ai_model),
+                    subtitle = stringResource(Res.string.settings_subtitle_ai_model).takeIf { aiConfig.model.isEmpty() },
+                    visible = aiEnabledDependency
+                )
+            }
             PreferenceDivider()
             // Other
             PreferenceSection(

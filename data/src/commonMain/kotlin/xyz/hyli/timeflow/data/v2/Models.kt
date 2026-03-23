@@ -9,7 +9,9 @@
 
 package xyz.hyli.timeflow.data.v2
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -34,4 +36,25 @@ data class User(
 data class SelectedSchedule(
     val scheduleId: Short?,
     val updatedAt: Instant?
+)
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+enum class AiProviderFormat {
+    @ProtoNumber(1)
+    OPENAI,
+    @ProtoNumber(2)
+    GOOGLE,
+    @ProtoNumber(3)
+    ANTHROPIC,
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class AiProviderConfig(
+    @ProtoNumber(1) val enabled: Boolean = false,
+    @ProtoNumber(2) val provider: AiProviderFormat = AiProviderFormat.OPENAI,
+    @ProtoNumber(3) val endpoint: String = "",
+    @ProtoNumber(4) val apiKey: String = "",
+    @ProtoNumber(5) val model: String = ""
 )

@@ -69,6 +69,10 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(cachedUserInfo = user)
     }
 
+    override suspend fun updateAiConfig(config: xyz.hyli.timeflow.data.AiProviderConfig?) {
+        _settings.value = _settings.value.copy(aiConfig = config)
+    }
+
     // Helper function for tests to manually set the settings
     fun setSettings(settings: Settings) {
         _settings.value = settings

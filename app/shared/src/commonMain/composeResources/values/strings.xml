@@ -88,6 +88,7 @@
     <string name="ai_value_quota_exceeded">AI 识别次数已用完（已使用 %1$s/%2$s 次）</string>
     <string name="ai_value_no_courses">未能从图片中识别出课程信息</string>
     <string name="ai_value_name_empty_hint">请输入课程表名称后再确认导入</string>
+    <string name="ai_value_custom_model_not_set">请先在设置中配置 AI 模型</string>
 
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>
@@ -133,6 +134,17 @@
     <string name="settings_value_version">版本</string>
     <string name="settings_title_changelog">更新日志</string>
     <string name="settings_title_config_path">配置文件路径</string>
+
+    <!--    advanced settings-->
+    <string name="settings_title_advanced">高级设置</string>
+    <string name="settings_title_ai_custom">自定义 AI 服务商</string>
+    <string name="settings_subtitle_ai_custom">使用自己的 API 进行课程表识别</string>
+    <string name="settings_title_ai_provider">AI 服务商</string>
+    <string name="settings_title_ai_endpoint">接口地址</string>
+    <string name="settings_subtitle_ai_endpoint">%1$s 兼容的 API 地址</string>
+    <string name="settings_title_ai_api_key">API Key</string>
+    <string name="settings_title_ai_model">模型</string>
+    <string name="settings_subtitle_ai_model">例如 gpt-4o、gemini-2.5-flash</string>
 
     <!--    account & sync settings-->
     <string name="settings_title_account">账户与同步</string>

@@ -65,4 +65,8 @@ class DataRepository(
     override suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?) {
         settingsDataStore.updateCachedUserInfo(user)
     }
+
+    override suspend fun updateAiConfig(config: xyz.hyli.timeflow.data.AiProviderConfig?) {
+        settingsDataStore.updateAiConfig(config)
+    }
 }

@@ -519,7 +519,7 @@ fun ScheduleFAB(
                         modifier = Modifier.clickable {
                             showImportChoiceDialog = false
                             dialogState.dismiss()
-                            if (!isLoggedIn || settings.apiEndpoint.isNullOrBlank()) {
+                            if ((!isLoggedIn || settings.apiEndpoint.isNullOrBlank()) && settings.aiConfig?.enabled != true) {
                                 showMessage(notLoggedInMsg)
                                 return@clickable
                             }

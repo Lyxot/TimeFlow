@@ -32,6 +32,8 @@ typealias WeekList = WeekListV2
 typealias Tokens = xyz.hyli.timeflow.data.v2.Tokens
 typealias User = xyz.hyli.timeflow.data.v2.User
 typealias SelectedSchedule = xyz.hyli.timeflow.data.v2.SelectedSchedule
+typealias AiProviderFormat = xyz.hyli.timeflow.data.v2.AiProviderFormat
+typealias AiProviderConfig = xyz.hyli.timeflow.data.v2.AiProviderConfig
 
 // V1 Data Structures
 typealias SettingsV1 = xyz.hyli.timeflow.data.v1.Settings
