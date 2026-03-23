@@ -24,6 +24,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
 import xyz.hyli.timeflow.ai.ScheduleExtractor
+import xyz.hyli.timeflow.ai.resizeImage
+import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.isImageBytes
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
@@ -82,6 +84,18 @@ class TimeFlowViewModel(
                 initialValue = tokenManager.hasTokens()
             )
 
+    private var cachedAiInfo: ApiV1.Ai.Info.Response? = null
+    private var cachedAiInfoKey: String? = null
+
+    private suspend fun getOrFetchAiInfo(): ApiV1.Ai.Info.Response? {
+        val key = "${settings.value.apiEndpoint}:${tokenManager.hasTokens()}"
+        if (cachedAiInfoKey == key && cachedAiInfo != null) return cachedAiInfo
+        val info = syncManager.getAiInfo()
+        cachedAiInfo = info
+        cachedAiInfoKey = key
+        return info
+    }
+
     private val _aiExtractionState = MutableStateFlow(AiExtractionState())
     val aiExtractionState: StateFlow<AiExtractionState> = _aiExtractionState.asStateFlow()
 
@@ -89,10 +103,16 @@ class TimeFlowViewModel(
     fun startAiExtraction(imageBytes: ByteArray) {
         _aiExtractionState.value = AiExtractionState(status = AiExtractionStatus.EXTRACTING)
         viewModelScope.launch {
-            val imageBase64 = Base64.encode(imageBytes)
             val result = if (settings.value.aiConfig?.enabled == true) {
+                val imageBase64 = Base64.encode(imageBytes)
                 extractWithCustomAi(imageBase64)
             } else {
+                // Compress image using server-advertised limits
+                val info = getOrFetchAiInfo()
+                val maxSize = info?.maxImageSizeBytes ?: DEFAULT_MAX_IMAGE_SIZE
+                val maxRes = info?.maxImageResolution ?: DEFAULT_MAX_IMAGE_RESOLUTION
+                val resized = resizeImage(imageBytes, maxSize, maxRes)
+                val imageBase64 = Base64.encode(resized.data)
                 syncManager.extractSchedule(imageBase64)
             }
             result.onSuccess { schedule ->
@@ -151,7 +171,7 @@ class TimeFlowViewModel(
                     onResult("")
                 }
             } else {
-                val info = syncManager.getAiInfo()
+                val info = getOrFetchAiInfo()
                 if (info == null) {
                     onResult(null)
                 } else if (!info.enabled) {
@@ -420,3 +440,5 @@ class TimeFlowViewModel(
 }
 
 private const val TIMEOUT_MILLIS = 5_000L
+private const val DEFAULT_MAX_IMAGE_SIZE = 2_097_152L // 2 MB
+private const val DEFAULT_MAX_IMAGE_RESOLUTION = 2048
