@@ -12,5 +12,5 @@ package xyz.hyli.timeflow.client
 import io.ktor.client.engine.*
 import io.ktor.client.engine.js.*
 
-internal actual val HttpEngine: HttpClientEngineFactory<*>
+actual val HttpEngine: HttpClientEngineFactory<*>
     get() = Js

@@ -26,6 +26,7 @@ import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
 import ai.koog.prompt.streaming.StreamFrame
+import io.ktor.client.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
@@ -46,59 +47,52 @@ class ScheduleExtractor(
     private val provider: String,
     private val apiKey: String,
     private val model: String,
-    private val endpoint: String? = null
+    private val endpoint: String? = null,
+    private val httpClient: HttpClient? = null
 ) : AutoCloseable {
 
     private val executor: SingleLLMPromptExecutor = createExecutor()
 
     private fun createExecutor(): SingleLLMPromptExecutor {
         val ep = endpoint?.takeIf { it.isNotBlank() }
+        val client = httpClient ?: HttpClient()
 
         return when (provider.lowercase()) {
             "openrouter" -> {
-                if (ep != null) {
+                val settings = if (ep != null) {
                     val (baseUrl, chatPath) = parseEndpoint(ep)
-                    SingleLLMPromptExecutor(OpenRouterLLMClient(apiKey, OpenRouterClientSettings(baseUrl, chatPath)))
-                } else {
-                    SingleLLMPromptExecutor(OpenRouterLLMClient(apiKey))
-                }
+                    OpenRouterClientSettings(baseUrl, chatPath)
+                } else OpenRouterClientSettings()
+                SingleLLMPromptExecutor(OpenRouterLLMClient(apiKey, settings, client))
             }
 
             "google" -> {
-                if (ep != null) {
+                val settings = if (ep != null) {
                     val (baseUrl, _) = parseEndpoint(ep)
-                    SingleLLMPromptExecutor(GoogleLLMClient(apiKey, GoogleClientSettings(baseUrl)))
-                } else {
-                    SingleLLMPromptExecutor(GoogleLLMClient(apiKey))
-                }
+                    GoogleClientSettings(baseUrl)
+                } else GoogleClientSettings()
+                SingleLLMPromptExecutor(GoogleLLMClient(apiKey, settings, client))
             }
 
             "anthropic" -> {
-                if (ep != null) {
+                val settings = if (ep != null) {
                     val (baseUrl, _) = parseEndpoint(ep)
-                    SingleLLMPromptExecutor(AnthropicLLMClient(apiKey, AnthropicClientSettings(baseUrl = baseUrl)))
-                } else {
-                    SingleLLMPromptExecutor(AnthropicLLMClient(apiKey))
-                }
+                    AnthropicClientSettings(baseUrl = baseUrl)
+                } else AnthropicClientSettings()
+                SingleLLMPromptExecutor(AnthropicLLMClient(apiKey, settings, client))
             }
 
             "ollama" -> {
-                SingleLLMPromptExecutor(OllamaClient(ep ?: "http://localhost:11434"))
+                SingleLLMPromptExecutor(OllamaClient(ep ?: "http://localhost:11434", client))
             }
 
             else -> {
                 // "openai" and any unknown format: use OpenAI-compatible client
-                if (ep != null) {
+                val settings = if (ep != null) {
                     val (baseUrl, chatPath) = parseEndpoint(ep)
-                    SingleLLMPromptExecutor(
-                        OpenAILLMClient(
-                            apiKey,
-                            OpenAIClientSettings(baseUrl, chatCompletionsPath = chatPath)
-                        )
-                    )
-                } else {
-                    SingleLLMPromptExecutor(OpenAILLMClient(apiKey))
-                }
+                    OpenAIClientSettings(baseUrl, chatCompletionsPath = chatPath)
+                } else OpenAIClientSettings()
+                SingleLLMPromptExecutor(OpenAILLMClient(apiKey, settings, client))
             }
         }
     }

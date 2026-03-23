@@ -9,6 +9,7 @@
 
 package xyz.hyli.timeflow.ui.sync
 
+import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -35,6 +36,7 @@ class SyncManager(
     private val settingsSnapshot: () -> Settings,
     private val tokenManager: RepositoryTokenManager,
     private val scope: CoroutineScope,
+    private val client: HttpClient,
 ) {
     private val _syncState = MutableStateFlow(SyncState())
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
@@ -50,7 +52,7 @@ class SyncManager(
         if (endpoint.isNullOrBlank()) return null
         if (apiClient == null || currentEndpoint != endpoint) {
             apiClient?.close()
-            apiClient = ApiClient(tokenManager, endpoint)
+            apiClient = ApiClient(tokenManager, endpoint, client)
             currentEndpoint = endpoint
         }
         return apiClient

@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
+import io.ktor.client.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -27,6 +28,7 @@ import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.ai.resizeImage
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.isImageBytes
+import xyz.hyli.timeflow.client.HttpEngine
 import xyz.hyli.timeflow.data.*
 import xyz.hyli.timeflow.di.IAppContainer
 import xyz.hyli.timeflow.di.IDataRepository
@@ -71,7 +73,8 @@ class TimeFlowViewModel(
 
     private val secureTokenStorage = createSecureTokenStorage()
     private val tokenManager = RepositoryTokenManager(secureTokenStorage)
-    private val syncManager = SyncManager(repository, { settings.value }, tokenManager, viewModelScope)
+    private val httpClient = HttpClient(HttpEngine)
+    private val syncManager = SyncManager(repository, { settings.value }, tokenManager, viewModelScope, httpClient)
 
     val syncState: StateFlow<SyncState> = syncManager.syncState
     val userInfo = syncManager.userInfo
@@ -145,7 +148,8 @@ class TimeFlowViewModel(
             provider = providerStr,
             apiKey = cfg.apiKey,
             model = cfg.model,
-            endpoint = cfg.endpoint.ifBlank { null }
+            endpoint = cfg.endpoint.ifBlank { null },
+            httpClient = httpClient
         )
         return try {
             val extraction = extractor.extractFull(imageBase64)
@@ -420,6 +424,7 @@ class TimeFlowViewModel(
     override fun onCleared() {
         super.onCleared()
         syncManager.close()
+        httpClient.close()
     }
 
     companion object {

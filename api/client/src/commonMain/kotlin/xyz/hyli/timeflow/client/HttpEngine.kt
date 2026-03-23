@@ -11,4 +11,4 @@ package xyz.hyli.timeflow.client
 
 import io.ktor.client.engine.*
 
-internal expect val HttpEngine: HttpClientEngineFactory<*>
+expect val HttpEngine: HttpClientEngineFactory<*>
