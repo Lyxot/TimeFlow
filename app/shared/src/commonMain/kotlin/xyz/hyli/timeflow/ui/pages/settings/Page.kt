@@ -34,6 +34,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import xyz.hyli.timeflow.BuildConfig
+import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.data.AiProviderConfig
 import xyz.hyli.timeflow.data.AiProviderFormat
 import xyz.hyli.timeflow.data.Schedule
@@ -232,18 +233,27 @@ fun SettingsScreen(
                     (it.aiConfig ?: AiProviderConfig()).enabled
                 }
                 val providerLabels = mapOf(
-                    AiProviderFormat.OPENAI to "OpenAI",
-                    AiProviderFormat.GOOGLE to "Google",
-                    AiProviderFormat.ANTHROPIC to "Anthropic"
+                    AiProviderFormat.OPENAI to ("OpenAI" to ScheduleExtractor.OPENAI_URL),
+                    AiProviderFormat.GOOGLE to ("Google" to ScheduleExtractor.GOOGLE_URL),
+                    AiProviderFormat.ANTHROPIC to ("Anthropic" to ScheduleExtractor.ANTHROPIC_URL),
                 )
                 PreferenceList(
                     style = PreferenceListStyle.Style.SegmentedButtons,
                     value = aiConfig.provider,
                     onValueChange = { newProvider ->
-                        viewModel.updateAiConfig(aiConfig.copy(provider = newProvider))
+                        if (aiConfig.endpoint.isBlank()) {
+                            viewModel.updateAiConfig(
+                                aiConfig.copy(
+                                    provider = newProvider,
+                                    endpoint = providerLabels[newProvider]?.second ?: ""
+                                )
+                            )
+                        } else {
+                            viewModel.updateAiConfig(aiConfig.copy(provider = newProvider))
+                        }
                     },
                     items = AiProviderFormat.entries,
-                    itemTextProvider = { providerLabels[it] ?: it.name },
+                    itemTextProvider = { providerLabels[it]?.first ?: it.name },
                     title = stringResource(Res.string.settings_title_ai_provider),
                     visible = aiEnabledDependency
                 )
@@ -256,7 +266,7 @@ fun SettingsScreen(
                     subtitle = stringResource(
                         Res.string.settings_subtitle_ai_endpoint,
                         providerLabels[aiConfig.provider] ?: ""
-                    ).takeIf { aiConfig.endpoint.isEmpty() },
+                    ).takeIf { aiConfig.endpoint.isBlank() },
                     visible = aiEnabledDependency
                 )
                 PreferenceInputText(
@@ -273,7 +283,7 @@ fun SettingsScreen(
                         viewModel.updateAiConfig(aiConfig.copy(model = newModel))
                     },
                     title = stringResource(Res.string.settings_title_ai_model),
-                    subtitle = stringResource(Res.string.settings_subtitle_ai_model).takeIf { aiConfig.model.isEmpty() },
+                    subtitle = stringResource(Res.string.settings_subtitle_ai_model).takeIf { aiConfig.model.isBlank() },
                     visible = aiEnabledDependency
                 )
             }

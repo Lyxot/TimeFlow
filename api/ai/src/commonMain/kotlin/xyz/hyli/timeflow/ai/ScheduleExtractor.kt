@@ -323,26 +323,10 @@ class ScheduleExtractor(
     companion object {
         // 10 minutes timeout
         private const val REQUEST_TIMEOUT_MS = 600_000L
-        private const val OPENAI_URL = "https://api.openai.com/v1/chat/completions"
-        private const val OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-        private const val OLLAMA_URL = "http://localhost:11434/v1/chat/completions"
-        private const val ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
-        private const val GOOGLE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-
-        /**
-         * Parse a full endpoint URL into (baseUrl, path).
-         * e.g. "https://integrate.api.nvidia.com/v1/chat/completions"
-         *   -> ("https://integrate.api.nvidia.com", "v1/chat/completions")
-         */
-        internal fun parseEndpoint(endpoint: String): Pair<String, String> {
-            val url = endpoint.trimEnd('/')
-            val protocolEnd = url.indexOf("://")
-            if (protocolEnd == -1) return url to "v1/chat/completions"
-            val pathStart = url.indexOf('/', protocolEnd + 3)
-            if (pathStart == -1) return url to "v1/chat/completions"
-            val baseUrl = url.substring(0, pathStart)
-            val path = url.substring(pathStart + 1)
-            return baseUrl to path
-        }
+        const val OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+        const val OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+        const val OLLAMA_URL = "http://localhost:11434/v1/chat/completions"
+        const val ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+        const val GOOGLE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
     }
 }
