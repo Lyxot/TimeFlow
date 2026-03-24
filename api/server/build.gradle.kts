@@ -78,7 +78,6 @@ dependencies {
     implementation(libs.flyway.database.postgresql)
     implementation(libs.hikaricp)
     implementation(libs.jakarta.mail)
-    implementation(libs.koog.ktor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.logback.classic)
     implementation(libs.postgresql)

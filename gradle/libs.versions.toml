@@ -19,7 +19,6 @@ jakarta-mail = "2.0.2"
 jbr-api = "1.10.1"
 jna = "5.18.1"
 kermit = "2.1.0"
-koog = "0.6.4"
 korlibs = "6.0.0"
 kotlin = "2.3.10"
 kotlin-inject = "0.9.0"
@@ -73,8 +72,6 @@ jbr-api = { group = "org.jetbrains.runtime", name = "jbr-api", version.ref = "jb
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
-koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
-koog-ktor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
 korlibs-compression = { module = "com.soywiz:korlibs-compression", version.ref = "korlibs" }
 kotlin-inject = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlin-inject" }
 kotlin-inject-ksp = { group = "me.tatarka.inject", name = "kotlin-inject-compiler-ksp", version.ref = "kotlin-inject" }

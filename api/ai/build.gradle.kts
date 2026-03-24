@@ -40,12 +40,13 @@ kotlin {
             api(project(":data"))
             implementation(project(":api:models"))
             implementation(project(":utils"))
-            implementation(libs.koog.agents)
+            implementation(ktorLibs.client.core)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }
         jvmTest.dependencies {
             implementation(libs.kotlin.test.junit)
+            implementation(ktorLibs.client.apache5)
         }
     }
 }
