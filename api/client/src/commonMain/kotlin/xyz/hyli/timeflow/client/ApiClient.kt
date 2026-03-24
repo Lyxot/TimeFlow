@@ -71,32 +71,39 @@ class ApiClient(
         }
     }
 
-    private val httpClient = client?.config { configureBase() } ?: HttpClient(HttpEngine) { configureBase() }
-    private val authenticatedClient: HttpClient = httpClient.config {
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    val accessToken = tokenManager.getAccessToken()
-                    val refreshToken = tokenManager.getRefreshToken()
-                    BearerTokens(accessToken, refreshToken)
-                }
-                refreshTokens {
-                    refresh(tokenManager.isRefreshTokenNeedRotate())
-                    val accessToken = tokenManager.getAccessToken()
-                    val refreshToken = tokenManager.getRefreshToken()
-                    BearerTokens(accessToken, refreshToken)
+    private val lazyHttpClient = lazy {
+        client?.config { configureBase() } ?: HttpClient(HttpEngine) { configureBase() }
+    }
+    private val httpClient: HttpClient by lazyHttpClient
+
+    private val lazyAuthenticatedClient = lazy {
+        httpClient.config {
+            install(Auth) {
+                bearer {
+                    loadTokens {
+                        val accessToken = tokenManager.getAccessToken()
+                        val refreshToken = tokenManager.getRefreshToken()
+                        BearerTokens(accessToken, refreshToken)
+                    }
+                    refreshTokens {
+                        refresh(tokenManager.isRefreshTokenNeedRotate())
+                        val accessToken = tokenManager.getAccessToken()
+                        val refreshToken = tokenManager.getRefreshToken()
+                        BearerTokens(accessToken, refreshToken)
+                    }
                 }
             }
         }
     }
+    private val authenticatedClient: HttpClient by lazyAuthenticatedClient
 
     typealias Version = Version.Response
 
     lateinit var apiVersion: Version
 
     override fun close() {
-        httpClient.close()
-        authenticatedClient.close()
+        if (lazyAuthenticatedClient.isInitialized()) authenticatedClient.close()
+        if (lazyHttpClient.isInitialized()) httpClient.close()
     }
 
     suspend fun ping() =
