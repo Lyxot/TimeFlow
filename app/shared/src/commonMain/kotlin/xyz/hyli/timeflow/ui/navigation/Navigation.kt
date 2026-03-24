@@ -156,7 +156,7 @@ fun AdaptiveNavigation(
         destination?.hierarchy?.any { it.hasRoute<Destination.SettingsGraph>() } == true
 
     val state = rememberNavigationSuiteScaffoldState()
-    LaunchedEffect(isSchedule, isToday, isSettings, navSuiteType) {
+    LaunchedEffect(navBackStackEntry, navSuiteType) {
         if (navSuiteType in NavigationBarType) {
             val isInMainPage = destination?.hasRoute<Destination.Schedule>() == true ||
                     destination?.hasRoute<Destination.Today>() == true ||
