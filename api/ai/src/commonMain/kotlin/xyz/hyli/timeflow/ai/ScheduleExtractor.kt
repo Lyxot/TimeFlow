@@ -22,6 +22,7 @@ import kotlinx.serialization.json.*
 import xyz.hyli.timeflow.api.models.ExtractionResult
 import xyz.hyli.timeflow.api.models.detectImageFormatFromBase64
 import xyz.hyli.timeflow.api.models.parseExtractionResult
+import xyz.hyli.timeflow.client.HttpEngine
 
 /**
  * 使用 Ktor HTTP 客户端直接调用 LLM API，从课程表图片中提取课程信息。
@@ -50,7 +51,7 @@ class ScheduleExtractor(
                 socketTimeoutMillis = REQUEST_TIMEOUT_MS
             }
             }
-            ?: HttpClient {
+            ?: HttpClient(HttpEngine) {
                 install(HttpTimeout) {
                     requestTimeoutMillis = REQUEST_TIMEOUT_MS
                     socketTimeoutMillis = REQUEST_TIMEOUT_MS
