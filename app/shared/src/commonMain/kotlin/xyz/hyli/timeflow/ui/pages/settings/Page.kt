@@ -207,6 +207,21 @@ fun SettingsScreen(
                                     contentDescription = null
                                 )
                             }
+                        },
+                        courseListContent = {
+                            BasePreference(
+                                title = stringResource(Res.string.settings_title_course_list),
+                                subtitle = stringResource(Res.string.settings_subtitle_course_list),
+                                onClick = {
+                                    navHostController.navigate(Destination.Settings.CourseList)
+                                },
+                                enabled = scheduleDependency
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                    contentDescription = null
+                                )
+                            }
                         }
                     )
                 }

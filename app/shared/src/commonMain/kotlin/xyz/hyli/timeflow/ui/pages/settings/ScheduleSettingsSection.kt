@@ -32,6 +32,8 @@ import xyz.hyli.timeflow.utils.isDesktop
  * @param lessonsPerDayContent Optional trailing content for the "lessons per day" row
  *   (e.g. a navigate-next icon in settings). If null, inline number pickers are shown
  *   for morning/afternoon/evening counts.
+ * @param courseListContent Optional content rendered at the end of the section
+ *   (e.g. a course list navigation entry).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +41,7 @@ fun PreferenceScope.ScheduleSettingsContent(
     schedule: Schedule,
     onScheduleChanged: (Schedule) -> Unit,
     lessonsPerDayContent: (@Composable () -> Unit)? = null,
+    courseListContent: (@Composable () -> Unit)? = null,
 ) {
     val validationMessages = localizedValidationMessages()
 
@@ -181,4 +184,5 @@ fun PreferenceScope.ScheduleSettingsContent(
         },
         title = stringResource(Res.string.settings_title_display_weekends)
     )
+    courseListContent?.invoke()
 }

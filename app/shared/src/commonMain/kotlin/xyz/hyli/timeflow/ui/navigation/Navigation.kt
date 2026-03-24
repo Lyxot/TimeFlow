@@ -65,6 +65,7 @@ import xyz.hyli.timeflow.ui.pages.schedule.subpage.EditCourseScreen
 import xyz.hyli.timeflow.ui.pages.schedule.subpage.ScheduleListScreen
 import xyz.hyli.timeflow.ui.pages.settings.SettingsScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.AboutScreen
+import xyz.hyli.timeflow.ui.pages.settings.subpage.CourseListScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LessonsPerDayScreen
 import xyz.hyli.timeflow.ui.pages.settings.subpage.LicenseScreen
 import xyz.hyli.timeflow.ui.pages.today.TodayScreen
@@ -120,6 +121,9 @@ sealed class Destination {
     data object Settings : Destination() {
         @Serializable
         object LessonsPerDay
+
+        @Serializable
+        object CourseList
 
         @Serializable
         object About
@@ -276,6 +280,9 @@ fun TimeFlowNavHost(
             composable<Destination.Settings> { SettingsScreen(viewModel, navHostController) }
             subScreenComposable<Destination.Settings.LessonsPerDay> {
                 LessonsPerDayScreen(viewModel, navHostController)
+            }
+            subScreenComposable<Destination.Settings.CourseList> {
+                CourseListScreen(viewModel, navHostController)
             }
             subScreenComposable<Destination.Settings.About> {
                 AboutScreen(navHostController)

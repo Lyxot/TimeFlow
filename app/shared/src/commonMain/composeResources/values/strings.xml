@@ -127,6 +127,9 @@
     <string name="settings_warning_lessons_per_day_empty">课程节数不能为零</string>
     <string name="settings_warning_lessons_time_conflict">标红课程时间冲突，请重新设置</string>
     <string name="settings_title_display_weekends">显示周末</string>
+    <string name="settings_title_course_list">课程列表</string>
+    <string name="settings_subtitle_course_list">查看和编辑所有课程</string>
+    <string name="settings_value_course_list_empty">暂无课程</string>
     <string name="settings_title_other">其他</string>
     <string name="settings_title_about">关于 TimeFlow</string>
     <string name="settings_title_donate">捐赠</string>
