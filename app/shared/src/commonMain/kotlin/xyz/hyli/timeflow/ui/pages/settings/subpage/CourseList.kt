@@ -9,7 +9,10 @@
 
 package xyz.hyli.timeflow.ui.pages.settings.subpage
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -196,7 +199,7 @@ fun CourseListContent(
             val coursesByWeekday = remember(schedule.courses) {
                 schedule.courses.toList()
                     .groupBy { (_, course) -> course.weekday }
-                    .toSortedMap(compareBy { it.ordinal })
+                    .entries.sortedBy { it.key.ordinal }
             }
 
             PreferenceScreen(
@@ -204,7 +207,7 @@ fun CourseListContent(
                     .fillMaxWidth()
                     .bottomPadding()
             ) {
-                coursesByWeekday.entries.forEachIndexed { groupIndex, (weekday, coursesForDay) ->
+                coursesByWeekday.forEachIndexed { groupIndex, (weekday, coursesForDay) ->
                     val sortedCourses = coursesForDay.sortedBy { (_, course) -> course.time.start }
 
                     PreferenceSection(
