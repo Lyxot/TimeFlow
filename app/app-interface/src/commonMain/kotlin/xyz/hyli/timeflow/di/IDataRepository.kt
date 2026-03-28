@@ -29,4 +29,5 @@ interface IDataRepository {
     suspend fun updateApiEndpoint(endpoint: String?)
     suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?)
     suspend fun updateAiConfig(config: xyz.hyli.timeflow.data.AiProviderConfig?)
+    suspend fun resetAll()
 }

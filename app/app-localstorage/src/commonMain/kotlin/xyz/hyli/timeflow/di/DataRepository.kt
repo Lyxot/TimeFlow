@@ -82,4 +82,8 @@ class DataRepository(
     override suspend fun updateAiConfig(config: xyz.hyli.timeflow.data.AiProviderConfig?) {
         store.update { it.copy(aiConfig = config) }
     }
+
+    override suspend fun resetAll() {
+        store.update { Settings() }
+    }
 }

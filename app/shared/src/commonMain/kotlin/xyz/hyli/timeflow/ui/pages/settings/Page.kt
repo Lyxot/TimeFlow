@@ -16,10 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,8 +58,20 @@ fun SettingsScreen(
 ) {
     val settingsState = viewModel.settings.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val uriHandler = LocalUriHandler.current
     val validationMessages = localizedValidationMessages()
+    var showResetDialog by remember { mutableStateOf(false) }
+    if (showResetDialog) {
+        ResetAllConfirmDialog(
+            isLoggedIn = isLoggedIn,
+            onDismiss = { showResetDialog = false },
+            onConfirm = {
+                showResetDialog = false
+                viewModel.resetAll()
+            }
+        )
+    }
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
         title = {
@@ -359,6 +368,10 @@ fun SettingsScreen(
                         contentDescription = null
                     )
                 }
+                BasePreference(
+                    title = stringResource(Res.string.settings_title_reset_all),
+                    onClick = { showResetDialog = true }
+                )
             }
             Spacer(Modifier.height(24.dp))
             Column(
@@ -418,3 +431,51 @@ fun SettingsScreen(
     }
 }
 
+@Composable
+private fun ResetAllConfirmDialog(
+    isLoggedIn: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    var remainingSeconds by remember { mutableStateOf(5) }
+    LaunchedEffect(Unit) {
+        while (remainingSeconds > 0) {
+            kotlinx.coroutines.delay(1000L)
+            remainingSeconds--
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.settings_title_reset_all)) },
+        text = {
+            Text(
+                stringResource(
+                    if (isLoggedIn) Res.string.settings_subtitle_confirm_reset_logged_in
+                    else Res.string.settings_subtitle_confirm_reset
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = remainingSeconds == 0
+            ) {
+                Text(
+                    text = if (remainingSeconds > 0)
+                        "${stringResource(Res.string.settings_title_reset_all)} (${remainingSeconds}s)"
+                    else
+                        stringResource(Res.string.settings_title_reset_all),
+                    color = if (remainingSeconds == 0)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.cancel))
+            }
+        }
+    )
+}

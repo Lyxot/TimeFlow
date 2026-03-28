@@ -421,6 +421,13 @@ class TimeFlowViewModel(
         }
     }
 
+    fun resetAll() {
+        viewModelScope.launch {
+            syncManager.logout()
+            repository.resetAll()
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         syncManager.close()

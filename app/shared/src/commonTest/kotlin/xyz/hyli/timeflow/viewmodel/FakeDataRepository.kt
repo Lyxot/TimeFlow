@@ -73,6 +73,10 @@ class FakeDataRepository : IDataRepository {
         _settings.value = _settings.value.copy(aiConfig = config)
     }
 
+    override suspend fun resetAll() {
+        _settings.value = Settings()
+    }
+
     // Helper function for tests to manually set the settings
     fun setSettings(settings: Settings) {
         _settings.value = settings

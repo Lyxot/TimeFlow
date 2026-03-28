@@ -137,6 +137,9 @@
     <string name="settings_value_version">版本</string>
     <string name="settings_title_changelog">更新日志</string>
     <string name="settings_title_config_path">配置文件路径</string>
+    <string name="settings_title_reset_all">重置所有数据</string>
+    <string name="settings_subtitle_confirm_reset">此操作将清除所有本地数据（包括课程表、设置等），且无法恢复。确定要重置吗？</string>
+    <string name="settings_subtitle_confirm_reset_logged_in">此操作将清除所有本地数据（包括课程表、设置等）并退出登录，且无法恢复。服务器上的数据不会受到影响。确定要重置吗？</string>
 
     <!--    advanced settings-->
     <string name="settings_title_advanced">高级设置</string>
