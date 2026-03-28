@@ -110,6 +110,8 @@ fun CourseCell(
                     .background(containerColor)
             ) {
                 if (coursesForThisTime.size > 1) {
+                    val hasMultipleInCurrentWeek = coursesForThisTime.values.count { it.isInWeek(currentWeek) } > 1
+                    val indicatorColor = if (hasMultipleInCurrentWeek) MaterialTheme.colorScheme.error else contentColor
                     val indicatorSize = minOf(20.dp, width / 4)
                     AnimatedContent(
                         modifier = Modifier.align(Alignment.BottomEnd),
@@ -121,7 +123,7 @@ fun CourseCell(
                                     .padding(maxOf(minOf(width * 0.04f, height * 0.04f), 4.dp))
                                     .size(minOf(8.dp, width / 8))
                                     .clip(RoundedCornerShape(50))
-                                    .background(contentColor)
+                                    .background(indicatorColor)
                             )
                         } else {
                             Box(
@@ -130,7 +132,7 @@ fun CourseCell(
                                     .size(indicatorSize)
                                     .clip(RightBottomTriangleShape)
                                     .clip(RoundedCornerShape(0.dp, 0.dp, 12.dp, 0.dp))
-                                    .background(contentColor)
+                                    .background(indicatorColor)
                             )
                         }
                     }
