@@ -96,7 +96,8 @@ fun ScheduleScreen(
 
     @Composable
     fun BoxScope.ScheduleScreenContent(
-        scrollState: ScrollState
+        scrollState: ScrollState,
+        fab: @Composable () -> Unit = {}
     ) {
         if (schedule == null || rows == null || rows == 0) {
             Text(
@@ -214,6 +215,7 @@ fun ScheduleScreen(
                 }
             },
             topAppBarType = TopAppBarType.CenterAligned,
+            floatingActionButton = fab,
         ) {
             AnimatedContent(
                 targetState = isOverviewMode,
@@ -345,18 +347,21 @@ fun ScheduleScreen(
                         )
                     }
 
-                    ScheduleScreenContent(scrollState)
-                    ScheduleFAB(
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                        viewModel = viewModel,
-                        navHostController = navHostController,
-                        visible = fabVisible,
-                        showMessage = { message ->
-                            scope.launch {
-                                snackbarHostState.showSnackbar(message)
-                            }
-                        },
-                        onExportAsImage = { captureRequested = true }
+                    ScheduleScreenContent(
+                        scrollState = scrollState,
+                        fab = {
+                            ScheduleFAB(
+                                viewModel = viewModel,
+                                navHostController = navHostController,
+                                visible = fabVisible,
+                                showMessage = { message ->
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(message)
+                                    }
+                                },
+                                onExportAsImage = { captureRequested = true }
+                            )
+                        }
                     )
                 }
             }

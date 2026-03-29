@@ -107,9 +107,8 @@ fun LessonsPerDayContent(
             }
         },
         snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.fillMaxWidth(0.75f)
+            AnimatedSnackbarHost(
+                hostState = snackbarHostState
             ) { data ->
                 Snackbar(
                     snackbarData = data,

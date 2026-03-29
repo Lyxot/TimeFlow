@@ -9,8 +9,9 @@
 
 package xyz.hyli.timeflow.ui.components
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import xyz.hyli.timeflow.LocalNavSuiteType
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.utils.currentPlatform
@@ -26,6 +28,50 @@ import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
 
 val LocalSnackbarHostState = staticCompositionLocalOf { SnackbarHostState() }
+
+@Composable
+fun AnimatedSnackbarHost(
+    hostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+    snackbar: @Composable (SnackbarData) -> Unit = { Snackbar(it) }
+) {
+    val currentSnackbarData = hostState.currentSnackbarData
+    val lastSnackbarData = remember { mutableStateOf<SnackbarData?>(null) }
+    if (currentSnackbarData != null) {
+        lastSnackbarData.value = currentSnackbarData
+    }
+
+    LaunchedEffect(currentSnackbarData) {
+        if (currentSnackbarData != null) {
+            val duration = currentSnackbarData.visuals.duration
+            if (duration != SnackbarDuration.Indefinite) {
+                delay(
+                    when (duration) {
+                        SnackbarDuration.Short -> 4000L
+                        SnackbarDuration.Long -> 10000L
+                        else -> Long.MAX_VALUE
+                    }
+                )
+                currentSnackbarData.dismiss()
+            }
+        }
+    }
+
+    AnimatedVisibility(
+        visible = currentSnackbarData != null,
+        modifier = modifier,
+        enter = slideInVertically(
+            initialOffsetY = { it },
+            animationSpec = tween(durationMillis = 256)
+        ) + fadeIn(animationSpec = tween(durationMillis = 256)),
+        exit = slideOutVertically(
+            targetOffsetY = { it },
+            animationSpec = tween(durationMillis = 200)
+        ) + fadeOut(animationSpec = tween(durationMillis = 200))
+    ) {
+        lastSnackbarData.value?.let { snackbar(it) }
+    }
+}
 
 enum class TopAppBarType {
     Small,
@@ -46,10 +92,7 @@ fun CustomScaffold(
     topAppBarColors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     bottomBar: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {
-        SnackbarHost(
-            hostState = LocalSnackbarHostState.current,
-            modifier = Modifier.fillMaxWidth(0.75f)
-        )
+        AnimatedSnackbarHost(hostState = LocalSnackbarHostState.current)
     },
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
