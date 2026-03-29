@@ -49,7 +49,7 @@ fun ScheduleListScreen(
     var multipleSelectionMode by remember { mutableStateOf(false) }
     val selectedSchedules = remember { mutableStateSetOf<Short>() }
     val showConfirmDeleteSelectedSchedulesDialog = rememberDialogState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbarHostState.current
     val scope = rememberCoroutineScope()
     CustomScaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,12 +78,6 @@ fun ScheduleListScreen(
                 NavigationBackIcon(navHostController)
             }
         },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.fillMaxWidth(0.75f)
-            )
-        }
     ) {
         PreferenceScreen(
             modifier = Modifier

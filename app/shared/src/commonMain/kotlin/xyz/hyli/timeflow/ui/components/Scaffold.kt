@@ -13,10 +13,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -27,6 +24,8 @@ import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.utils.currentPlatform
 import xyz.hyli.timeflow.utils.isMacOS
 import xyz.hyli.timeflow.utils.isWindows
+
+val LocalSnackbarHostState = staticCompositionLocalOf { SnackbarHostState() }
 
 enum class TopAppBarType {
     Small,
@@ -46,7 +45,12 @@ fun CustomScaffold(
     topAppBarType: TopAppBarType = TopAppBarType.Small,
     topAppBarColors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     bottomBar: @Composable () -> Unit = {},
-    snackbarHost: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {
+        SnackbarHost(
+            hostState = LocalSnackbarHostState.current,
+            modifier = Modifier.fillMaxWidth(0.75f)
+        )
+    },
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     containerColor: Color = MaterialTheme.colorScheme.background,

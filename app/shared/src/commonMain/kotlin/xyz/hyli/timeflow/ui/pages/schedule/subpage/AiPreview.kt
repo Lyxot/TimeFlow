@@ -48,7 +48,7 @@ fun AiPreviewScreen(
 
     val schedule = aiState.editedSchedule!!
     val isValid = schedule.name.isNotBlank()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbarHostState.current
     val scope = rememberCoroutineScope()
     val nameEmptyHint = stringResource(Res.string.ai_value_name_empty_hint)
 
@@ -106,12 +106,6 @@ fun AiPreviewScreen(
                 )
             }
         },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.fillMaxWidth(0.75f)
-            )
-        }
     ) {
         PreferenceScreen(
             modifier = Modifier

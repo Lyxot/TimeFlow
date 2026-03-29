@@ -83,7 +83,7 @@ fun ScheduleScreen(
     val columns = if (schedule?.displayWeekends == true) 7 else 5
     val rows = schedule?.lessonTimePeriodInfo?.totalLessonsCount
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbarHostState.current
 
     // Conflict dialog
     val firstConflict = syncState.conflicts.firstOrNull()
@@ -214,12 +214,6 @@ fun ScheduleScreen(
                 }
             },
             topAppBarType = TopAppBarType.CenterAligned,
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.fillMaxWidth(0.75f)
-                )
-            }
         ) {
             AnimatedContent(
                 targetState = isOverviewMode,

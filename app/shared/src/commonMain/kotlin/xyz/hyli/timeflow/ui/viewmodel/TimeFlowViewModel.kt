@@ -9,6 +9,7 @@
 
 package xyz.hyli.timeflow.ui.viewmodel
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -78,6 +79,8 @@ class TimeFlowViewModel(
 
     val syncState: StateFlow<SyncState> = syncManager.syncState
     val userInfo = syncManager.userInfo
+    val globalMessage: SharedFlow<String> = syncManager.events
+    val snackbarHostState = SnackbarHostState()
 
     val isLoggedIn: StateFlow<Boolean> =
         settings.map { tokenManager.hasTokens() }

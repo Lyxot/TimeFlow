@@ -20,11 +20,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
+import org.jetbrains.compose.resources.stringResource
+import xyz.hyli.timeflow.shared.generated.resources.Res
+import xyz.hyli.timeflow.shared.generated.resources.error_unauthorized
+import xyz.hyli.timeflow.ui.components.LocalSnackbarHostState
 import xyz.hyli.timeflow.ui.components.drawRoundedCornerBackground
 import xyz.hyli.timeflow.ui.components.ifThen
 import xyz.hyli.timeflow.ui.navigation.AdaptiveNavigation
 import xyz.hyli.timeflow.ui.navigation.NavigationBarType
 import xyz.hyli.timeflow.ui.navigation.TimeFlowNavHost
+import xyz.hyli.timeflow.ui.sync.SyncManager
 import xyz.hyli.timeflow.ui.theme.AppTheme
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
 
@@ -49,6 +54,14 @@ fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) = {
             viewModel.updateFirstLaunch(BuildConfig.APP_VERSION_CODE)
         }
     }
+    val unauthorizedMessage = stringResource(Res.string.error_unauthorized)
+    LaunchedEffect(Unit) {
+        viewModel.globalMessage.collect { message ->
+            if (message == SyncManager.ERROR_UNAUTHORIZED) {
+                viewModel.snackbarHostState.showSnackbar(unauthorizedMessage)
+            }
+        }
+    }
     val navController = rememberNavController()
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val customNavSuiteType = remember(adaptiveInfo) {
@@ -68,7 +81,8 @@ fun AppContent(viewModel: TimeFlowViewModel): @Composable (() -> Unit) = {
         )
     }
     CompositionLocalProvider(
-        LocalNavSuiteType provides customNavSuiteType
+        LocalNavSuiteType provides customNavSuiteType,
+        LocalSnackbarHostState provides viewModel.snackbarHostState
     ) {
         val navSuiteType by customNavSuiteType
         AdaptiveNavigation(

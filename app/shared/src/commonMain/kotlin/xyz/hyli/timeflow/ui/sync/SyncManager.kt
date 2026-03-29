@@ -14,9 +14,7 @@ import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.SelectedSchedule
@@ -43,6 +41,9 @@ class SyncManager(
 
     private val _userInfo = MutableStateFlow<User?>(null)
     val userInfo: StateFlow<User?> = _userInfo.asStateFlow()
+
+    private val _events = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val events: SharedFlow<String> = _events.asSharedFlow()
 
     private var apiClient: ApiClient? = null
     private var currentEndpoint: String? = null
@@ -195,9 +196,14 @@ class SyncManager(
             // 1. Get server schedule summaries
             val schedulesResponse = client.schedules()
             if (schedulesResponse.status != HttpStatusCode.OK) {
+                val error = errorMessage(schedulesResponse)
+                if (error == ERROR_UNAUTHORIZED) {
+                    forceLogout()
+                    return
+                }
                 _syncState.value = _syncState.value.copy(
                     status = SyncStatus.ERROR,
-                    error = errorMessage(schedulesResponse)
+                    error = error
                 )
                 return
             }
@@ -392,6 +398,15 @@ class SyncManager(
             }
             .filter { it != "[DONE]" }
             .joinToString("")
+    }
+
+    private suspend fun forceLogout() {
+        tokenManager.clearTokens()
+        _userInfo.value = null
+        _syncState.value = SyncState()
+        repository.updateSyncedAt(null)
+        repository.updateCachedUserInfo(null)
+        _events.tryEmit(ERROR_UNAUTHORIZED)
     }
 
     fun close() {

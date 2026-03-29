@@ -64,7 +64,7 @@ fun LessonsPerDayContent(
     val eveningCount = remember { mutableStateOf(initialInfo.evening.size) }
     val isModified = remember { mutableStateOf(false) }
     val conflictSet = lessonTimePeriodInfo.value.conflictSet
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbarHostState.current
     LaunchedEffect(lessonTimePeriodInfo.value) {
         if ((morningCount.value + afternoonCount.value + eveningCount.value) == 0) {
             snackbarHostState.showSnackbar(
