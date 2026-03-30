@@ -93,3 +93,20 @@ allprojects {
     group = "xyz.hyli.timeflow"
     version = versionName
 }
+
+subprojects {
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension> {
+            compilerOptions {
+                freeCompilerArgs.add("-Xexplicit-backing-fields")
+            }
+        }
+    }
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            compilerOptions {
+                freeCompilerArgs.add("-Xexplicit-backing-fields")
+            }
+        }
+    }
+}

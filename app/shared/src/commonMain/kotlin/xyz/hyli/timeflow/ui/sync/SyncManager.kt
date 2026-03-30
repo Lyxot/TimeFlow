@@ -14,7 +14,10 @@ import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import xyz.hyli.timeflow.api.models.ApiV1
 import xyz.hyli.timeflow.api.models.SelectedSchedule
@@ -36,14 +39,14 @@ class SyncManager(
     private val scope: CoroutineScope,
     private val client: HttpClient,
 ) {
-    private val _syncState = MutableStateFlow(SyncState())
-    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+    val syncState: StateFlow<SyncState>
+        field = MutableStateFlow(SyncState())
 
-    private val _userInfo = MutableStateFlow<User?>(null)
-    val userInfo: StateFlow<User?> = _userInfo.asStateFlow()
+    val userInfo: StateFlow<User?>
+        field = MutableStateFlow<User?>(null)
 
-    private val _events = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val events: SharedFlow<String> = _events.asSharedFlow()
+    val events: SharedFlow<String>
+        field = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
     private var apiClient: ApiClient? = null
     private var currentEndpoint: String? = null
@@ -76,8 +79,8 @@ class SyncManager(
     }
 
     fun loadCachedUserInfo(settings: Settings) {
-        if (_userInfo.value == null && settings.cachedUserInfo != null) {
-            _userInfo.value = settings.cachedUserInfo
+        if (userInfo.value == null && settings.cachedUserInfo != null) {
+            userInfo.value = settings.cachedUserInfo
         }
     }
 
@@ -87,7 +90,7 @@ class SyncManager(
             val response = client.me()
             if (response.status == HttpStatusCode.OK) {
                 val user: User = response.body()
-                _userInfo.value = user
+                userInfo.value = user
                 repository.updateCachedUserInfo(user)
             }
         } catch (_: Exception) {
@@ -116,8 +119,8 @@ class SyncManager(
             // Best effort
         }
         tokenManager.clearTokens()
-        _userInfo.value = null
-        _syncState.value = SyncState()
+        userInfo.value = null
+        syncState.value = SyncState()
         repository.updateSyncedAt(null)
         repository.updateCachedUserInfo(null)
     }
@@ -167,7 +170,7 @@ class SyncManager(
     }
 
     fun sync() {
-        if (_syncState.value.status == SyncStatus.SYNCING) return
+        if (syncState.value.status == SyncStatus.SYNCING) return
         scope.launch {
             performSync()
         }
@@ -175,7 +178,7 @@ class SyncManager(
 
     private suspend fun performSync() {
         val client = getOrCreateClient() ?: run {
-            _syncState.value = _syncState.value.copy(
+            syncState.value = syncState.value.copy(
                 status = SyncStatus.ERROR,
                 error = ERROR_API_NOT_CONFIGURED
             )
@@ -184,14 +187,14 @@ class SyncManager(
 
         val settings = settingsSnapshot()
         if (!tokenManager.hasTokens()) {
-            _syncState.value = _syncState.value.copy(
+            syncState.value = syncState.value.copy(
                 status = SyncStatus.ERROR,
                 error = ERROR_UNAUTHORIZED
             )
             return
         }
 
-        _syncState.value = _syncState.value.copy(status = SyncStatus.SYNCING, error = null, conflicts = emptyList())
+        syncState.value = syncState.value.copy(status = SyncStatus.SYNCING, error = null, conflicts = emptyList())
 
         try {
             // 1. Get server schedule summaries
@@ -202,7 +205,7 @@ class SyncManager(
                     forceLogout()
                     return
                 }
-                _syncState.value = _syncState.value.copy(
+                syncState.value = syncState.value.copy(
                     status = SyncStatus.ERROR,
                     error = error
                 )
@@ -289,7 +292,7 @@ class SyncManager(
                 }
             }
 
-            if (quotaExceeded) _events.tryEmit(ERROR_SCHEDULE_QUOTA_EXCEEDED)
+            if (quotaExceeded) events.tryEmit(ERROR_SCHEDULE_QUOTA_EXCEEDED)
 
             // 4. Sync selected schedule (newer wins, unless conflict)
             if (serverSelected != null) {
@@ -320,13 +323,13 @@ class SyncManager(
             val now = Clock.System.now()
             repository.updateSyncedAt(now)
 
-            _syncState.value = when {
+            syncState.value = when {
                 quotaExceeded -> SyncState(status = SyncStatus.ERROR, lastSyncedAt = now, error = ERROR_SCHEDULE_QUOTA_EXCEEDED)
                 conflicts.isNotEmpty() -> SyncState(status = SyncStatus.IDLE, lastSyncedAt = now, conflicts = conflicts)
                 else -> SyncState(status = SyncStatus.SUCCESS, lastSyncedAt = now)
             }
         } catch (e: Exception) {
-            _syncState.value = _syncState.value.copy(
+            syncState.value = syncState.value.copy(
                 status = SyncStatus.ERROR,
                 error = ERROR_NETWORK
             )
@@ -335,7 +338,7 @@ class SyncManager(
 
     suspend fun resolveConflict(resolution: ConflictResolution) {
         val client = getOrCreateClient() ?: return
-        val currentConflicts = _syncState.value.conflicts.toMutableList()
+        val currentConflicts = syncState.value.conflicts.toMutableList()
 
         when (resolution) {
             is ConflictResolution.KeepLocal -> {
@@ -351,7 +354,7 @@ class SyncManager(
             }
         }
 
-        _syncState.value = _syncState.value.copy(conflicts = currentConflicts)
+        syncState.value = syncState.value.copy(conflicts = currentConflicts)
     }
 
     suspend fun getAiInfo(): ApiV1.Ai.Info.Response? {
@@ -409,11 +412,11 @@ class SyncManager(
 
     private suspend fun forceLogout() {
         tokenManager.clearTokens()
-        _userInfo.value = null
-        _syncState.value = SyncState()
+        userInfo.value = null
+        syncState.value = SyncState()
         repository.updateSyncedAt(null)
         repository.updateCachedUserInfo(null)
-        _events.tryEmit(ERROR_UNAUTHORIZED)
+        events.tryEmit(ERROR_UNAUTHORIZED)
     }
 
     fun close() {
