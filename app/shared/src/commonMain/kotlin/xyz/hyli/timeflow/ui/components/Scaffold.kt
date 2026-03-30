@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import xyz.hyli.timeflow.LocalNavSuiteType
@@ -36,6 +37,8 @@ fun AnimatedSnackbarHost(
     snackbar: @Composable (SnackbarData) -> Unit = { Snackbar(it) }
 ) {
     val currentSnackbarData = hostState.currentSnackbarData
+    val accessibilityManager = LocalAccessibilityManager.current
+
     val lastSnackbarData = remember { mutableStateOf<SnackbarData?>(null) }
     if (currentSnackbarData != null) {
         lastSnackbarData.value = currentSnackbarData
@@ -43,17 +46,19 @@ fun AnimatedSnackbarHost(
 
     LaunchedEffect(currentSnackbarData) {
         if (currentSnackbarData != null) {
-            val duration = currentSnackbarData.visuals.duration
-            if (duration != SnackbarDuration.Indefinite) {
-                delay(
-                    when (duration) {
-                        SnackbarDuration.Short -> 4000L
-                        SnackbarDuration.Long -> 10000L
-                        else -> Long.MAX_VALUE
-                    }
-                )
-                currentSnackbarData.dismiss()
+            val rawDuration = when (currentSnackbarData.visuals.duration) {
+                SnackbarDuration.Short -> 4000L
+                SnackbarDuration.Long -> 10000L
+                SnackbarDuration.Indefinite -> return@LaunchedEffect
             }
+            val duration = accessibilityManager?.calculateRecommendedTimeoutMillis(
+                rawDuration,
+                containsIcons = true,
+                containsText = true,
+                containsControls = currentSnackbarData.visuals.actionLabel != null,
+            ) ?: rawDuration
+            delay(duration)
+            currentSnackbarData.dismiss()
         }
     }
 
