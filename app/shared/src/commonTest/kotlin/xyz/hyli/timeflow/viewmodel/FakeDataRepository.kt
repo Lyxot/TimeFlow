@@ -18,67 +18,67 @@ import xyz.hyli.timeflow.di.IDataRepository
 import kotlin.time.Instant
 
 class FakeDataRepository : IDataRepository {
-    private val _settings = MutableStateFlow(Settings())
-    override val settings: Flow<Settings> = _settings
+    final override val settings: Flow<Settings>
+        field = MutableStateFlow(Settings())
 
     override suspend fun updateFirstLaunch(versionCode: Int) {
-        _settings.value = _settings.value.copy(firstLaunch = versionCode)
+        settings.value = settings.value.copy(firstLaunch = versionCode)
     }
 
     override suspend fun updateThemeMode(themeMode: ThemeMode) {
-        _settings.value = _settings.value.copy(themeMode = themeMode)
+        settings.value = settings.value.copy(themeMode = themeMode)
     }
 
     override suspend fun updateThemeDynamicColor(themeDynamicColor: Boolean) {
-        _settings.value = _settings.value.copy(themeDynamicColor = themeDynamicColor)
+        settings.value = settings.value.copy(themeDynamicColor = themeDynamicColor)
     }
 
     override suspend fun updateThemeColor(color: Int) {
-        _settings.value = _settings.value.copy(themeColor = color)
+        settings.value = settings.value.copy(themeColor = color)
     }
 
     override suspend fun updateSelectedScheduleID(id: Short) {
-        _settings.value = _settings.value.copy(selectedScheduleID = id)
+        settings.value = settings.value.copy(selectedScheduleID = id)
     }
 
     override suspend fun updateSelectedScheduleUpdatedAt(updatedAt: Instant?) {
-        _settings.value = _settings.value.copy(selectedScheduleUpdatedAt = updatedAt)
+        settings.value = settings.value.copy(selectedScheduleUpdatedAt = updatedAt)
     }
 
     override suspend fun upsertSchedule(id: Short, schedule: Schedule) {
-        val newMap = _settings.value.schedules.toMutableMap()
+        val newMap = settings.value.schedules.toMutableMap()
         newMap[id] = schedule
-        _settings.value = _settings.value.copy(schedules = newMap)
+        settings.value = settings.value.copy(schedules = newMap)
     }
 
     override suspend fun deleteSchedule(id: Short) {
-        val newMap = _settings.value.schedules.toMutableMap()
+        val newMap = settings.value.schedules.toMutableMap()
         newMap.remove(id)
-        _settings.value = _settings.value.copy(schedules = newMap)
+        settings.value = settings.value.copy(schedules = newMap)
     }
 
     override suspend fun updateSyncedAt(syncedAt: Instant?) {
-        _settings.value = _settings.value.copy(syncedAt = syncedAt)
+        settings.value = settings.value.copy(syncedAt = syncedAt)
     }
 
     override suspend fun updateApiEndpoint(endpoint: String?) {
-        _settings.value = _settings.value.copy(apiEndpoint = endpoint)
+        settings.value = settings.value.copy(apiEndpoint = endpoint)
     }
 
     override suspend fun updateCachedUserInfo(user: xyz.hyli.timeflow.data.User?) {
-        _settings.value = _settings.value.copy(cachedUserInfo = user)
+        settings.value = settings.value.copy(cachedUserInfo = user)
     }
 
     override suspend fun updateAiConfig(config: xyz.hyli.timeflow.data.AiProviderConfig?) {
-        _settings.value = _settings.value.copy(aiConfig = config)
+        settings.value = settings.value.copy(aiConfig = config)
     }
 
     override suspend fun resetAll() {
-        _settings.value = Settings()
+        settings.value = Settings()
     }
 
     // Helper function for tests to manually set the settings
     fun setSettings(settings: Settings) {
-        _settings.value = settings
+        this.settings.value = settings
     }
 }

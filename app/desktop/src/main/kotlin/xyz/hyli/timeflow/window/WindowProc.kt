@@ -17,7 +17,6 @@ import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.awt.Window
 
 val windowProc = MutableStateFlow<BasicWindowProc?>(null)
@@ -33,8 +32,8 @@ open class BasicWindowProc(
             ?: Native.getWindowPointer(window),
     )
 
-    private val _accentColor: MutableStateFlow<Color> = MutableStateFlow(currentAccentColor())
-    val accentColor: StateFlow<Color> = _accentColor.asStateFlow()
+    val accentColor: StateFlow<Color>
+        field = MutableStateFlow(currentAccentColor())
 
     private val defaultWindowProc =
         user32.SetWindowLongPtr(
@@ -53,7 +52,7 @@ open class BasicWindowProc(
             val changedKey = Pointer(lParam.toLong()).getWideString(0)
             // Theme changed for color and darkTheme
             if (changedKey == "ImmersiveColorSet") {
-                _accentColor.tryEmit(currentAccentColor())
+                accentColor.tryEmit(currentAccentColor())
             }
         }
         return callDefWindowProc(hwnd, uMsg, wParam, lParam)

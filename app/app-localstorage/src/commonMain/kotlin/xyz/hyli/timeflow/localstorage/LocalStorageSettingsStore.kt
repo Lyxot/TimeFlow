@@ -10,9 +10,8 @@
 package xyz.hyli.timeflow.localstorage
 
 import kotlinx.browser.window
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
 import xyz.hyli.timeflow.data.Settings
 
@@ -24,9 +23,8 @@ private val json = Json {
 }
 
 class LocalStorageSettingsStore {
-    private val _settings = MutableStateFlow(load())
-
-    val settings: Flow<Settings> = _settings.asStateFlow()
+    val settings: StateFlow<Settings>
+        field = MutableStateFlow(load())
 
     private fun load(): Settings {
         val raw = window.localStorage.getItem(STORAGE_KEY) ?: return Settings()
@@ -43,8 +41,8 @@ class LocalStorageSettingsStore {
     }
 
     fun update(transform: (Settings) -> Settings) {
-        val newSettings = transform(_settings.value)
-        _settings.value = newSettings
+        val newSettings = transform(settings.value)
+        settings.value = newSettings
         save(newSettings)
     }
 }

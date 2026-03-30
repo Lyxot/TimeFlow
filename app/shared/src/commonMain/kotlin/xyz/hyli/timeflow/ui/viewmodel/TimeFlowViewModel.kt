@@ -101,12 +101,12 @@ class TimeFlowViewModel(
         return info
     }
 
-    private val _aiExtractionState = MutableStateFlow(AiExtractionState())
-    val aiExtractionState: StateFlow<AiExtractionState> = _aiExtractionState.asStateFlow()
+    val aiExtractionState: StateFlow<AiExtractionState>
+        field = MutableStateFlow(AiExtractionState())
 
     @OptIn(ExperimentalEncodingApi::class)
     fun startAiExtraction(imageBytes: ByteArray) {
-        _aiExtractionState.value = AiExtractionState(status = AiExtractionStatus.EXTRACTING)
+        aiExtractionState.value = AiExtractionState(status = AiExtractionStatus.EXTRACTING)
         viewModelScope.launch {
             val result = if (settings.value.aiConfig?.enabled == true) {
                 val imageBase64 = Base64.encode(imageBytes)
@@ -122,12 +122,12 @@ class TimeFlowViewModel(
             }
             result.onSuccess { schedule ->
                     if (schedule.courses.isEmpty()) {
-                        _aiExtractionState.value = AiExtractionState(
+                        aiExtractionState.value = AiExtractionState(
                             status = AiExtractionStatus.ERROR,
                             error = getString(Res.string.ai_value_no_courses)
                         )
                     } else {
-                        _aiExtractionState.value = AiExtractionState(
+                        aiExtractionState.value = AiExtractionState(
                             status = AiExtractionStatus.DONE,
                             extractedSchedule = schedule,
                             editedSchedule = schedule
@@ -135,7 +135,7 @@ class TimeFlowViewModel(
                     }
                 }
                 .onFailure { e ->
-                    _aiExtractionState.value = AiExtractionState(
+                    aiExtractionState.value = AiExtractionState(
                         status = AiExtractionStatus.ERROR,
                         error = e.message
                     )
@@ -192,7 +192,7 @@ class TimeFlowViewModel(
     }
 
     fun updateEditedSchedule(schedule: Schedule) {
-        _aiExtractionState.value = _aiExtractionState.value.copy(editedSchedule = schedule)
+        aiExtractionState.value = aiExtractionState.value.copy(editedSchedule = schedule)
     }
 
     fun confirmAiImport(schedule: Schedule) {
@@ -201,7 +201,7 @@ class TimeFlowViewModel(
     }
 
     fun clearAiExtractionState() {
-        _aiExtractionState.value = AiExtractionState()
+        aiExtractionState.value = AiExtractionState()
     }
 
     init {
