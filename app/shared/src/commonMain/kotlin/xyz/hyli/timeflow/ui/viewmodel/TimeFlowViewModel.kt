@@ -79,7 +79,6 @@ class TimeFlowViewModel(
 
     val syncState: StateFlow<SyncState> = syncManager.syncState
     val userInfo = syncManager.userInfo
-    val globalMessage: SharedFlow<String> = syncManager.events
     val snackbarHostState = SnackbarHostState()
 
     val isLoggedIn: StateFlow<Boolean> =
@@ -217,6 +216,16 @@ class TimeFlowViewModel(
                         syncManager.sync()
                     }
                 }
+            }
+        }
+        viewModelScope.launch {
+            syncManager.events.collect { message ->
+                val text = when (message) {
+                    SyncManager.ERROR_UNAUTHORIZED -> getString(Res.string.error_unauthorized)
+                    SyncManager.ERROR_SCHEDULE_QUOTA_EXCEEDED -> getString(Res.string.error_schedule_quota_exceeded)
+                    else -> return@collect
+                }
+                snackbarHostState.showSnackbar(text)
             }
         }
     }

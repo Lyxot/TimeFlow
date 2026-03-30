@@ -216,6 +216,22 @@ components:
         error: { type: string }
         used: { type: integer, description: "Number of requests used in the current 6-month period." }
         limit: { type: integer, description: "Maximum requests allowed per 6-month period." }
+    SyncInfoResponse:
+      type: object
+      properties:
+        scheduleQuotaUsed:
+          type: integer
+          description: "Total number of schedule rows for the user, including soft-deleted ones."
+        scheduleQuotaLimit:
+          type: integer
+          nullable: true
+          description: "Maximum allowed schedules. Null if the user has unlimited sync access."
+    SyncQuotaExceededResponse:
+      type: object
+      properties:
+        error: { type: string, example: "error_schedule_quota_exceeded" }
+        used: { type: integer, description: "Current total schedule count (including soft-deleted)." }
+        limit: { type: integer, description: "Configured schedule quota limit." }
     AiInfoResponse:
       type: object
       properties:
@@ -512,6 +528,25 @@ paths:
           content:
             application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
 
+  # Sync Endpoints
+  /sync/info:
+    get:
+      tags: [ Sync ]
+      summary: Get sync quota info for the current user
+      description: >
+        Returns the user's current schedule count (including soft-deleted) and the configured quota limit.
+        A null scheduleQuotaLimit indicates the user has unlimited sync access.
+      security: [ { bearerAuth: [ ] } ]
+      responses:
+        '200':
+          description: Sync quota info
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/SyncInfoResponse' } }
+        '401':
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+
   # Schedules Endpoints
   /schedules:
     get:
@@ -570,7 +605,11 @@ paths:
     put:
       tags: [ Schedules ]
       summary: Create or update a schedule (including soft delete)
-      description: Use this endpoint to create, update, or soft-delete a schedule by setting deleted=true
+      description: >
+        Use this endpoint to create, update, or soft-delete a schedule by setting deleted=true.
+        When creating a new schedule (i.e. the scheduleId does not yet exist on the server), the
+        server checks the user's sync quota. If the quota is exceeded, 403 is returned and the
+        upload is skipped. Updating or restoring an existing schedule is never quota-gated.
       security: [ { bearerAuth: [ ] } ]
       requestBody:
         required: true
@@ -587,6 +626,10 @@ paths:
           description: Unauthorized
           content:
             application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } }
+        '403':
+          description: Schedule sync quota exceeded. The user has reached the maximum number of allowed schedules.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/SyncQuotaExceededResponse' } }
     delete:
       tags: [ Schedules ]
       summary: Permanently delete a schedule

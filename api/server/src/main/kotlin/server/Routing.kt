@@ -12,6 +12,8 @@ package xyz.hyli.timeflow.server
 import io.ktor.server.application.*
 import io.ktor.server.resources.*
 import io.ktor.server.routing.*
+import xyz.hyli.timeflow.server.config.AiConfig
+import xyz.hyli.timeflow.server.config.SyncConfig
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.routes.*
 
@@ -19,14 +21,16 @@ fun Application.configureRouting(repository: DataRepository, turnstileService: T
     install(Resources)
     val emailService = EmailService(environment.config)
     val aiConfig = AiConfig.parse(environment.config)
+    val syncConfig = SyncConfig.parse(environment.config)
     val modelSelector = ModelSelector(aiConfig.providers, aiConfig.models)
 
     routing {
         utilRoutes()
         authRoutes(tokenManager, repository, emailService, turnstileService)
         usersRoutes(repository)
-        schedulesRoutes(repository)
+        schedulesRoutes(repository, syncConfig)
         coursesRoutes(repository)
+        syncRoutes(repository, syncConfig)
         aiRoutes(aiConfig, modelSelector, repository, log)
         appRoutes(environment.config, log)
     }

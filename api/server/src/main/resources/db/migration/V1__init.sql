@@ -18,6 +18,7 @@ CREATE TABLE users
     selected_schedule_id         smallint,
     selected_schedule_updated_at timestamptz,
     ai_unlimited boolean NOT NULL DEFAULT FALSE,
+    sync_unlimited boolean NOT NULL DEFAULT FALSE,
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT users_auth_id_unique UNIQUE (auth_id),
     CONSTRAINT users_email_unique UNIQUE (email)

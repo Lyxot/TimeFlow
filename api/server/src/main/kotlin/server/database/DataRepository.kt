@@ -229,4 +229,28 @@ interface DataRepository {
      * @return True if the user has unlimited access.
      */
     suspend fun isAiUnlimited(userId: Int): Boolean
+
+    /**
+     * Checks if a schedule row exists for a user by local ID, regardless of soft-delete status.
+     * Used to distinguish a create from an update before the quota check.
+     * @param userId The ID of the user.
+     * @param localId The local ID of the schedule.
+     * @return True if the row exists (active or soft-deleted).
+     */
+    suspend fun scheduleExists(userId: Int, localId: Short): Boolean
+
+    /**
+     * Counts all schedule rows for a user, including soft-deleted ones.
+     * Counting soft-deleted rows prevents the delete-then-recreate loophole.
+     * @param userId The ID of the user.
+     * @return Total number of schedule rows.
+     */
+    suspend fun countSchedules(userId: Int): Int
+
+    /**
+     * Checks if a user is exempt from the schedule sync quota.
+     * @param userId The ID of the user.
+     * @return True if the user has unlimited sync access.
+     */
+    suspend fun isSyncUnlimited(userId: Int): Boolean
 }

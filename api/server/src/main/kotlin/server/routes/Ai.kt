@@ -23,7 +23,7 @@ import org.slf4j.Logger
 import xyz.hyli.timeflow.ai.ScheduleExtractor
 import xyz.hyli.timeflow.ai.resizeImage
 import xyz.hyli.timeflow.api.models.ApiV1
-import xyz.hyli.timeflow.server.AiConfig
+import xyz.hyli.timeflow.server.config.AiConfig
 import xyz.hyli.timeflow.server.ModelSelector
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.utils.authedGet

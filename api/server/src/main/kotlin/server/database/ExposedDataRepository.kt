@@ -407,4 +407,16 @@ class ExposedDataRepository : DataRepository {
     override suspend fun isAiUnlimited(userId: Int): Boolean = dbQuery {
         UserEntity[userId].aiUnlimited
     }
+
+    override suspend fun scheduleExists(userId: Int, localId: Short): Boolean = dbQuery {
+        getScheduleEntity(userId, localId, deleted = null) != null
+    }
+
+    override suspend fun countSchedules(userId: Int): Int = dbQuery {
+        ScheduleEntity.find { SchedulesTable.userId eq userId }.count().toInt()
+    }
+
+    override suspend fun isSyncUnlimited(userId: Int): Boolean = dbQuery {
+        UserEntity[userId].syncUnlimited
+    }
 }

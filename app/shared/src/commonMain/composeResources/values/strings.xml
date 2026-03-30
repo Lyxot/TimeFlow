@@ -192,6 +192,7 @@
     <string name="error_server">服务器错误，请稍后再试</string>
     <string name="error_network">网络连接失败，请检查网络设置</string>
     <string name="error_api_not_configured">请先设置服务器地址</string>
+    <string name="error_schedule_quota_exceeded">已达到课程表同步上限，部分课程表未能同步</string>
     <string name="validation_email_blank">邮箱不能为空</string>
     <string name="validation_email_too_long">邮箱过长（最多 %1$d 个字符）</string>
     <string name="validation_email_invalid_format">邮箱格式不正确</string>

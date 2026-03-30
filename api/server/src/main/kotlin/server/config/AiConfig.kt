@@ -7,7 +7,7 @@
  * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
  */
 
-package xyz.hyli.timeflow.server
+package xyz.hyli.timeflow.server.config
 
 import io.ktor.server.config.*
 
@@ -40,7 +40,8 @@ data class AiConfig(
     companion object {
         fun parse(config: ApplicationConfig): AiConfig {
             val enabled = config.propertyOrNull("ai.enabled")?.getString()?.toBoolean() ?: false
-            if (!enabled) return AiConfig(false, emptyMap(), emptyList(),
+            if (!enabled) return AiConfig(
+                false, emptyMap(), emptyList(),
                 config.propertyOrNull("ai.maxImageSizeBytes")?.getString()?.toLongOrNull() ?: 2_097_152L,
                 config.propertyOrNull("ai.maxImageResolution")?.getString()?.toIntOrNull() ?: 2048,
                 config.propertyOrNull("ai.quotaPerHalfYear")?.getString()?.toIntOrNull() ?: 4

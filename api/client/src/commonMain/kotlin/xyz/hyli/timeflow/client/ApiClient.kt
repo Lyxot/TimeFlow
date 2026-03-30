@@ -235,6 +235,9 @@ class ApiClient(
             )
         )
 
+    suspend fun syncInfo() =
+        authenticatedClient.get(ApiV1.Sync.Info())
+
     suspend fun aiInfo() =
         authenticatedClient.get(ApiV1.Ai.Info())
 

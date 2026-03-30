@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025-2026 Lyxot and contributors.
+ *
+ * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证。
+ * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
+ *
+ * https://github.com/Lyxot/TimeFlow/blob/master/LICENSE
+ */
+
+package xyz.hyli.timeflow.server.routes
+
+import io.ktor.http.*
+import io.ktor.server.auth.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.server.config.SyncConfig
+import xyz.hyli.timeflow.server.database.DataRepository
+import xyz.hyli.timeflow.server.utils.authedGet
+
+fun Route.syncRoutes(repository: DataRepository, syncConfig: SyncConfig) {
+    authenticate("access-auth") {
+        authedGet<ApiV1.Sync.Info>(repository) { _, user ->
+            val unlimited = repository.isSyncUnlimited(user.id)
+            val used = repository.countSchedules(user.id)
+            call.respond(
+                HttpStatusCode.OK,
+                ApiV1.Sync.Info.Response(
+                    scheduleQuotaUsed = used,
+                    scheduleQuotaLimit = if (unlimited) null else syncConfig.scheduleQuota
+                )
+            )
+        }
+    }
+}

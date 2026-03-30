@@ -37,6 +37,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var selectedScheduleId by UsersTable.selectedScheduleId
     var selectedScheduleUpdatedAt by UsersTable.selectedScheduleUpdatedAt
     var aiUnlimited by UsersTable.aiUnlimited
+    var syncUnlimited by UsersTable.syncUnlimited
 
 
     @OptIn(ExperimentalUuidApi::class)

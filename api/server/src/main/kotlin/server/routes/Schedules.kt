@@ -16,14 +16,17 @@ import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import xyz.hyli.timeflow.api.models.ApiV1
+import xyz.hyli.timeflow.server.config.SyncConfig
 import xyz.hyli.timeflow.server.database.DataRepository
 import xyz.hyli.timeflow.server.utils.authedDelete
 import xyz.hyli.timeflow.server.utils.authedGet
 import xyz.hyli.timeflow.server.utils.authedPut
 import xyz.hyli.timeflow.utils.InputValidation
 
-fun Route.schedulesRoutes(repository: DataRepository) {
+fun Route.schedulesRoutes(repository: DataRepository, syncConfig: SyncConfig) {
     authenticate("access-auth") {
         authedGet<ApiV1.Schedules>(repository) { resource, user ->
             val schedules = repository.getSchedules(user.id, resource.deleted)
@@ -44,6 +47,22 @@ fun Route.schedulesRoutes(repository: DataRepository) {
             InputValidation.validateName(scheduleData.name)?.let { error ->
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to error))
                 return@authedPut
+            }
+            if (!repository.scheduleExists(user.id, resource.scheduleId)) {
+                if (!repository.isSyncUnlimited(user.id)) {
+                    val used = repository.countSchedules(user.id)
+                    if (used >= syncConfig.scheduleQuota) {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            buildJsonObject {
+                                put("error", "error_schedule_quota_exceeded")
+                                put("used", used)
+                                put("limit", syncConfig.scheduleQuota)
+                            }
+                        )
+                        return@authedPut
+                    }
+                }
             }
             val wasCreated = repository.upsertSchedule(user.id, resource.scheduleId, scheduleData)
             if (wasCreated) {

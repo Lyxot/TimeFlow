@@ -228,6 +228,7 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "ai.maxImageSizeBytes" to "2097152",
     "ai.maxImageResolution" to "2048",
     "ai.quotaPerHalfYear" to "4",
+    "sync.scheduleQuota" to "15",
     "webApp.serveEnabled" to BuildConfig.BUNDLED_WEB_APP_ZIP.toString(),
     "webApp.zipPath" to "",
     "webApp.location" to "app",

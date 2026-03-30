@@ -37,6 +37,7 @@ object UsersTable : IntIdTable("users") {
     val selectedScheduleId = short("selected_schedule_id").nullable()
     val selectedScheduleUpdatedAt = timestamp("selected_schedule_updated_at").nullable()
     val aiUnlimited = bool("ai_unlimited").default(false)
+    val syncUnlimited = bool("sync_unlimited").default(false)
 }
 
 /**

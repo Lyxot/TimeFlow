@@ -220,6 +220,7 @@ class SyncManager(
             val lastSyncedAt = settings.syncedAt
             val allIds = localSchedules.keys + serverSummaries.keys
             val conflicts = mutableListOf<ScheduleConflict>()
+            var quotaExceeded = false
 
             for (id in allIds) {
                 val localSchedule = localSchedules[id]
@@ -236,7 +237,10 @@ class SyncManager(
                     }
                     // Local-only: upload
                     localSchedule != null && serverSummary == null -> {
-                        client.upsertSchedule(id, localSchedule)
+                        val response = client.upsertSchedule(id, localSchedule)
+                        if (response.status == HttpStatusCode.Forbidden) {
+                            quotaExceeded = true
+                        }
                     }
                     // Both exist: compare updatedAt against syncedAt
                     localSchedule != null && serverSummary != null -> {
@@ -284,6 +288,8 @@ class SyncManager(
                 }
             }
 
+            if (quotaExceeded) _events.tryEmit(ERROR_SCHEDULE_QUOTA_EXCEEDED)
+
             // 4. Sync selected schedule (newer wins, unless conflict)
             if (serverSelected != null) {
                 val localSelectedUpdatedAt = settings.selectedScheduleUpdatedAt
@@ -313,10 +319,10 @@ class SyncManager(
             val now = Clock.System.now()
             repository.updateSyncedAt(now)
 
-            _syncState.value = if (conflicts.isEmpty()) {
-                SyncState(status = SyncStatus.SUCCESS, lastSyncedAt = now)
-            } else {
-                SyncState(status = SyncStatus.IDLE, lastSyncedAt = now, conflicts = conflicts)
+            _syncState.value = when {
+                quotaExceeded -> SyncState(status = SyncStatus.ERROR, lastSyncedAt = now, error = ERROR_SCHEDULE_QUOTA_EXCEEDED)
+                conflicts.isNotEmpty() -> SyncState(status = SyncStatus.IDLE, lastSyncedAt = now, conflicts = conflicts)
+                else -> SyncState(status = SyncStatus.SUCCESS, lastSyncedAt = now)
             }
         } catch (e: Exception) {
             _syncState.value = _syncState.value.copy(
@@ -443,5 +449,6 @@ class SyncManager(
         const val ERROR_SERVER = "error.server"
         const val ERROR_NETWORK = "error.network"
         const val ERROR_API_NOT_CONFIGURED = "error.api_not_configured"
+        const val ERROR_SCHEDULE_QUOTA_EXCEEDED = "error.schedule_quota_exceeded"
     }
 }

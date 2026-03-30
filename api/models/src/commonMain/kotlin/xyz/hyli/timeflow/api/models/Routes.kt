@@ -140,6 +140,20 @@ class ApiV1 {
     }
 
     @Serializable
+    @Resource("sync")
+    class Sync(val parent: ApiV1 = ApiV1()) {
+        @Serializable
+        @Resource("info")
+        class Info(val parent: Sync = Sync()) {
+            @Serializable
+            data class Response(
+                val scheduleQuotaUsed: Int,
+                val scheduleQuotaLimit: Int?
+            )
+        }
+    }
+
+    @Serializable
     @Resource("schedules")
     class Schedules(val parent: ApiV1 = ApiV1(), val deleted: Boolean? = null) {
         // GET /schedules?deleted=true to get only deleted schedules

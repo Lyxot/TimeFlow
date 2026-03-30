@@ -9,6 +9,8 @@
 
 package xyz.hyli.timeflow.server
 
+import xyz.hyli.timeflow.server.config.AiModelConfig
+import xyz.hyli.timeflow.server.config.AiProviderConfig
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days

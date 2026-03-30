@@ -199,6 +199,7 @@ fun resolveErrorMessage(error: String?): String? {
         SyncManager.ERROR_SERVER -> stringResource(Res.string.error_server)
         SyncManager.ERROR_NETWORK -> stringResource(Res.string.error_network)
         SyncManager.ERROR_API_NOT_CONFIGURED -> stringResource(Res.string.error_api_not_configured)
+        SyncManager.ERROR_SCHEDULE_QUOTA_EXCEEDED -> stringResource(Res.string.error_schedule_quota_exceeded)
         else -> error
     }
 }
