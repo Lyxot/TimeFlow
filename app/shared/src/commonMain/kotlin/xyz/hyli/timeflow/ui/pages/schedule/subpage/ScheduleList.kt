@@ -10,7 +10,10 @@
 package xyz.hyli.timeflow.ui.pages.schedule.subpage
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.filled.Checklist
@@ -78,6 +81,93 @@ fun ScheduleListScreen(
                 NavigationBackIcon(navHostController)
             }
         },
+        floatingActionButton = {
+            HorizontalFloatingToolbar(
+                expanded = true
+            ) {
+                IconButton(
+                    onClick = {
+                        if (multipleSelectionMode) {
+                            if (selectedSchedules.isNotEmpty()) {
+                                showConfirmDeleteSelectedSchedulesDialog.show()
+                            }
+                        } else {
+                            recycleBinMode = !recycleBinMode
+                        }
+                    }
+                ) {
+                    val iconColor by animateColorAsState(
+                        targetValue = if (multipleSelectionMode) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        tint = iconColor,
+                        contentDescription = null
+                    )
+                }
+                AnimatedVisibility(
+                    visible = selectedSchedules.size == 1 && multipleSelectionMode && !recycleBinMode,
+                ) {
+                    val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
+
+                    @Suppress("DEPRECATION")
+                    val saver = rememberFileSaverLauncher { file ->
+                        if (file != null) {
+                            viewModel.exportScheduleToFile(
+                                id = id,
+                                file = file,
+                                showMessage = { message ->
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(message)
+                                    }
+                                }
+                            )
+                        }
+                        multipleSelectionMode = false
+                    }
+                    IconButton(
+                        onClick = {
+                            if (currentPlatform().isWeb()) {
+                                viewModel.viewModelScope.launch {
+                                    writeBytesToFile(
+                                        settings.schedules[id]!!.toProtoBufByteArray(),
+                                        file = null,
+                                        filename = settings.schedules[id]!!.name + ".pb"
+                                    )
+                                }
+                            } else {
+                                saver.launch(settings.schedules[id]!!.name, "pb")
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.IosShare,
+                            contentDescription = null
+                        )
+                    }
+                    // TODO: More share methods
+                }
+                FilledTonalIconToggleButton(
+                    checked = multipleSelectionMode,
+                    onCheckedChange = {
+                        multipleSelectionMode = it
+                        if (!multipleSelectionMode) {
+                            selectedSchedules.clear()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Checklist,
+                        contentDescription = null
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center,
     ) {
         PreferenceScreen(
             modifier = Modifier
@@ -267,94 +357,6 @@ fun ScheduleListScreen(
                 permanently = recycleBinMode,
                 showConfirmDeleteSelectedSchedulesDialog = showConfirmDeleteSelectedSchedulesDialog
             )
-        }
-        HorizontalFloatingToolbar(
-            modifier = Modifier
-                .padding(16.dp)
-                .navigationBarsPadding()
-                .align(Alignment.BottomCenter),
-            expanded = true,
-        ) {
-            IconButton(
-                onClick = {
-                    if (multipleSelectionMode) {
-                        if (selectedSchedules.isNotEmpty()) {
-                            showConfirmDeleteSelectedSchedulesDialog.show()
-                        }
-                    } else {
-                        recycleBinMode = !recycleBinMode
-                    }
-                }
-            ) {
-                val iconColor by animateColorAsState(
-                    targetValue = if (multipleSelectionMode) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
-                )
-                Icon(
-                    imageVector = Icons.Default.DeleteOutline,
-                    tint = iconColor,
-                    contentDescription = null
-                )
-            }
-            AnimatedVisibility(
-                visible = selectedSchedules.size == 1 && multipleSelectionMode && !recycleBinMode,
-            ) {
-                val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
-
-                @Suppress("DEPRECATION")
-                val saver = rememberFileSaverLauncher { file ->
-                    if (file != null) {
-                        viewModel.exportScheduleToFile(
-                            id = id,
-                            file = file,
-                            showMessage = { message ->
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(message)
-                                }
-                            }
-                        )
-                    }
-                    multipleSelectionMode = false
-                }
-                IconButton(
-                    onClick = {
-                        if (currentPlatform().isWeb()) {
-                            viewModel.viewModelScope.launch {
-                                writeBytesToFile(
-                                    settings.schedules[id]!!.toProtoBufByteArray(),
-                                    file = null,
-                                    filename = settings.schedules[id]!!.name + ".pb"
-                                )
-                            }
-                        } else {
-                            saver.launch(settings.schedules[id]!!.name, "pb")
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.IosShare,
-                        contentDescription = null
-                    )
-                }
-                // TODO: More share methods
-            }
-            FilledTonalIconToggleButton(
-                checked = multipleSelectionMode,
-                onCheckedChange = {
-                    multipleSelectionMode = it
-                    if (!multipleSelectionMode) {
-                        selectedSchedules.clear()
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Checklist,
-                    contentDescription = null
-                )
-            }
         }
     }
 }
