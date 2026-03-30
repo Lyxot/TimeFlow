@@ -112,6 +112,16 @@ class SyncManager(
         }
     }
 
+    suspend fun deleteScheduleOnServer(id: Short) {
+        val client = getOrCreateClient() ?: return
+        if (!tokenManager.hasTokens()) return
+        try {
+            client.deleteSchedule(id)
+        } catch (_: Exception) {
+            // Best effort — if offline, the schedule will re-appear on next sync
+        }
+    }
+
     suspend fun logout() {
         try {
             apiClient?.logout()

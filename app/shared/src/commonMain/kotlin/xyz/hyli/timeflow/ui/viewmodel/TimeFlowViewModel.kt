@@ -286,17 +286,18 @@ class TimeFlowViewModel(
         viewModelScope.launch {
             if (permanently) {
                 repository.deleteSchedule(id)
+                syncManager.deleteScheduleOnServer(id)
             } else {
                 val schedule = settings.value.schedules[id]
                 if (schedule != null) {
                     repository.upsertSchedule(id, schedule.copy(deleted = true, updatedAt = Clock.System.now()))
                 }
+                syncIfLoggedIn()
             }
             if (settings.value.selectedScheduleID == id) {
                 repository.updateSelectedScheduleID(Settings.ZERO_ID)
                 repository.updateSelectedScheduleUpdatedAt(Clock.System.now())
             }
-            syncIfLoggedIn()
         }
     }
 
