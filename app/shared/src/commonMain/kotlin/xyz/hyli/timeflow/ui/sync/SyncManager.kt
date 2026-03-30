@@ -167,6 +167,7 @@ class SyncManager(
     }
 
     fun sync() {
+        if (_syncState.value.status == SyncStatus.SYNCING) return
         scope.launch {
             performSync()
         }
