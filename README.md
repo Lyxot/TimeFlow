@@ -17,6 +17,11 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
     - 可自定义主题颜色。
     - 浅色与深色模式切换。
 - **富有表现力的设计**: 基于 Material Design 3 Expressive 设计风格，提供流畅的动画和现代的视觉体验。
+- **云同步**: 支持通过 API 服务端提供云同步功能。
+- **分享**: 
+    - 支持将课程表导出为文件/图片。
+    - 支持从文件/图片导入课程表。
+    - 支持使用 AI 从普通图片中提取课程表信息。
 
 | 课程表 | 今日 |
 | --- | --- |
@@ -25,6 +30,12 @@ TimeFlow 是一款使用 [Compose Multiplatform](https://github.com/JetBrains/co
 | 浅色模式 | 深色模式 |
 | --- | --- |
 | ![](.readme/images/screenshot_desktop_page_schedule_light.png) | ![](.readme/images/screenshot_desktop_page_schedule_dark.png) |
+
+## 🔧 后端部署
+
+TimeFlow 支持通过 API 服务端提供云同步功能，并支持通过 Docker 私有化部署。
+
+有关后端部署和 API 文档，请参考 [Server README](./api/README.md) 和 [API README](./api/models/README.md)。
 
 ## 🚀 如何构建
 

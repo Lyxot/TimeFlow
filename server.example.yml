@@ -57,6 +57,15 @@ email:
   # 验证码有效期，单位为分钟
   codeExpirationMinutes: 10
 
+# Cloudflare Turnstile 人机校验配置
+turnstile:
+  # 是否启用 Turnstile 校验
+  enabled: false
+  # Turnstile 服务端密钥
+  secretKey: ""
+  # Turnstile 校验接口地址，通常无需修改
+  siteVerifyUrl: "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
 # HTTP 相关中间件与安全策略
 http:
   # 标准 Forwarded 请求头支持，通常在反向代理后启用
@@ -168,12 +177,3 @@ webApp:
   # Web 应用的 URL 路径，默认 "app" 即 /app/
   # 设置为 "/" 可在根路径提供 Web 应用
   location: "app"
-
-# Cloudflare Turnstile 人机校验配置
-turnstile:
-  # 是否启用 Turnstile 校验
-  enabled: false
-  # Turnstile 服务端密钥
-  secretKey: ""
-  # Turnstile 校验接口地址，通常无需修改
-  siteVerifyUrl: "https://challenges.cloudflare.com/turnstile/v0/siteverify"
