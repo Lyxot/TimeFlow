@@ -22,6 +22,7 @@ import xyz.hyli.timeflow.server.*
 import xyz.hyli.timeflow.server.database.DatabaseFactory
 import xyz.hyli.timeflow.server.database.ExposedDataRepository
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 fun main(args: Array<String>) {
     val commandLine = CommandLineArgs.parse(args)
@@ -52,8 +53,6 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    val log = LoggerFactory.getLogger("xyz.hyli.timeflow.Application")
-
     validateConfig(environment.config)
     DatabaseFactory.init(config = environment.config)
     val repository = ExposedDataRepository()
@@ -74,7 +73,7 @@ fun Application.module() {
     if (!isTestMode) {
         launch {
             while (isActive) {
-                delay(3_600_000L)
+                delay(3_600_000L.milliseconds)
                 try {
                     repository.cleanupExpiredTokens()
                 } catch (e: Exception) {
@@ -124,12 +123,21 @@ private fun validateConfig(config: ApplicationConfig) {
     }
 }
 
+private val log = LoggerFactory.getLogger("xyz.hyli.timeflow.Application")
+
 private fun loadConfig(commandLine: CommandLineArgs): ApplicationConfig {
     var config: ApplicationConfig = defaultConfig()
-    commandLine.configPaths.forEach { path ->
-        loadConfigFileOrNull(path)?.let { loadedConfig ->
-            config = config.mergeWith(loadedConfig)
-        }
+    if (commandLine.configPath != null) {
+        config = config.mergeWith(loadConfigFile(commandLine.configPath))
+    } else {
+        loadConfigFileOrNull("server.yml")
+            ?.let { config = config.mergeWith(it) }
+            ?: log.warn("Default config file 'server.yml' not found, proceeding with defaults")
+    }
+
+    val dotEnvOverrides = collectEnvMapOverrides(config, loadDotEnvOrNull(commandLine.envPath) ?: emptyMap())
+    if (dotEnvOverrides.isNotEmpty()) {
+        config = config.mergeWith(MapApplicationConfig(dotEnvOverrides))
     }
 
     val environmentOverrides = collectEnvironmentOverrides(config)
@@ -144,6 +152,14 @@ private fun loadConfig(commandLine: CommandLineArgs): ApplicationConfig {
     return config
 }
 
+private fun collectEnvMapOverrides(config: ApplicationConfig, envMap: Map<String, String>): List<Pair<String, String>> {
+    val overrides = mutableListOf<Pair<String, String>>()
+    collectConfigKeys(config).forEach { key ->
+        envMap[toEnvironmentVariableName(key)]?.let { overrides += key to it }
+    }
+    return overrides
+}
+
 private fun collectEnvironmentOverrides(config: ApplicationConfig): List<Pair<String, String>> {
     val overrides = mutableListOf<Pair<String, String>>()
     collectConfigKeys(config).forEach { key ->
@@ -151,6 +167,21 @@ private fun collectEnvironmentOverrides(config: ApplicationConfig): List<Pair<St
         System.getProperty(key)?.let { overrides += key to it }
     }
     return overrides
+}
+
+private fun loadDotEnvOrNull(path: String): Map<String, String>? {
+    val file = try {
+        File(resolveConfigPath(path))
+    } catch (_: MissingConfigFileException) {
+        return null
+    }
+    return file.readLines()
+        .filter { it.isNotBlank() && !it.trimStart().startsWith('#') }
+        .mapNotNull { line ->
+            val idx = line.indexOf('=')
+            if (idx > 0) line.substring(0, idx).trim() to line.substring(idx + 1) else null
+        }
+        .toMap()
 }
 
 private fun collectConfigKeys(config: ApplicationConfig, prefix: String = ""): Set<String> {
@@ -237,6 +268,17 @@ private fun defaultConfig(): ApplicationConfig = MapApplicationConfig(
     "turnstile.siteVerifyUrl" to "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 )
 
+private fun loadConfigFile(path: String): ApplicationConfig = try {
+    val resolvedPath = resolveConfigPath(path)
+    requireNotNull(YamlConfigLoader().load(resolvedPath)) {
+        "Config file '$path' could not be loaded"
+    }
+} catch (e: MissingConfigFileException) {
+    throw IllegalStateException("Config file '$path' not found.", e)
+} catch (e: Exception) {
+    throw IllegalStateException("Failed to load config file at '$path'.", e)
+}
+
 private fun loadConfigFileOrNull(path: String): ApplicationConfig? = try {
     val resolvedPath = resolveConfigPath(path)
     requireNotNull(YamlConfigLoader().load(resolvedPath)) {
@@ -270,17 +312,19 @@ private class MissingConfigFileException(path: String) :
     IllegalArgumentException("Config file '$path' does not exist")
 
 private data class CommandLineArgs(
-    val configPaths: List<String>,
+    val configPath: String?,
+    val envPath: String,
     val host: String?,
     val port: Int?,
     val propertyOverrides: List<Pair<String, String>>
 ) {
     companion object {
-        private const val DEFAULT_CONFIG_PATH = "server.yml"
+        private const val DEFAULT_ENV_PATH = ".env"
 
         fun parse(args: Array<String>): CommandLineArgs {
-            val configPaths = mutableListOf<String>()
             val propertyOverrides = mutableListOf<Pair<String, String>>()
+            var configPath: String? = null
+            var envPath: String? = null
             var host: String? = null
             var port: Int? = null
             var index = 0
@@ -293,11 +337,19 @@ private data class CommandLineArgs(
                     }
 
                     arg.startsWith("--config=") || arg.startsWith("-c=") -> {
-                        configPaths += arg.substringAfter('=')
+                        configPath = arg.substringAfter('=')
                     }
 
                     arg == "--config" || arg == "-c" -> {
-                        configPaths += requireValue(args, ++index, arg)
+                        configPath = requireValue(args, ++index, arg)
+                    }
+
+                    arg.startsWith("--env=") || arg.startsWith("-e=") -> {
+                        envPath = arg.substringAfter('=')
+                    }
+
+                    arg == "--env" || arg == "-e" -> {
+                        envPath = requireValue(args, ++index, arg)
                     }
 
                     arg.startsWith("--host=") || arg.startsWith("-h=") -> {
@@ -320,7 +372,8 @@ private data class CommandLineArgs(
             }
 
             return CommandLineArgs(
-                configPaths = configPaths.ifEmpty { listOf(DEFAULT_CONFIG_PATH) },
+                configPath = configPath,
+                envPath = envPath ?: DEFAULT_ENV_PATH,
                 host = host,
                 port = port,
                 propertyOverrides = propertyOverrides
