@@ -140,6 +140,8 @@ class TimeFlowViewModel(
                         error = e.message
                     )
                 }
+            cachedAiInfo = null
+            cachedAiInfoKey = null
         }
     }
 

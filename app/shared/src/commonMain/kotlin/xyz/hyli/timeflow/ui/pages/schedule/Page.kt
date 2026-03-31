@@ -386,6 +386,10 @@ fun ScheduleFAB(
     var showContent by remember { mutableStateOf(false) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
     var showImportChoiceDialog by remember { mutableStateOf(false) }
+    var showAiQuotaConfirmDialog by remember { mutableStateOf(false) }
+    var pendingAiBytes by remember { mutableStateOf<ByteArray?>(null) }
+    val notLoggedInMsg = stringResource(Res.string.ai_value_not_logged_in)
+    val aiQuotaHintMsg = stringResource(Res.string.ai_hint_will_use_quota)
 
     @Suppress("DEPRECATION")
     val saver = rememberFileSaverLauncher { file ->
@@ -416,7 +420,14 @@ fun ScheduleFAB(
                 file = file,
                 showMessage = showMessage,
                 onAiExtractionAvailable = { bytes ->
-                    viewModel.startAiExtraction(bytes)
+                    if ((!isLoggedIn || settings.apiEndpoint.isNullOrBlank()) && settings.aiConfig?.enabled != true) {
+                        showMessage(notLoggedInMsg)
+                    } else if (settings.aiConfig?.enabled == true) {
+                        viewModel.startAiExtraction(bytes)
+                    } else {
+                        pendingAiBytes = bytes
+                        showAiQuotaConfirmDialog = true
+                    }
                 }
             )
         }
@@ -454,6 +465,35 @@ fun ScheduleFAB(
         )
     }
 
+    // AI quota confirmation dialog
+    if (showAiQuotaConfirmDialog && pendingAiBytes != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showAiQuotaConfirmDialog = false
+                pendingAiBytes = null
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAiQuotaConfirmDialog = false
+                    viewModel.startAiExtraction(pendingAiBytes!!)
+                    pendingAiBytes = null
+                }) {
+                    Text(stringResource(Res.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAiQuotaConfirmDialog = false
+                    pendingAiBytes = null
+                }) {
+                    Text(stringResource(Res.string.cancel))
+                }
+            },
+            title = { Text(stringResource(Res.string.import_from_image)) },
+            text = { Text(aiQuotaHintMsg) }
+        )
+    }
+
     // Navigate to preview when extraction completes
     LaunchedEffect(aiState.status) {
         if (aiState.status == AiExtractionStatus.DONE) {
@@ -464,7 +504,6 @@ fun ScheduleFAB(
     if (showImportChoiceDialog) {
         val dialogState = rememberDialogState()
         LaunchedEffect(Unit) { dialogState.show() }
-        val notLoggedInMsg = stringResource(Res.string.ai_value_not_logged_in)
         if (dialogState.visible) {
             MyDialog(
                 state = dialogState,
@@ -518,17 +557,7 @@ fun ScheduleFAB(
                         modifier = Modifier.clickable {
                             showImportChoiceDialog = false
                             dialogState.dismiss()
-                            if ((!isLoggedIn || settings.apiEndpoint.isNullOrBlank()) && settings.aiConfig?.enabled != true) {
-                                showMessage(notLoggedInMsg)
-                                return@clickable
-                            }
-                            viewModel.checkAiAvailable { errorMsg ->
-                                if (errorMsg == null || errorMsg.isNotEmpty()) {
-                                    showMessage(errorMsg ?: notLoggedInMsg)
-                                } else {
-                                    imageReader.launch()
-                                }
-                            }
+                            imageReader.launch()
                         }
                     )
                 }

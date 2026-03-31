@@ -83,12 +83,13 @@
     <string name="ai_title_confirm_discard">放弃识别结果</string>
     <string name="ai_subtitle_confirm_discard">确定要放弃当前识别结果吗？</string>
     <string name="ai_value_extraction_error">AI 识别失败：%1$s</string>
-    <string name="ai_value_not_logged_in">请先登录并设置服务器地址</string>
+    <string name="ai_value_not_logged_in">无法直接读取图片数据，请先设置服务器地址并登录以启用 AI 识别</string>
     <string name="ai_value_not_enabled">服务器未启用 AI 识别功能</string>
     <string name="ai_value_quota_exceeded">AI 识别次数已用完（已使用 %1$s/%2$s 次）</string>
     <string name="ai_value_no_courses">未能从图片中识别出课程信息</string>
     <string name="ai_value_name_empty_hint">请输入课程表名称后再确认导入</string>
     <string name="ai_value_custom_model_not_set">请先在设置中配置 AI 模型</string>
+    <string name="ai_hint_will_use_quota">无法直接读取图片数据，是否使用 AI 识别？这将消耗一次 AI 识别配额。</string>
 
     <!--    today page-->
     <string name="today_title_no_courses">今日无课程</string>
