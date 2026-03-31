@@ -22,3 +22,4 @@ libraries.json
 /server.yml
 *.pem
 /db
+.env
