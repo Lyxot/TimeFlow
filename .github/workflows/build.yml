@@ -36,7 +36,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Setup JDK
         uses: actions/setup-java@v5
@@ -45,7 +45,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Run ${{ matrix.name }} tests
         run: ${{ matrix.task }}
@@ -93,7 +93,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Setup JDK
         uses: actions/setup-java@v5
@@ -102,7 +102,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Setup Signing
         id: sign
@@ -155,7 +155,7 @@ jobs:
           path: builder/build/artifacts/release/webCompat
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Setup JDK
         uses: actions/setup-java@v5
@@ -164,7 +164,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build
         run: ./gradlew :api:server:buildFatJar -PbundleWebAppZip=${{ matrix.bundleWebApp }}
