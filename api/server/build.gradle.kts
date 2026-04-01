@@ -16,7 +16,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 application {
@@ -38,7 +38,7 @@ ktor {
         archiveFileName.set(Target.Server.artifactName)
     }
     docker {
-        jreVersion.set(JavaVersion.VERSION_17)
+        jreVersion.set(JavaVersion.VERSION_21)
     }
 }
 

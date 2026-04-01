@@ -41,7 +41,7 @@ TimeFlow 支持通过 API 服务端提供云同步功能，并支持通过 Docke
 
 在开始之前，请确保您已经安装了：
 
-- JDK 17 或更高版本
+- JDK 21 或更高版本
 - Android SDK (并将路径配置在项目的 `local.properties` 文件中)
 - （可选）[KDoctor](https://github.com/Kotlin/kdoctor) 来检查您的开发环境
 
