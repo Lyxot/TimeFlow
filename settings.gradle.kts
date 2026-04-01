@@ -9,7 +9,7 @@
 
 rootProject.name = "TimeFlow"
 
-val ktorVersion = "3.4.0"
+val ktorVersion = "3.4.2"
 
 pluginManagement {
     repositories {
