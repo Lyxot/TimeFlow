@@ -40,8 +40,10 @@ fun SyncIconButton(viewModel: TimeFlowViewModel) {
     val isSyncing = syncState.status == SyncStatus.SYNCING
 
     val rotation = remember { Animatable(-90f) }
+    var wasSyncing by remember { mutableStateOf(false) }
     LaunchedEffect(isSyncing) {
         if (isSyncing) {
+            wasSyncing = true
             rotation.animateTo(
                 targetValue = rotation.value - 360f,
                 animationSpec = infiniteRepeatable(
@@ -49,7 +51,8 @@ fun SyncIconButton(viewModel: TimeFlowViewModel) {
                     repeatMode = RepeatMode.Restart
                 )
             )
-        } else {
+        } else if (wasSyncing) {
+            wasSyncing = false
             // Continue counter-clockwise to the nearest ±90° stop
             val remainder = ((rotation.value % 180f) + 180f) % 180f  // 0..180
             val target = rotation.value - remainder - 90f
