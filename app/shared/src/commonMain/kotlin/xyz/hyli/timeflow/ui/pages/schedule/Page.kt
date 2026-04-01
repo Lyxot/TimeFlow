@@ -35,13 +35,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import io.github.vinceglb.filekit.dialogs.FileKitMode
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
-import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
@@ -54,9 +48,9 @@ import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
 import xyz.hyli.timeflow.ui.viewmodel.AiExtractionStatus
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isWeb
-import xyz.hyli.timeflow.utils.writeBytesToFile
+import xyz.hyli.timeflow.utils.rememberOpenFileLauncher
+import xyz.hyli.timeflow.utils.rememberOpenImageLauncher
+import xyz.hyli.timeflow.utils.rememberSaveFileLauncher
 
 data class ScheduleParams(
     val viewModel: TimeFlowViewModel,
@@ -296,26 +290,19 @@ fun ScheduleScreen(
                     }
 
                     var captureRequested by remember { mutableStateOf(false) }
-                    var capturedPngBytes by remember { mutableStateOf<ByteArray?>(null) }
 
-                    @Suppress("DEPRECATION")
-                    val pngSaver = rememberFileSaverLauncher { file ->
-                        if (file != null && capturedPngBytes != null) {
-                            scope.launch {
-                                try {
-                                    writeBytesToFile(capturedPngBytes!!, file)
-                                    snackbarHostState.showSnackbar(
-                                        getString(Res.string.schedule_value_export_schedule_success, file.name)
-                                    )
-                                } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar(
-                                        getString(Res.string.schedule_value_export_schedule_failed, e.message ?: "")
-                                    )
-                                }
-                                capturedPngBytes = null
-                            }
+                    val pngSaver = rememberSaveFileLauncher(
+                        onSuccess = { name ->
+                            snackbarHostState.showSnackbar(
+                                getString(Res.string.schedule_value_export_schedule_success, name)
+                            )
+                        },
+                        onError = { e ->
+                            snackbarHostState.showSnackbar(
+                                getString(Res.string.schedule_value_export_schedule_failed, e.message ?: "")
+                            )
                         }
-                    }
+                    )
 
                     if (captureRequested && schedule != null) {
                         ScheduleImageCapture(
@@ -323,18 +310,7 @@ fun ScheduleScreen(
                             onCaptured = { pngBytes ->
                                 captureRequested = false
                                 val polyglot = pngBytes + schedule!!.toProtoBufByteArray()
-                                if (currentPlatform().isWeb()) {
-                                    scope.launch {
-                                        writeBytesToFile(
-                                            polyglot,
-                                            file = null,
-                                            filename = schedule!!.name + ".png"
-                                        )
-                                    }
-                                } else {
-                                    capturedPngBytes = polyglot
-                                    pngSaver.launch(schedule!!.name, "png")
-                                }
+                                pngSaver.launch(polyglot, schedule!!.name, "png")
                             },
                             onError = { error ->
                                 captureRequested = false
@@ -391,19 +367,15 @@ fun ScheduleFAB(
     val notLoggedInMsg = stringResource(Res.string.ai_value_not_logged_in)
     val aiQuotaHintMsg = stringResource(Res.string.ai_hint_will_use_quota)
 
-    @Suppress("DEPRECATION")
-    val saver = rememberFileSaverLauncher { file ->
-        if (file != null) {
-            viewModel.exportScheduleToFile(
-                file = file,
-                showMessage = showMessage
-            )
+    val saver = rememberSaveFileLauncher(
+        onSuccess = { name ->
+            showMessage(getString(Res.string.schedule_value_export_schedule_success, name))
+        },
+        onError = { e ->
+            showMessage(getString(Res.string.schedule_value_export_schedule_failed, e.message ?: ""))
         }
-    }
-    val fileReader = rememberFilePickerLauncher(
-        mode = FileKitMode.Single,
-        type = FileKitType.File("pb")
-    ) { file ->
+    )
+    val fileReader = rememberOpenFileLauncher("pb") { file ->
         if (file != null) {
             viewModel.importScheduleFromFile(
                 file = file,
@@ -411,10 +383,7 @@ fun ScheduleFAB(
             )
         }
     }
-    val imageReader = rememberFilePickerLauncher(
-        mode = FileKitMode.Single,
-        type = FileKitType.Image
-    ) { file ->
+    val imageReader = rememberOpenImageLauncher { file ->
         if (file != null) {
             viewModel.importScheduleFromFile(
                 file = file,
@@ -621,17 +590,7 @@ fun ScheduleFAB(
                         modifier = Modifier.clickable {
                             showExportChoiceDialog = false
                             dialogState.dismiss()
-                            if (currentPlatform().isWeb()) {
-                                viewModel.viewModelScope.launch {
-                                    writeBytesToFile(
-                                        schedule!!.toProtoBufByteArray(),
-                                        file = null,
-                                        filename = schedule!!.name + ".pb"
-                                    )
-                                }
-                            } else {
-                                saver.launch(schedule!!.name, "pb")
-                            }
+                            saver.launch(schedule!!.toProtoBufByteArray(), schedule!!.name, "pb")
                         }
                     )
                 }

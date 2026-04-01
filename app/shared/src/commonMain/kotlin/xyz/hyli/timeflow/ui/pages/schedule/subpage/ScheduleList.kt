@@ -24,9 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -36,9 +34,7 @@ import xyz.hyli.timeflow.ui.components.*
 import xyz.hyli.timeflow.ui.pages.schedule.ConfirmActionDialog
 import xyz.hyli.timeflow.ui.pages.schedule.DeleteSelectedSchedulesDialog
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.currentPlatform
-import xyz.hyli.timeflow.utils.isWeb
-import xyz.hyli.timeflow.utils.writeBytesToFile
+import xyz.hyli.timeflow.utils.rememberSaveFileLauncher
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -114,34 +110,23 @@ fun ScheduleListScreen(
                 ) {
                     val id = selectedSchedules.firstOrNull() ?: return@AnimatedVisibility
 
-                    @Suppress("DEPRECATION")
-                    val saver = rememberFileSaverLauncher { file ->
-                        if (file != null) {
-                            viewModel.exportScheduleToFile(
-                                id = id,
-                                file = file,
-                                showMessage = { message ->
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(message)
-                                    }
-                                }
+                    val saver = rememberSaveFileLauncher(
+                        onSuccess = { name ->
+                            snackbarHostState.showSnackbar(
+                                getString(Res.string.schedule_value_export_schedule_success, name)
+                            )
+                        },
+                        onError = { e ->
+                            snackbarHostState.showSnackbar(
+                                getString(Res.string.schedule_value_export_schedule_failed, e.message ?: "")
                             )
                         }
-                        multipleSelectionMode = false
-                    }
+                    )
                     IconButton(
                         onClick = {
-                            if (currentPlatform().isWeb()) {
-                                viewModel.viewModelScope.launch {
-                                    writeBytesToFile(
-                                        settings.schedules[id]!!.toProtoBufByteArray(),
-                                        file = null,
-                                        filename = settings.schedules[id]!!.name + ".pb"
-                                    )
-                                }
-                            } else {
-                                saver.launch(settings.schedules[id]!!.name, "pb")
-                            }
+                            val schedule = settings.schedules[id] ?: return@IconButton
+                            saver.launch(schedule.toProtoBufByteArray(), schedule.name, "pb")
+                            multipleSelectionMode = false
                         }
                     ) {
                         Icon(
