@@ -169,10 +169,10 @@ fun ScheduleListScreen(
                 title = stringResource(Res.string.schedule_title_selected_schedule),
                 visible = selectedScheduleDependency
             ) {
+                val s = schedule ?: return@PreferenceSection
                 BasePreference(
-                    title = schedule!!.name,
-                    subtitle = schedule!!.termStartDate.toString() + " ~ " +
-                            schedule!!.termEndDate.toString(),
+                    title = s.name,
+                    subtitle = s.termStartDate.toString() + " ~ " + s.termEndDate.toString(),
                     onClick = {
                         navHostController.popBackStack()
                     }

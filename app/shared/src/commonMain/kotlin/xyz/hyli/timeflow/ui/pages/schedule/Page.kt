@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.jetbrains.compose.resources.getString
@@ -48,9 +49,8 @@ import xyz.hyli.timeflow.ui.navigation.Destination
 import xyz.hyli.timeflow.ui.pages.settings.subpage.SyncConflictDialog
 import xyz.hyli.timeflow.ui.viewmodel.AiExtractionStatus
 import xyz.hyli.timeflow.ui.viewmodel.TimeFlowViewModel
-import xyz.hyli.timeflow.utils.rememberOpenFileLauncher
-import xyz.hyli.timeflow.utils.rememberOpenImageLauncher
-import xyz.hyli.timeflow.utils.rememberSaveFileLauncher
+import xyz.hyli.timeflow.utils.*
+import kotlin.time.Duration.Companion.milliseconds
 
 data class ScheduleParams(
     val viewModel: TimeFlowViewModel,
@@ -363,7 +363,33 @@ fun ScheduleFAB(
     var showExportChoiceDialog by remember { mutableStateOf(false) }
     var showImportChoiceDialog by remember { mutableStateOf(false) }
     var showAiQuotaConfirmDialog by remember { mutableStateOf(false) }
+    var pendingImportAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var pendingExportAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var pendingAiBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+    // DialogEvent.Dismissed only fires for interaction-based dismissals, not programmatic ones.
+    // Observe the dialog flags directly and defer the launch via a pending-action pattern.
+    // On iOS, CMP's Dialog runs a ~100ms LayersWindow hide animation on dismissal. Launching
+    // the picker synchronously causes FileKit's topMostViewController() to find the dialog VC
+    // as topmost; the picker is then silently discarded when that window hides. delay(150) on
+    // iOS ensures the UIKit window is fully hidden before presentViewController is called.
+    // No delay is needed on Android (ActivityResultLauncher), Desktop (Swing), or Web (browser).
+    LaunchedEffect(showImportChoiceDialog) {
+        if (!showImportChoiceDialog) {
+            val action = pendingImportAction ?: return@LaunchedEffect
+            pendingImportAction = null
+            if (currentPlatform().isIos()) delay(150.milliseconds)
+            action()
+        }
+    }
+    LaunchedEffect(showExportChoiceDialog) {
+        if (!showExportChoiceDialog) {
+            val action = pendingExportAction ?: return@LaunchedEffect
+            pendingExportAction = null
+            if (currentPlatform().isIos()) delay(150.milliseconds)
+            action()
+        }
+    }
     val notLoggedInMsg = stringResource(Res.string.ai_value_not_logged_in)
     val aiQuotaHintMsg = stringResource(Res.string.ai_hint_will_use_quota)
 
@@ -505,9 +531,9 @@ fun ScheduleFAB(
                             DialogStyleDefaults.iconColor
                         ),
                         modifier = Modifier.clickable {
+                            pendingImportAction = { fileReader.launch() }
                             showImportChoiceDialog = false
                             dialogState.dismiss()
-                            fileReader.launch()
                         }
                     )
                     ListItem(
@@ -524,9 +550,9 @@ fun ScheduleFAB(
                             DialogStyleDefaults.iconColor
                         ),
                         modifier = Modifier.clickable {
+                            pendingImportAction = { imageReader.launch() }
                             showImportChoiceDialog = false
                             dialogState.dismiss()
-                            imageReader.launch()
                         }
                     )
                 }
@@ -569,9 +595,9 @@ fun ScheduleFAB(
                             DialogStyleDefaults.iconColor
                         ),
                         modifier = Modifier.clickable {
+                            pendingExportAction = { onExportAsImage() }
                             showExportChoiceDialog = false
                             dialogState.dismiss()
-                            onExportAsImage()
                         }
                     )
                     ListItem(
@@ -588,9 +614,10 @@ fun ScheduleFAB(
                             DialogStyleDefaults.iconColor
                         ),
                         modifier = Modifier.clickable {
+                            val s = schedule!!
+                            pendingExportAction = { saver.launch(s.toProtoBufByteArray(), s.name, "pb") }
                             showExportChoiceDialog = false
                             dialogState.dismiss()
-                            saver.launch(schedule!!.toProtoBufByteArray(), schedule!!.name, "pb")
                         }
                     )
                 }
