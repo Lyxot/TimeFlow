@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.2"
-aboutLibraries = "13.2.1"
+aboutLibraries = "14.0.0"
 androidx-activity-compose = "1.13.0"
 androidx-core-ktx = "1.18.0"
 androidx-datastore = "1.2.1"
