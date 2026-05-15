@@ -9,7 +9,6 @@
 
 package xyz.hyli.timeflow.ai
 
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import xyz.hyli.timeflow.api.models.ExtractedCourse
 import java.io.File
@@ -68,6 +67,31 @@ class ScheduleExtractorTest {
     }
 
     @Test
+    fun testPureExtractionJsonDetection() {
+        val pureJsonl = """
+            {"_schedule":true,"name":"测试课程表","termStartDate":null,"termEndDate":null,"totalWeeks":16,"displayWeekends":false,"morningLessons":4,"afternoonLessons":4,"eveningLessons":null}
+            {"name":"数学","teacher":"张三","classroom":"A101","time":[1,2],"weekday":0,"week":[1,2,3],"note":null}
+        """.trimIndent()
+
+        val markdownWrapped = """
+            Here is the extracted JSON:
+            ```json
+            {"_schedule":true,"name":"测试课程表"}
+            {"name":"数学","time":[1,2],"weekday":0}
+            ```
+        """.trimIndent()
+
+        val invalidCourse = """
+            {"_schedule":true,"name":"测试课程表"}
+            {"name":"数学","time":[1,2],"weekday":9}
+        """.trimIndent()
+
+        assertTrue(ScheduleExtractor.isPureExtractionJson(pureJsonl))
+        assertFalse(ScheduleExtractor.isPureExtractionJson(markdownWrapped))
+        assertFalse(ScheduleExtractor.isPureExtractionJson(invalidCourse))
+    }
+
+    @Test
     fun testToCourse() {
         val extracted = ExtractedCourse(
             name = "高等数学",
@@ -92,11 +116,11 @@ class ScheduleExtractorTest {
     /**
      * Integration test: calls OpenRouter with a real image.
      * Only runs if TEST_IMAGE_PATH env var is set.
-     * Usage: TEST_IMAGE_PATH=/path/to/schedule.png ./gradlew :api:ai:jvmTest --tests "*testStreamingExtraction*"
+     * Usage: TEST_IMAGE_PATH=/path/to/schedule.png ./gradlew :api:ai:jvmTest --tests "*testExtraction*"
      */
     @OptIn(ExperimentalEncodingApi::class)
     @Test
-    fun testStreamingExtraction() {
+    fun testExtraction() {
         val imagePath = System.getenv("TEST_IMAGE_PATH") ?: run {
             println("Skipping integration test: TEST_IMAGE_PATH not set")
             return
@@ -120,30 +144,12 @@ class ScheduleExtractorTest {
         )
 
         runBlocking {
-            // Try non-streaming first
-            println("--- Non-streaming extraction ---")
             val courses = extractor.extractFull(imageBase64).courses
             println("Extracted ${courses.size} courses:")
             courses.forEach { course ->
                 println("  ${course.name} | ${course.teacher} | ${course.classroom} | time=${course.time} | weekday=${course.weekday} | weeks=${course.week}")
             }
             assertTrue(courses.isNotEmpty(), "Expected at least one course to be extracted")
-
-            // Then try streaming
-            println("\n--- Streaming extraction ---")
-            val chunks = mutableListOf<String>()
-            extractor.extractStreaming(imageBase64).toList().also { deltas ->
-                deltas.forEach { delta ->
-                    print(delta)
-                    chunks.add(delta)
-                }
-            }
-            println("\n--- End streaming ---")
-
-            val fullText = chunks.joinToString("")
-            val streamedCourses = extractor.parseResult(fullText).courses
-            println("Streamed ${streamedCourses.size} courses")
-            assertTrue(streamedCourses.isNotEmpty(), "Expected at least one course from streaming")
         }
 
         extractor.close()

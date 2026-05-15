@@ -139,7 +139,7 @@ private val extractionJson = Json { ignoreUnknownKeys = true }
 /**
  * 解析 LLM 输出为完整结果。
  * 使用大括号深度匹配提取 JSON 对象，不依赖换行符分隔。
- * 同时兼容 JSONL 和拼接在一起的 JSON（如 SSE 流式输出）。
+ * 同时兼容 JSONL 和拼接在一起的 JSON。
  */
 fun parseExtractionResult(text: String): ExtractionResult {
     var scheduleInfo: ExtractedScheduleInfo? = null

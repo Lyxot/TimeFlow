@@ -189,7 +189,8 @@ components:
         stream:
           type: boolean
           default: false
-          description: "If true, stream the response in OpenAI-compatible format. If false (default), return a JSON array."
+          deprecated: true
+          description: "Deprecated legacy compatibility flag. New clients should omit it. When true, the server returns repaired JSONL wrapped as text/event-stream for old clients; LLM calls are not streamed internally."
     AiExtractedCourse:
       type: object
       description: "A single course extracted from a schedule image by the LLM."
@@ -475,9 +476,10 @@ paths:
       summary: Extract courses from a schedule image
       description: >
         Uses an LLM to extract course information from a schedule/timetable image.
-        Set `stream: true` for OpenAI-compatible streaming, or omit for a JSON array response.
         Each user has a quota of requests per 6-month period (default: 4).
-        Quota info is returned in response headers.
+        Quota info is returned in response headers. The deprecated `stream=true`
+        request flag is still accepted for old clients and returns repaired JSONL
+        in SSE framing, but new clients should use the default JSON response.
       security: [ { bearerAuth: [ ] } ]
       requestBody:
         required: true
@@ -486,8 +488,9 @@ paths:
       responses:
         '200':
           description: >
-            When stream=false (default): JSON array of extracted courses.
-            When stream=true: OpenAI-compatible streaming with `data:` lines, terminated by `data: [DONE]`.
+            By default, returns an extracted schedule with courses and metadata.
+            With deprecated stream=true, returns repaired JSONL in text/event-stream
+            framing for legacy clients.
           headers:
             X-Ai-Model:
               schema: { type: string }
@@ -502,11 +505,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Schedule'
-                description: "Returned when stream=false. A complete Schedule object with extracted courses and metadata."
             text/event-stream:
               schema:
                 type: string
-                description: "Returned when stream=true. `data:` lines with text chunks, terminated by `data: [DONE]`."
+                description: "Deprecated legacy response for stream=true. `data:` lines contain repaired JSONL objects and end with `data: [DONE]`."
         '400':
           description: Invalid base64 image data or empty image
           content:

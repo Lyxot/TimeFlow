@@ -103,6 +103,9 @@ class ApiV1 {
             @Serializable
             data class Payload(
                 val image: String,
+                @Deprecated(
+                    message = "Legacy compatibility flag. New clients should omit it; server-side extraction is no longer streamed."
+                )
                 val stream: Boolean = false
             )
         }

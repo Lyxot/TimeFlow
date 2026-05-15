@@ -15,8 +15,6 @@ import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.slf4j.Logger
@@ -144,21 +142,23 @@ fun Route.aiRoutes(aiConfig: AiConfig, modelSelector: ModelSelector, repository:
 
                     try {
                         call.response.header("X-Ai-Model", model.id)
-                        if (payload.stream) {
+                        val jsonLines = extractor.extractJsonLines(imageBase64, resized.format)
+                        @Suppress("DEPRECATION")
+                        val legacyStreamResponse = payload.stream
+                        if (legacyStreamResponse) {
                             call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                                extractor.extractStreaming(imageBase64, resized.format).collect { chunk ->
-                                    withContext(Dispatchers.IO) {
-                                        write("data: $chunk\n\n")
+                                jsonLines.lineSequence()
+                                    .map { it.trim() }
+                                    .filter { it.isNotEmpty() }
+                                    .forEach { line ->
+                                        write("data: $line\n\n")
                                         flush()
                                     }
-                                }
-                                withContext(Dispatchers.IO) {
-                                    write("data: [DONE]\n\n")
-                                    flush()
-                                }
+                                write("data: [DONE]\n\n")
+                                flush()
                             }
                         } else {
-                            val result = extractor.extractFull(imageBase64, resized.format)
+                            val result = extractor.parseResult(jsonLines)
                             call.respond(HttpStatusCode.OK, result.toSchedule())
                         }
 

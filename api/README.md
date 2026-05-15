@@ -237,6 +237,21 @@ docker compose up -d
 
 服务会按权重选择模型；如果某个模型失败，会继续尝试其他可用模型。
 
+#### 提取接口兼容性
+
+`POST /api/v1/ai/extract-schedule` 默认接收 `{ "image": "<base64>" }`，并返回 `application/json` 格式的完整
+`Schedule` 数据。
+
+服务端会先把 LLM 输出修复为纯 JSONL，再转换为课程表数据。如果模型输出包含说明文字、Markdown 代码块或其他非
+JSON 内容，会使用同一提供商的修复提示重新生成，最多重试 3 次。
+
+为兼容已发布旧客户端，请求体仍保留已废弃的 `stream` 字段：
+
+- 新客户端不应传 `stream`。
+- `stream: true` 只影响 HTTP 返回格式：服务端仍使用非流式 LLM 调用和同一 JSONL 修复流程，然后把修复后的
+  JSONL 包装为 `text/event-stream`，以 `data: ...` 行输出，并以 `data: [DONE]` 结束。
+- 该模式不是实时 LLM 流式推理，仅用于旧客户端兼容。
+
 ### Web 静态包托管
 
 `webApp` 配置块用于让后端直接托管前端 Web 产物。

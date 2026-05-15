@@ -63,6 +63,13 @@
 | `GET` | `/ai/info` | 查询 AI 功能状态与限制信息 | &#10004; |
 | `POST` | `/ai/extract-schedule` | 从课程表图片中提取课程信息 | &#10004; |
 
+`POST /ai/extract-schedule` 默认请求体为 `{ "image": "<base64>" }`，返回 `application/json` 格式的完整
+`Schedule`。服务端会将 LLM 输出修复为纯 JSONL，最多重试 3 次，避免说明文字、Markdown 代码块等内容干扰解析。
+
+`stream` 字段仅为已废弃的旧客户端兼容开关；新客户端不应使用。传入 `stream: true` 时，服务端仍会先完成非流式识别和
+JSONL 修复，再返回 `text/event-stream`：每个 `data:` 行包含一个修复后的 JSONL 对象，最后以 `data: [DONE]`
+结束。
+
 ## 同步
 
 | 方法 | 端点 | 描述 | 认证 |

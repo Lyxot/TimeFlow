@@ -15,10 +15,9 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.utils.io.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.json.*
+import xyz.hyli.timeflow.api.models.ExtractedCourse
+import xyz.hyli.timeflow.api.models.ExtractedScheduleInfo
 import xyz.hyli.timeflow.api.models.ExtractionResult
 import xyz.hyli.timeflow.api.models.detectImageFormatFromBase64
 import xyz.hyli.timeflow.api.models.parseExtractionResult
@@ -68,34 +67,39 @@ class ScheduleExtractor(
      * @return 提取结果，包含课程表信息和课程列表
      */
     suspend fun extractFull(imageBase64: String, format: String? = null): ExtractionResult {
+        return parseResult(extractJsonLines(imageBase64, format))
+    }
+
+    /**
+     * 从图片中提取纯 JSONL 文本。LLM 输出不是纯 JSONL 时会自动修复，最多重试 3 次。
+     */
+    suspend fun extractJsonLines(imageBase64: String, format: String? = null): String {
         val fmt = format ?: detectImageFormatFromBase64(imageBase64)
         val text = when (provider.lowercase()) {
             "anthropic" -> requestAnthropic(imageBase64, fmt)
             "google" -> requestGoogle(imageBase64, fmt)
             else -> requestOpenAICompatible(imageBase64, fmt)
         }
-        return parseResult(text)
-    }
-
-    /**
-     * 从图片中提取课程信息（流式），返回 LLM 的文本增量。
-     * @param imageBase64 Base64 编码的图片数据
-     * @param format 图片格式，如 "png"、"jpeg"，默认自动检测
-     * @return 文本增量的 Flow
-     */
-    fun extractStreaming(imageBase64: String, format: String? = null): Flow<String> {
-        val fmt = format ?: detectImageFormatFromBase64(imageBase64)
-        return when (provider.lowercase()) {
-            "anthropic" -> streamAnthropic(imageBase64, fmt)
-            "google" -> streamGoogle(imageBase64, fmt)
-            else -> streamOpenAICompatible(imageBase64, fmt)
-        }
+        return ensurePureJsonOutput(text)
     }
 
     /**
      * 解析 JSONL 格式的 LLM 输出为完整结果，包含课程表信息和课程列表。
      */
     fun parseResult(text: String): ExtractionResult = parseExtractionResult(text)
+
+    /**
+     * 将非纯 JSONL 的模型输出转换为纯 JSONL，最多重试 3 次。
+     */
+    suspend fun ensurePureJsonOutput(text: String): String {
+        var current = text.trim()
+        repeat(MAX_JSON_REPAIR_ATTEMPTS) {
+            if (isPureExtractionJson(current)) return current
+            current = requestJsonRepair(current).trim()
+        }
+        if (isPureExtractionJson(current)) return current
+        error("AI response was not pure JSON after $MAX_JSON_REPAIR_ATTEMPTS repair attempts")
+    }
 
     override fun close() {
         if (lazyClient.isInitialized()) client.close()
@@ -112,10 +116,9 @@ class ScheduleExtractor(
         }
     }
 
-    private fun openAICompatibleBody(imageBase64: String, format: String, stream: Boolean) =
+    private fun openAICompatibleBody(imageBase64: String, format: String) =
         buildJsonObject {
             put("model", model)
-            put("stream", stream)
             putJsonArray("messages") {
                 addJsonObject {
                     put("role", "system")
@@ -140,7 +143,7 @@ class ScheduleExtractor(
             if (apiKey.isNotBlank()) header(HttpHeaders.Authorization, "Bearer $apiKey")
             setBody(
                 TextContent(
-                    openAICompatibleBody(imageBase64, format, stream = false),
+                    openAICompatibleBody(imageBase64, format),
                     ContentType.Application.Json
                 )
             )
@@ -154,26 +157,33 @@ class ScheduleExtractor(
             ?: error("No content in response")
     }
 
-    private fun streamOpenAICompatible(imageBase64: String, format: String): Flow<String> = channelFlow {
-        client.preparePost(openAICompatibleUrl()) {
-            if (apiKey.isNotBlank()) header(HttpHeaders.Authorization, "Bearer $apiKey")
-            setBody(TextContent(openAICompatibleBody(imageBase64, format, stream = true), ContentType.Application.Json))
-        }.execute { response ->
-            val channel = response.bodyAsChannel()
-            while (!channel.isClosedForRead) {
-                val line = channel.readLine() ?: break
-                if (!line.startsWith("data: ")) continue
-                val data = line.removePrefix("data: ").trim()
-                if (data == "[DONE]") break
-                val text = runCatching {
-                    json.parseToJsonElement(data).jsonObject["choices"]?.jsonArray
-                        ?.firstOrNull()?.jsonObject
-                        ?.get("delta")?.jsonObject
-                        ?.get("content")?.jsonPrimitive?.content
-                }.getOrNull()
-                if (text != null) send(text)
+    private fun openAICompatibleRepairBody(text: String) =
+        buildJsonObject {
+            put("model", model)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "system")
+                    put("content", ScheduleExtractorPrompt.JSON_REPAIR_PROMPT)
+                }
+                addJsonObject {
+                    put("role", "user")
+                    put("content", text)
+                }
             }
+        }.toString()
+
+    private suspend fun requestOpenAICompatibleRepair(text: String): String {
+        val response = client.post(openAICompatibleUrl()) {
+            if (apiKey.isNotBlank()) header(HttpHeaders.Authorization, "Bearer $apiKey")
+            setBody(TextContent(openAICompatibleRepairBody(text), ContentType.Application.Json))
         }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        checkError(body, "API")
+        return body["choices"]?.jsonArray
+            ?.firstOrNull()?.jsonObject
+            ?.get("message")?.jsonObject
+            ?.get("content")?.jsonPrimitive?.content
+            ?: error("No content in response")
     }
 
     // ---- Anthropic ----
@@ -183,11 +193,10 @@ class ScheduleExtractor(
         return ANTHROPIC_URL
     }
 
-    private fun anthropicBody(imageBase64: String, format: String, stream: Boolean) =
+    private fun anthropicBody(imageBase64: String, format: String) =
         buildJsonObject {
             put("model", model)
             put("max_tokens", 8192)
-            put("stream", stream)
             put("system", ScheduleExtractorPrompt.SYSTEM_PROMPT)
             putJsonArray("messages") {
                 addJsonObject {
@@ -210,7 +219,7 @@ class ScheduleExtractor(
         val response = client.post(anthropicUrl()) {
             header("x-api-key", apiKey)
             header("anthropic-version", "2023-06-01")
-            setBody(TextContent(anthropicBody(imageBase64, format, stream = false), ContentType.Application.Json))
+            setBody(TextContent(anthropicBody(imageBase64, format), ContentType.Application.Json))
         }
         val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
         checkError(body, "Anthropic")
@@ -220,26 +229,31 @@ class ScheduleExtractor(
             ?: error("No content in response")
     }
 
-    private fun streamAnthropic(imageBase64: String, format: String): Flow<String> = channelFlow {
-        client.preparePost(anthropicUrl()) {
+    private fun anthropicRepairBody(text: String) =
+        buildJsonObject {
+            put("model", model)
+            put("max_tokens", 8192)
+            put("system", ScheduleExtractorPrompt.JSON_REPAIR_PROMPT)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    put("content", text)
+                }
+            }
+        }.toString()
+
+    private suspend fun requestAnthropicRepair(text: String): String {
+        val response = client.post(anthropicUrl()) {
             header("x-api-key", apiKey)
             header("anthropic-version", "2023-06-01")
-            setBody(TextContent(anthropicBody(imageBase64, format, stream = true), ContentType.Application.Json))
-        }.execute { response ->
-            val channel = response.bodyAsChannel()
-            while (!channel.isClosedForRead) {
-                val line = channel.readLine() ?: break
-                if (!line.startsWith("data: ")) continue
-                val data = line.removePrefix("data: ").trim()
-                val text = runCatching {
-                    val obj = json.parseToJsonElement(data).jsonObject
-                    if (obj["type"]?.jsonPrimitive?.content == "content_block_delta") {
-                        obj["delta"]?.jsonObject?.get("text")?.jsonPrimitive?.content
-                    } else null
-                }.getOrNull()
-                if (text != null) send(text)
-            }
+            setBody(TextContent(anthropicRepairBody(text), ContentType.Application.Json))
         }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        checkError(body, "Anthropic")
+        return body["content"]?.jsonArray
+            ?.filter { it.jsonObject["type"]?.jsonPrimitive?.content == "text" }
+            ?.joinToString("") { it.jsonObject["text"]!!.jsonPrimitive.content }
+            ?: error("No content in response")
     }
 
     // ---- Google Gemini ----
@@ -285,30 +299,45 @@ class ScheduleExtractor(
             ?: error("No content in response")
     }
 
-    private fun streamGoogle(imageBase64: String, format: String): Flow<String> = channelFlow {
-        val baseUrl = googleUrl()
-        client.preparePost("$baseUrl/v1beta/models/$model:streamGenerateContent?alt=sse&key=$apiKey") {
-            setBody(TextContent(googleBody(imageBase64, format), ContentType.Application.Json))
-        }.execute { response ->
-            val channel = response.bodyAsChannel()
-            while (!channel.isClosedForRead) {
-                val line = channel.readLine() ?: break
-                if (!line.startsWith("data: ")) continue
-                val data = line.removePrefix("data: ").trim()
-                val text = runCatching {
-                    json.parseToJsonElement(data).jsonObject["candidates"]?.jsonArray
-                        ?.firstOrNull()?.jsonObject
-                        ?.get("content")?.jsonObject
-                        ?.get("parts")?.jsonArray
-                        ?.filter { it.jsonObject.containsKey("text") }
-                        ?.joinToString("") { it.jsonObject["text"]!!.jsonPrimitive.content }
-                }.getOrNull()
-                if (!text.isNullOrEmpty()) send(text)
+    private fun googleRepairBody(text: String) =
+        buildJsonObject {
+            putJsonObject("system_instruction") {
+                putJsonArray("parts") {
+                    addJsonObject { put("text", ScheduleExtractorPrompt.JSON_REPAIR_PROMPT) }
+                }
             }
+            putJsonArray("contents") {
+                addJsonObject {
+                    putJsonArray("parts") {
+                        addJsonObject { put("text", text) }
+                    }
+                }
+            }
+        }.toString()
+
+    private suspend fun requestGoogleRepair(text: String): String {
+        val response = client.post("${googleUrl()}/$model:generateContent?key=$apiKey") {
+            setBody(TextContent(googleRepairBody(text), ContentType.Application.Json))
         }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        checkError(body, "Google")
+        return body["candidates"]?.jsonArray
+            ?.firstOrNull()?.jsonObject
+            ?.get("content")?.jsonObject
+            ?.get("parts")?.jsonArray
+            ?.filter { it.jsonObject.containsKey("text") }
+            ?.joinToString("") { it.jsonObject["text"]!!.jsonPrimitive.content }
+            ?: error("No content in response")
     }
 
     // ---- Helpers ----
+
+    private suspend fun requestJsonRepair(text: String): String =
+        when (provider.lowercase()) {
+            "anthropic" -> requestAnthropicRepair(text)
+            "google" -> requestGoogleRepair(text)
+            else -> requestOpenAICompatibleRepair(text)
+        }
 
     private fun checkError(body: JsonObject, provider: String) {
         body["error"]?.let { err ->
@@ -323,10 +352,34 @@ class ScheduleExtractor(
     companion object {
         // 10 minutes timeout
         private const val REQUEST_TIMEOUT_MS = 600_000L
+        private const val MAX_JSON_REPAIR_ATTEMPTS = 3
+        private val validationJson = Json { ignoreUnknownKeys = true }
         const val OPENAI_URL = "https://api.openai.com/v1/chat/completions"
         const val OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
         const val OLLAMA_URL = "http://localhost:11434/v1/chat/completions"
         const val ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
         const val GOOGLE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
+        internal fun isPureExtractionJson(text: String): Boolean {
+            val lines = text.trim().lines().map { it.trim() }.filter { it.isNotEmpty() }
+            if (lines.isEmpty()) return false
+
+            return lines.all { line ->
+                runCatching {
+                    val element = validationJson.parseToJsonElement(line)
+                    if (element !is JsonObject) return@runCatching false
+
+                    val isScheduleLine =
+                        element["_schedule"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() == true
+                    if (isScheduleLine) {
+                        validationJson.decodeFromJsonElement(ExtractedScheduleInfo.serializer(), element)
+                        true
+                    } else {
+                        val course = validationJson.decodeFromJsonElement(ExtractedCourse.serializer(), element)
+                        course.name.isNotBlank() && course.time.size >= 2 && course.weekday in 0..6
+                    }
+                }.getOrDefault(false)
+            }
+        }
     }
 }
